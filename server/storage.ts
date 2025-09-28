@@ -14,6 +14,7 @@ export interface IStorage {
   updateUserVerification(id: string, isVerified: boolean): Promise<void>;
   updateUserPassword(id: string, password: string): Promise<void>;
   setVerificationCode(id: string, code: string, expiry: Date): Promise<void>;
+  clearVerificationCode(id: string): Promise<void>;
   sessionStore: session.Store;
 }
 
@@ -65,6 +66,16 @@ export class DatabaseStorage implements IStorage {
       .set({ 
         verificationCode: code,
         verificationCodeExpiry: expiry 
+      })
+      .where(eq(users.id, id));
+  }
+
+  async clearVerificationCode(id: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        verificationCode: null,
+        verificationCodeExpiry: null 
       })
       .where(eq(users.id, id));
   }

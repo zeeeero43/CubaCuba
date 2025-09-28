@@ -7,11 +7,25 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import crypto from "crypto";
 
 declare global {
   namespace Express {
     interface User extends SelectUser {}
   }
+}
+
+// Safe user serializer - NEVER expose sensitive fields
+function sanitizeUser(user: SelectUser) {
+  return {
+    id: user.id,
+    phone: user.phone,
+    name: user.name,
+    province: user.province,
+    isVerified: user.isVerified,
+    createdAt: user.createdAt
+    // NEVER include: password, verificationCode, verificationCodeExpiry
+  };
 }
 
 const scryptAsync = promisify(scrypt);
@@ -29,12 +43,65 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+// Secure verification code generation and hashing
 function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 999999).toString();
+}
+
+async function hashVerificationCode(code: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(code, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+async function verifyCode(supplied: string, stored: string): Promise<boolean> {
+  if (!supplied || !stored) return false;
+  try {
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    return false;
+  }
+}
+
+// Simple CSRF protection without deprecated csurf
+function generateCSRFToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+function verifyCSRFToken(sessionToken: string, bodyToken: string): boolean {
+  if (!sessionToken || !bodyToken) return false;
+  try {
+    return timingSafeEqual(
+      Buffer.from(sessionToken, 'hex'),
+      Buffer.from(bodyToken, 'hex')
+    );
+  } catch (error) {
+    return false;
+  }
+}
+
+// CSRF middleware
+function csrfProtection(req: any, res: any, next: any) {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+    return next();
+  }
+
+  const sessionToken = req.session?.csrfToken;
+  const bodyToken = req.body?._csrf || req.headers['x-csrf-token'];
+
+  if (!verifyCSRFToken(sessionToken, bodyToken)) {
+    return res.status(403).json({ message: "Token CSRF inválido" });
+  }
+
+  next();
 }
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
+    name: 'rico.sid', // Custom session name
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
@@ -42,14 +109,26 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'lax', // CSRF protection
+      maxAge: 4 * 60 * 60 * 1000, // Reduced to 4 hours for security
     },
   };
 
-  app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Add CSRF token to all sessions
+  app.use((req: any, res, next) => {
+    if (!req.session.csrfToken) {
+      req.session.csrfToken = generateCSRFToken();
+    }
+    next();
+  });
+
+  // Apply CSRF protection to state-changing auth endpoints
+  app.use(['/api/login', '/api/register', '/api/verify-sms', '/api/resend-verification', 
+           '/api/reset-password', '/api/confirm-reset', '/api/logout'], csrfProtection);
 
   passport.use(
     new LocalStrategy(
@@ -78,14 +157,26 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Add CSRF token endpoint
+  app.get("/api/csrf-token", (req: any, res) => {
+    res.json({ csrfToken: req.session.csrfToken });
+  });
+
   // Registration endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      const validatedData = insertUserSchema.parse(req.body);
+      // Normalize phone number
+      const phoneNormalized = req.body.phone?.replace(/\D/g, '').substring(0, 8);
+      const validatedData = insertUserSchema.parse({
+        ...req.body,
+        phone: phoneNormalized,
+        name: req.body.name?.trim(),
+      });
       
       const existingUser = await storage.getUserByPhone(validatedData.phone);
       if (existingUser) {
-        return res.status(400).json({ message: "Este número de teléfono ya está registrado" });
+        // Generic response to prevent user enumeration
+        return res.status(400).json({ message: "Error en el registro. Verifica los datos e intenta de nuevo." });
       }
 
       const hashedPassword = await hashPassword(validatedData.password);
@@ -96,24 +187,31 @@ export function setupAuth(app: Express) {
 
       // Generate verification code (simulated SMS)
       const verificationCode = generateVerificationCode();
+      const hashedCode = await hashVerificationCode(verificationCode);
       const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-      await storage.setVerificationCode(user.id, verificationCode, expiry);
+      await storage.setVerificationCode(user.id, hashedCode, expiry);
 
-      // In a real app, send SMS here
-      console.log(`SMS Verification Code for +53${user.phone}: ${verificationCode}`);
+      // In production, send real SMS. NEVER log in production for security
+      if (process.env.NODE_ENV === "development") {
+        console.log(`SMS Verification Code for +53${user.phone}: ${verificationCode}`);
+      }
 
-      req.login(user, (err) => {
+      // Regenerate session on login for security
+      req.session.regenerate((err: any) => {
         if (err) return next(err);
-        res.status(201).json({ 
-          ...user, 
-          needsVerification: true,
-          message: "Código de verificación enviado por SMS" 
+        req.login(user, (loginErr) => {
+          if (loginErr) return next(loginErr);
+          res.status(201).json({ 
+            ...sanitizeUser(user), 
+            needsVerification: true,
+            message: "Código de verificación enviado por SMS" 
+          });
         });
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
-          message: error.errors[0]?.message || "Datos de registro inválidos" 
+          message: "Datos de registro inválidos" // Generic message for security
         });
       }
       next(error);
@@ -134,14 +232,21 @@ export function setupAuth(app: Express) {
     }
 
     if (new Date() > user.verificationCodeExpiry) {
+      // Clear expired code
+      await storage.clearVerificationCode(user.id);
       return res.status(400).json({ message: "Código de verificación expirado" });
     }
 
-    if (user.verificationCode !== code) {
+    // Verify hashed code with constant-time comparison
+    const isValidCode = await verifyCode(code, user.verificationCode);
+    if (!isValidCode) {
       return res.status(400).json({ message: "Código de verificación incorrecto" });
     }
 
+    // Update verification status and clear code (single-use)
     await storage.updateUserVerification(user.id, true);
+    await storage.clearVerificationCode(user.id);
+    
     res.json({ message: "Teléfono verificado exitosamente" });
   });
 
@@ -152,26 +257,39 @@ export function setupAuth(app: Express) {
     }
 
     const verificationCode = generateVerificationCode();
+    const hashedCode = await hashVerificationCode(verificationCode);
     const expiry = new Date(Date.now() + 10 * 60 * 1000);
-    await storage.setVerificationCode(req.user!.id, verificationCode, expiry);
+    await storage.setVerificationCode(req.user!.id, hashedCode, expiry);
 
-    console.log(`SMS Verification Code for +53${req.user!.phone}: ${verificationCode}`);
+    // NEVER log in production for security
+    if (process.env.NODE_ENV === "development") {
+      console.log(`SMS Verification Code for +53${req.user!.phone}: ${verificationCode}`);
+    }
+    
     res.json({ message: "Código de verificación reenviado" });
   });
 
   // Login endpoint
   app.post("/api/login", (req, res, next) => {
+    // Normalize phone number
+    const phoneNormalized = req.body.phone?.replace(/\D/g, '').substring(0, 8);
+    req.body.phone = phoneNormalized;
+
     passport.authenticate("local", (err: any, user: SelectUser, info: any) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ 
-          message: info?.message || "Credenciales inválidas" 
+          message: "Credenciales inválidas" // Generic message
         });
       }
 
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.json(user);
+      // Regenerate session on successful login for security
+      req.session.regenerate((sessionErr: any) => {
+        if (sessionErr) return next(sessionErr);
+        req.login(user, (loginErr) => {
+          if (loginErr) return next(loginErr);
+          res.json(sanitizeUser(user));
+        });
       });
     })(req, res, next);
   });
@@ -179,19 +297,24 @@ export function setupAuth(app: Express) {
   // Password reset request
   app.post("/api/reset-password", async (req, res) => {
     try {
-      const { phone } = req.body;
-      const user = await storage.getUserByPhone(phone);
+      const phoneNormalized = req.body.phone?.replace(/\D/g, '').substring(0, 8);
+      const user = await storage.getUserByPhone(phoneNormalized);
       
-      if (!user) {
-        return res.status(404).json({ message: "Usuario no encontrado" });
+      // Always return success to prevent user enumeration
+      if (user) {
+        const resetCode = generateVerificationCode();
+        const hashedCode = await hashVerificationCode(resetCode);
+        const expiry = new Date(Date.now() + 10 * 60 * 1000);
+        await storage.setVerificationCode(user.id, hashedCode, expiry);
+
+        // NEVER log in production for security
+        if (process.env.NODE_ENV === "development") {
+          console.log(`SMS Reset Code for +53${user.phone}: ${resetCode}`);
+        }
       }
 
-      const resetCode = generateVerificationCode();
-      const expiry = new Date(Date.now() + 10 * 60 * 1000);
-      await storage.setVerificationCode(user.id, resetCode, expiry);
-
-      console.log(`SMS Reset Code for +53${user.phone}: ${resetCode}`);
-      res.json({ message: "Código de restablecimiento enviado por SMS" });
+      // Always return the same response regardless of user existence
+      res.json({ message: "Si el número existe, recibirás un código de restablecimiento por SMS" });
     } catch (error) {
       res.status(500).json({ message: "Error interno del servidor" });
     }
@@ -201,17 +324,22 @@ export function setupAuth(app: Express) {
   app.post("/api/confirm-reset", async (req, res) => {
     try {
       const { phone, code, newPassword } = req.body;
-      const user = await storage.getUserByPhone(phone);
+      const phoneNormalized = phone?.replace(/\D/g, '').substring(0, 8);
+      const user = await storage.getUserByPhone(phoneNormalized);
       
       if (!user || !user.verificationCode || !user.verificationCodeExpiry) {
         return res.status(400).json({ message: "Código de restablecimiento no válido" });
       }
 
       if (new Date() > user.verificationCodeExpiry) {
+        // Clear expired code
+        await storage.clearVerificationCode(user.id);
         return res.status(400).json({ message: "Código de restablecimiento expirado" });
       }
 
-      if (user.verificationCode !== code) {
+      // Verify hashed code with constant-time comparison
+      const isValidCode = await verifyCode(code, user.verificationCode);
+      if (!isValidCode) {
         return res.status(400).json({ message: "Código de restablecimiento incorrecto" });
       }
 
@@ -221,6 +349,9 @@ export function setupAuth(app: Express) {
 
       const hashedPassword = await hashPassword(newPassword);
       await storage.updateUserPassword(user.id, hashedPassword);
+      
+      // Clear code after successful use (single-use)
+      await storage.clearVerificationCode(user.id);
       
       res.json({ message: "Contraseña restablecida exitosamente" });
     } catch (error) {
@@ -232,7 +363,11 @@ export function setupAuth(app: Express) {
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
-      res.sendStatus(200);
+      req.session.destroy((sessionErr) => {
+        if (sessionErr) return next(sessionErr);
+        res.clearCookie('rico.sid');
+        res.sendStatus(200);
+      });
     });
   });
 
