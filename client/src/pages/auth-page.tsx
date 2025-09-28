@@ -34,12 +34,12 @@ const provinces = [
 ];
 
 const loginSchema = z.object({
-  phone: z.string().regex(/^[567]\d{7}$/, "Formato de teléfono cubano inválido"),
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+49 123456789) o local"),
   password: z.string().min(1, "La contraseña es requerida"),
 });
 
 const resetSchema = z.object({
-  phone: z.string().regex(/^[567]\d{7}$/, "Formato de teléfono cubano inválido"),
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+49 123456789) o local"),
 });
 
 const confirmResetSchema = z.object({
@@ -94,17 +94,18 @@ export default function AuthPage() {
     },
   });
 
-  // Format Cuban phone number
-  const formatCubanPhone = (value: string) => {
-    const digits = value.replace(/\D/g, "");
-    if (digits.length <= 8) {
-      if (digits.length >= 1) {
-        return digits.substring(0, 1) + 
-               (digits.length > 1 ? " " + digits.substring(1, 4) : "") + 
-               (digits.length > 4 ? " " + digits.substring(4) : "");
-      }
+  // Format international phone number
+  const formatPhoneNumber = (value: string) => {
+    // Allow + sign and digits, limit to reasonable international phone length
+    let formatted = value.replace(/[^+\d]/g, "");
+    
+    // If starts with +, allow up to 15 digits total (international standard)
+    if (formatted.startsWith('+')) {
+      return formatted.substring(0, 16); // +15 digits max
     }
-    return digits.substring(0, 8);
+    
+    // If no + sign, allow up to 15 digits
+    return formatted.substring(0, 15);
   };
 
   // Handle OTP input
@@ -210,7 +211,8 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-background min-h-screen relative overflow-hidden">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-md lg:max-w-4xl xl:max-w-6xl mx-auto relative overflow-hidden">
       {/* Welcome Screen */}
       {currentScreen === "welcome" && (
         <div className="h-screen flex flex-col justify-center px-6 animate-in fade-in duration-500">
@@ -221,7 +223,7 @@ export default function AuthPage() {
             </div>
             
             <div className="mb-8 mx-auto w-48 h-48 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-              <div className="text-6xl">🇨🇺</div>
+              <div className="text-6xl">🛒</div>
             </div>
             
             <h2 className="text-2xl font-semibold mb-4 text-foreground">Bienvenido a Rico-Cuba</h2>
@@ -230,10 +232,10 @@ export default function AuthPage() {
             </p>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-4 md:space-y-3">
             <Button 
               onClick={() => setCurrentScreen("register")}
-              className="w-full py-4 text-lg font-semibold"
+              className="w-full py-4 md:py-3 text-lg md:text-base font-semibold"
               size="lg"
               data-testid="button-create-account"
             >
@@ -242,7 +244,7 @@ export default function AuthPage() {
             <Button 
               onClick={() => setCurrentScreen("login")}
               variant="outline"
-              className="w-full py-4 text-lg font-semibold"
+              className="w-full py-4 md:py-3 text-lg md:text-base font-semibold"
               size="lg"
               data-testid="button-login"
             >
@@ -254,7 +256,7 @@ export default function AuthPage() {
 
       {/* Register Screen */}
       {currentScreen === "register" && (
-        <div className="h-screen flex flex-col px-6 pt-16 animate-in slide-in-from-right duration-300">
+        <div className="h-screen flex flex-col px-6 md:px-8 pt-16 md:pt-12 animate-in slide-in-from-right duration-300 md:justify-center">
           <Button
             variant="ghost"
             size="icon"
@@ -265,38 +267,32 @@ export default function AuthPage() {
             <ArrowLeft className="w-6 h-6" />
           </Button>
           
-          <div className="flex-1 flex flex-col justify-center">
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold mb-3 text-foreground">Crear cuenta</h2>
+          <div className="flex-1 md:flex-none flex flex-col justify-center md:max-w-md md:mx-auto">
+            <div className="mb-8 md:mb-6">
+              <h2 className="text-3xl md:text-2xl font-bold mb-3 text-foreground">Crear cuenta</h2>
               <p className="text-muted-foreground text-base">Ingresa tu información para comenzar</p>
             </div>
             
-            <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-6">
+            <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-6 md:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="register-phone">Número de teléfono</Label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center">
-                    <span className="text-2xl mr-2">🇨🇺</span>
-                    <span className="text-muted-foreground">+53</span>
-                  </div>
-                  <Input
-                    id="register-phone"
-                    type="tel"
-                    className="pl-20 py-4 text-lg"
-                    placeholder="5 123 4567"
-                    maxLength={10}
-                    {...registerForm.register("phone", {
-                      onChange: (e) => {
-                        e.target.value = formatCubanPhone(e.target.value);
-                      }
-                    })}
-                    data-testid="input-register-phone"
-                  />
-                </div>
+                <Input
+                  id="register-phone"
+                  type="tel"
+                  className="py-4 md:py-3 text-lg md:text-base"
+                  placeholder="+49 123 456789 o 54123456"
+                  maxLength={16}
+                  {...registerForm.register("phone", {
+                    onChange: (e) => {
+                      e.target.value = formatPhoneNumber(e.target.value);
+                    }
+                  })}
+                  data-testid="input-register-phone"
+                />
                 {registerForm.formState.errors.phone && (
                   <p className="text-sm text-destructive">{registerForm.formState.errors.phone.message}</p>
                 )}
-                <p className="text-sm text-muted-foreground">Formato: 5XXXXXXX, 6XXXXXXX o 7XXXXXXX</p>
+                <p className="text-sm text-muted-foreground">Formato internacional: +49 123456789 o local: 54123456</p>
               </div>
               
               <div className="space-y-2">
@@ -304,7 +300,7 @@ export default function AuthPage() {
                 <Input
                   id="register-name"
                   type="text"
-                  className="py-4 text-lg"
+                  className="py-4 md:py-3 text-lg md:text-base"
                   placeholder="Tu nombre completo"
                   {...registerForm.register("name")}
                   data-testid="input-register-name"
@@ -317,7 +313,7 @@ export default function AuthPage() {
               <div className="space-y-2">
                 <Label htmlFor="register-province">Provincia</Label>
                 <Select onValueChange={(value) => registerForm.setValue("province", value)}>
-                  <SelectTrigger className="py-4 text-lg" data-testid="select-register-province">
+                  <SelectTrigger className="py-4 md:py-3 text-lg md:text-base" data-testid="select-register-province">
                     <SelectValue placeholder="Selecciona tu provincia" />
                   </SelectTrigger>
                   <SelectContent>
@@ -350,7 +346,7 @@ export default function AuthPage() {
               
               <Button 
                 type="submit" 
-                className="w-full py-4 text-lg font-semibold"
+                className="w-full py-4 md:py-3 text-lg md:text-base font-semibold"
                 size="lg"
                 disabled={registerMutation.isPending}
                 data-testid="button-submit-register"
@@ -499,25 +495,19 @@ export default function AuthPage() {
             <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="login-phone">Número de teléfono</Label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center">
-                    <span className="text-2xl mr-2">🇨🇺</span>
-                    <span className="text-muted-foreground">+53</span>
-                  </div>
-                  <Input
-                    id="login-phone"
-                    type="tel"
-                    className="pl-20 py-4 text-lg"
-                    placeholder="5 123 4567"
-                    maxLength={10}
-                    {...loginForm.register("phone", {
-                      onChange: (e) => {
-                        e.target.value = formatCubanPhone(e.target.value);
-                      }
-                    })}
-                    data-testid="input-login-phone"
-                  />
-                </div>
+                <Input
+                  id="login-phone"
+                  type="tel"
+                  className="py-4 text-lg"
+                  placeholder="+49 123 456789 o 54123456"
+                  maxLength={16}
+                  {...loginForm.register("phone", {
+                    onChange: (e) => {
+                      e.target.value = formatPhoneNumber(e.target.value);
+                    }
+                  })}
+                  data-testid="input-login-phone"
+                />
                 {loginForm.formState.errors.phone && (
                   <p className="text-sm text-destructive">{loginForm.formState.errors.phone.message}</p>
                 )}
@@ -599,25 +589,19 @@ export default function AuthPage() {
             <form onSubmit={resetForm.handleSubmit(onResetSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="reset-phone">Número de teléfono</Label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center">
-                    <span className="text-2xl mr-2">🇨🇺</span>
-                    <span className="text-muted-foreground">+53</span>
-                  </div>
-                  <Input
-                    id="reset-phone"
-                    type="tel"
-                    className="pl-20 py-4 text-lg"
-                    placeholder="5 123 4567"
-                    maxLength={10}
-                    {...resetForm.register("phone", {
-                      onChange: (e) => {
-                        e.target.value = formatCubanPhone(e.target.value);
-                      }
-                    })}
-                    data-testid="input-reset-phone"
-                  />
-                </div>
+                <Input
+                  id="reset-phone"
+                  type="tel"
+                  className="py-4 text-lg"
+                  placeholder="+49 123 456789 o 54123456"
+                  maxLength={16}
+                  {...resetForm.register("phone", {
+                    onChange: (e) => {
+                      e.target.value = formatPhoneNumber(e.target.value);
+                    }
+                  })}
+                  data-testid="input-reset-phone"
+                />
                 {resetForm.formState.errors.phone && (
                   <p className="text-sm text-destructive">{resetForm.formState.errors.phone.message}</p>
                 )}
@@ -672,6 +656,7 @@ export default function AuthPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
