@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import type { Category, Product } from "@shared/schema";
 import { 
   Search, 
   Bell, 
@@ -22,30 +25,34 @@ import {
 export default function HomePage() {
   const { user } = useAuth();
 
-  const categories = [
-    { id: "home", name: "Casa", nameEn: "Home", icon: Home, color: "bg-emerald-100", iconColor: "text-emerald-600" },
-    { id: "clothes", name: "Ropa", nameEn: "Clothes", icon: Shirt, color: "bg-blue-100", iconColor: "text-blue-600" },
-    { id: "electronics", name: "Electrónicos", nameEn: "Electronics", icon: Monitor, color: "bg-purple-100", iconColor: "text-purple-600" },
-  ];
+  // Fetch categories from API
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
+    queryKey: ['/api/categories'],
+  });
 
-  const featuredProducts = [
-    {
-      id: "1",
-      title: "Vaso de cristal azul",
-      price: "4",
-      currency: "CUP",
-      imageUrl: "https://images.unsplash.com/photo-1509669803555-fd5c105ddc16?w=150&h=150&fit=crop&crop=center",
-      category: "Casa"
-    },
-    {
-      id: "2", 
-      title: "Silla giratoria verde",
-      price: "120",
-      currency: "CUP",
-      imageUrl: "https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=150&h=150&fit=crop&crop=center",
-      category: "Casa"
-    }
-  ];
+  // Fetch featured products from API  
+  const { data: featuredProducts = [], isLoading: productsLoading } = useQuery<Product[]>({
+    queryKey: ['/api/products/featured'],
+  });
+
+  // Icon mapping for categories
+  const iconMap: Record<string, any> = {
+    'Home': Home,
+    'Shirt': Shirt, 
+    'Monitor': Monitor,
+    'Car': Monitor, // fallback
+    'Briefcase': Monitor, // fallback
+    'Building': Monitor, // fallback
+  };
+
+  const colorMap: Record<string, { bg: string; icon: string }> = {
+    '#10b981': { bg: 'bg-emerald-100', icon: 'text-emerald-600' },
+    '#3b82f6': { bg: 'bg-blue-100', icon: 'text-blue-600' },
+    '#8b5cf6': { bg: 'bg-purple-100', icon: 'text-purple-600' },
+    '#f59e0b': { bg: 'bg-amber-100', icon: 'text-amber-600' },
+    '#06b6d4': { bg: 'bg-cyan-100', icon: 'text-cyan-600' },
+    '#ef4444': { bg: 'bg-red-100', icon: 'text-red-600' },
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -98,25 +105,39 @@ export default function HomePage() {
 
         {/* Categories */}
         <div className="px-4 mb-6">
-          <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((category) => {
-              const IconComponent = category.icon;
-              return (
-                <Card
-                  key={category.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
-                  data-testid={`card-category-${category.id}`}
-                >
+          {categoriesLoading ? (
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="border-0 shadow-sm">
                   <CardContent className="p-4 text-center">
-                    <div className={`w-12 h-12 ${category.color} rounded-xl flex items-center justify-center mx-auto mb-2`}>
-                      <IconComponent className={`w-6 h-6 ${category.iconColor}`} />
-                    </div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{category.name}</p>
+                    <Skeleton className="w-12 h-12 rounded-xl mx-auto mb-2" />
+                    <Skeleton className="h-4 w-16 mx-auto" />
                   </CardContent>
                 </Card>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
+              {categories.map((category) => {
+                const IconComponent = iconMap[category.icon] || Home;
+                const colors = colorMap[category.color] || colorMap['#10b981'];
+                return (
+                  <Card
+                    key={category.id}
+                    className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
+                    data-testid={`card-category-${category.id}`}
+                  >
+                    <CardContent className="p-4 text-center">
+                      <div className={`w-12 h-12 ${colors.bg} rounded-xl flex items-center justify-center mx-auto mb-2`}>
+                        <IconComponent className={`w-6 h-6 ${colors.icon}`} />
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{category.name}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Promo Banner */}
@@ -158,41 +179,60 @@ export default function HomePage() {
 
         {/* Featured Products */}
         <div className="px-4 mb-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-            {featuredProducts.map((product) => (
-              <Card 
-                key={product.id} 
-                className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
-                data-testid={`card-product-${product.id}`}
-              >
-                <CardContent className="p-0">
-                  <div className="relative">
-                    <img
-                      src={product.imageUrl}
-                      alt={product.title}
-                      className="w-full h-32 object-cover rounded-t-lg"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 w-8 h-8 bg-white/80 hover:bg-white rounded-full"
-                      data-testid={`button-favorite-${product.id}`}
-                    >
-                      <Heart className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="p-3">
-                    <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2" data-testid={`text-title-${product.id}`}>
-                      {product.title}
-                    </h4>
-                    <p className="font-bold text-lg text-gray-900 dark:text-gray-100" data-testid={`text-price-${product.id}`}>
-                      {product.price} {product.currency}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {productsLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="border-0 shadow-sm">
+                  <CardContent className="p-0">
+                    <Skeleton className="w-full h-32 rounded-t-lg" />
+                    <div className="p-3">
+                      <Skeleton className="h-4 w-full mb-2" />
+                      <Skeleton className="h-6 w-20" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {featuredProducts.map((product) => (
+                <Card 
+                  key={product.id} 
+                  className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
+                  data-testid={`card-product-${product.id}`}
+                >
+                  <CardContent className="p-0">
+                    <div className="relative">
+                      <img
+                        src={product.imageUrl || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center'}
+                        alt={product.title}
+                        className="w-full h-32 object-cover rounded-t-lg"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center';
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 w-8 h-8 bg-white/80 hover:bg-white rounded-full"
+                        data-testid={`button-favorite-${product.id}`}
+                      >
+                        <Heart className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2 line-clamp-2" data-testid={`text-title-${product.id}`}>
+                        {product.title}
+                      </h4>
+                      <p className="font-bold text-lg text-gray-900 dark:text-gray-100" data-testid={`text-price-${product.id}`}>
+                        {product.price} {product.currency}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Bottom spacing for navigation */}

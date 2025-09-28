@@ -1,6 +1,6 @@
-import { users, type User, type InsertUser } from "@shared/schema";
+import { users, categories, products, type User, type InsertUser, type Category, type InsertCategory, type Product, type InsertProduct } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -15,6 +15,19 @@ export interface IStorage {
   updateUserPassword(id: string, password: string): Promise<void>;
   setVerificationCode(id: string, code: string, expiry: Date): Promise<void>;
   clearVerificationCode(id: string): Promise<void>;
+  
+  // Categories
+  getCategories(): Promise<Category[]>;
+  getCategory(id: string): Promise<Category | undefined>;
+  createCategory(category: InsertCategory): Promise<Category>;
+  
+  // Products
+  getProducts(): Promise<Product[]>;
+  getFeaturedProducts(): Promise<Product[]>;
+  getProductsByCategory(categoryId: string): Promise<Product[]>;
+  getProduct(id: string): Promise<Product | undefined>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  
   sessionStore: session.Store;
 }
 
@@ -78,6 +91,55 @@ export class DatabaseStorage implements IStorage {
         verificationCodeExpiry: null 
       })
       .where(eq(users.id, id));
+  }
+
+  // Categories implementation
+  async getCategories(): Promise<Category[]> {
+    return await db.select().from(categories).orderBy(categories.order, categories.name);
+  }
+
+  async getCategory(id: string): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category || undefined;
+  }
+
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const [category] = await db
+      .insert(categories)
+      .values(insertCategory)
+      .returning();
+    return category;
+  }
+
+  // Products implementation
+  async getProducts(): Promise<Product[]> {
+    return await db.select().from(products).orderBy(desc(products.createdAt));
+  }
+
+  async getFeaturedProducts(): Promise<Product[]> {
+    return await db.select().from(products)
+      .where(eq(products.featured, "true"))
+      .orderBy(desc(products.createdAt))
+      .limit(6);
+  }
+
+  async getProductsByCategory(categoryId: string): Promise<Product[]> {
+    return await db.select().from(products)
+      .where(eq(products.categoryId, categoryId))
+      .orderBy(desc(products.createdAt));
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product || undefined;
+  }
+
+  async createProduct(insertProduct: InsertProduct): Promise<Product> {
+    const [product] = await db
+      .insert(products)
+      .values(insertProduct)
+      .returning();
+    return product;
   }
 }
 
