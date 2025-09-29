@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { 
   Home,
-  ShoppingCart, 
+  Plus, 
   Heart, 
   User
 } from "lucide-react";
@@ -44,10 +44,11 @@ export default function BottomNavigation() {
             variant="ghost" 
             size="icon" 
             className="flex flex-col items-center py-2" 
-            data-testid="nav-cart"
+            onClick={() => navigate('/create-listing')}
+            data-testid="nav-create"
           >
-            <ShoppingCart className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-            <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">Carrito</span>
+            <Plus className="w-5 h-5 text-primary" />
+            <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">Crear</span>
           </Button>
           
           <Button 
