@@ -77,9 +77,21 @@ export function ObjectUploader({
       })
   );
 
+  const handleOpenModal = () => {
+    // Update Uppy restrictions before opening modal to reflect current state
+    uppy.setOptions({
+      restrictions: {
+        maxNumberOfFiles,
+        maxFileSize,
+        allowedFileTypes: ['image/*'],
+      },
+    });
+    setShowModal(true);
+  };
+
   return (
     <div>
-      <Button onClick={() => setShowModal(true)} className={buttonClassName}>
+      <Button onClick={handleOpenModal} className={buttonClassName}>
         {children}
       </Button>
 

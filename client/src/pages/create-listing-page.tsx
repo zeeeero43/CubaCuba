@@ -88,10 +88,16 @@ export default function CreateListingPage() {
   });
 
   const addImageFromUpload = (imageUrl: string) => {
-    if (imageUrl && images.length < 8 && !images.includes(imageUrl)) {
-      const updatedImages = [...images, imageUrl];
-      setImages(updatedImages);
-      form.setValue('images', updatedImages);
+    if (imageUrl) {
+      setImages(prev => {
+        // Check if image already exists or if we've reached the limit
+        if (prev.includes(imageUrl) || prev.length >= 8) {
+          return prev;
+        }
+        const updatedImages = [...prev, imageUrl];
+        form.setValue('images', updatedImages);
+        return updatedImages;
+      });
     }
   };
 
@@ -117,6 +123,9 @@ export default function CreateListingPage() {
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     try {
+      const processedImages: string[] = [];
+      
+      // Process all files and collect their object paths
       for (const file of result.successful || []) {
         if (file.uploadURL) {
           // Set ACL policy for the uploaded image
@@ -124,15 +133,25 @@ export default function CreateListingPage() {
             body: JSON.stringify({ imageURL: file.uploadURL }),
           });
           const data = await response.json();
-          
-          // Add the normalized object path to images
-          addImageFromUpload(data.objectPath);
+          processedImages.push(data.objectPath);
         }
       }
       
+      // Update images state once with all new images
+      setImages(prev => {
+        const newImages = [...prev];
+        for (const imageUrl of processedImages) {
+          if (!newImages.includes(imageUrl) && newImages.length < 8) {
+            newImages.push(imageUrl);
+          }
+        }
+        form.setValue('images', newImages);
+        return newImages;
+      });
+      
       toast({
         title: "¡Imagen subida exitosamente!",
-        description: `${result.successful?.length || 0} imagen(es) agregada(s) a tu anuncio`,
+        description: `${processedImages.length} imagen(es) agregada(s) a tu anuncio`,
       });
     } catch (error) {
       console.error('Error finalizing upload:', error);
