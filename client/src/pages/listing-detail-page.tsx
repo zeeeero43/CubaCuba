@@ -24,7 +24,8 @@ import {
   Star,
   Flag,
   UserPlus,
-  UserMinus
+  UserMinus,
+  Edit
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { Listing, Category } from "@shared/schema";
@@ -57,6 +58,79 @@ interface RatingsData {
   items: Rating[];
   total: number;
   avg: number;
+}
+
+// Similar Listings Component
+function SimilarListings({ categoryId, currentListingId }: { categoryId: string; currentListingId: string }) {
+  const [, setLocation] = useLocation();
+
+  // Fetch similar listings from same category
+  const { data: listingsData, isLoading } = useQuery<{
+    listings: Listing[];
+    totalCount: number;
+  }>({
+    queryKey: [`/api/listings?categoryId=${categoryId}&pageSize=6`],
+    enabled: !!categoryId,
+  });
+
+  const similarListings = listingsData?.listings.filter(l => l.id !== currentListingId).slice(0, 4) || [];
+
+  if (isLoading) {
+    return (
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Anuncios similares</h2>
+        <div className="grid grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="aspect-square bg-gray-300 dark:bg-gray-600 rounded-lg mb-2"></div>
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (similarListings.length === 0) {
+    return null;
+  }
+
+  return (
+    <div>
+      <h2 className="text-lg font-semibold mb-4">Anuncios similares</h2>
+      <div className="grid grid-cols-2 gap-4">
+        {similarListings.map((listing) => (
+          <Card
+            key={listing.id}
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation(`/listing/${listing.id}`)}
+            data-testid={`similar-listing-${listing.id}`}
+          >
+            <div className="aspect-square overflow-hidden rounded-t-lg">
+              <img
+                src={listing.images?.[0] || '/placeholder.jpg'}
+                alt={listing.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <CardContent className="p-3">
+              <h4 className="font-semibold text-sm line-clamp-2 mb-1">
+                {listing.title}
+              </h4>
+              <p className="text-primary font-bold text-base">
+                {listing.price} CUP
+              </p>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                <MapPin className="w-3 h-3" />
+                <span className="line-clamp-1">{listing.locationCity}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // Seller Info Component
@@ -487,6 +561,10 @@ export default function ListingDetailPage() {
   // Record view when listing loads
   const recordViewMutation = useMutation({
     mutationFn: () => apiRequest('POST', `/api/listings/${listingId}/view`),
+    onSuccess: () => {
+      // Refetch listing to update view count
+      queryClient.invalidateQueries({ queryKey: ['/api/listings', listingId] });
+    },
   });
 
   // Record contact
@@ -533,7 +611,13 @@ export default function ListingDetailPage() {
 
     if (type === 'whatsapp') {
       const message = encodeURIComponent(`Hola, estoy interesado en tu anuncio: ${listing.title}`);
-      window.open(`https://wa.me/53${listing.contactPhone}?text=${message}`, '_blank');
+      // Remove any non-numeric characters from phone number
+      let cleanPhone = listing.contactPhone.replace(/\D/g, '');
+      // If number starts with 5 and is 8 digits (Cuban mobile), add country code 53
+      if (cleanPhone.length === 8 && cleanPhone.startsWith('5')) {
+        cleanPhone = '53' + cleanPhone;
+      }
+      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
     } else {
       window.open(`tel:${listing.contactPhone}`, '_self');
     }
@@ -698,6 +782,16 @@ export default function ListingDetailPage() {
           </Button>
           
           <div className="flex items-center gap-2">
+            {user?.id === listing.sellerId && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate(`/edit-listing/${listing.id}`)}
+                data-testid="button-edit-listing"
+              >
+                <Edit className="w-5 h-5" />
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -721,14 +815,15 @@ export default function ListingDetailPage() {
         {listing.images && listing.images.length > 0 ? (
           <div className="relative mb-6">
             <div 
-              className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer"
+              className="aspect-[4/3] bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer"
+              style={{maxHeight: '500px'}}
               onClick={() => setImageDialogOpen(true)}
               data-testid="image-container"
             >
               <img
                 src={listing.images[currentImageIndex]}
                 alt={`Imagen ${currentImageIndex + 1} de ${listing.title}`}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
                 onError={(e) => {
                   e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E";
                 }}
@@ -825,7 +920,7 @@ export default function ListingDetailPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <Eye className="w-4 h-4" />
-                  {(listing as any).viewCount || 0} vistas
+                  {listing.views || 0} vistas
                 </span>
               </div>
             </div>
@@ -865,6 +960,15 @@ export default function ListingDetailPage() {
 
             {/* Seller Ratings */}
             <SellerRatings sellerId={listing.sellerId} currentUserId={user?.id} />
+
+            {listing.categoryId && (
+              <>
+                <Separator />
+
+                {/* Similar Listings */}
+                <SimilarListings categoryId={listing.categoryId} currentListingId={listing.id} />
+              </>
+            )}
           </div>
 
           {/* Contact Sidebar */}
