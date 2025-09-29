@@ -79,6 +79,7 @@ export default function CreateListingPage() {
       navigate('/');
     },
     onError: (error: any) => {
+      console.log('Mutation error:', error);
       toast({
         title: "Error al crear el anuncio",
         description: error.message || "Hubo un problema al crear tu anuncio",
@@ -174,6 +175,9 @@ export default function CreateListingPage() {
       ...data,
       images
     });
+    console.log('Form errors:', form.formState.errors);
+    console.log('Form is valid:', form.formState.isValid);
+    
     createListingMutation.mutate({
       ...data,
       images

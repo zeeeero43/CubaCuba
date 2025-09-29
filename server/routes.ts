@@ -191,7 +191,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      console.log('Received request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertListingSchema.parse(req.body);
+      console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       const listingData = {
         ...validatedData,
         sellerId: req.user!.id
@@ -200,6 +202,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(listing);
     } catch (error: any) {
       if (error.name === "ZodError") {
+        console.error('Zod validation error:', error.errors);
+        console.error('Request body that failed:', JSON.stringify(req.body, null, 2));
         const validationError = fromZodError(error);
         return res.status(400).json({ message: validationError.message });
       }
