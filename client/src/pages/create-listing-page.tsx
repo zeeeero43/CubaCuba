@@ -132,7 +132,7 @@ export default function CreateListingPage() {
         console.log('Processing file:', file);
         
         // Try different possible properties for the upload URL
-        const uploadURL = file.uploadURL || file.url || (file.response as any)?.uploadURL || (file.response as any)?.url;
+        const uploadURL = file.uploadURL || (file as any).url || (file.response as any)?.uploadURL || (file.response as any)?.url;
         console.log('Found upload URL:', uploadURL);
         
         if (uploadURL) {
