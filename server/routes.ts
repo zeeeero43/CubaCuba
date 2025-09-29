@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertCategorySchema, insertProductSchema, insertListingSchema } from "@shared/schema";
+import { insertCategorySchema, insertProductSchema, insertListingSchema, insertRatingSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient } from "./objectStorage";
 import { setObjectAclPolicy } from "./objectAcl";
@@ -438,6 +438,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ isFavorite });
     } catch (error) {
       console.error("Error checking favorite:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // User Profile & Follow endpoints
+  // GET /api/users/:id/public - Get public user profile
+  app.get("/api/users/:id/public", async (req, res) => {
+    try {
+      const profile = await storage.getUserPublicProfile(req.params.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+
+      // If authenticated and not same user, check if following
+      let isFollowing = false;
+      if (req.isAuthenticated() && req.user!.id !== req.params.id) {
+        isFollowing = await storage.isFollowing(req.user!.id, req.params.id);
+      }
+
+      res.json({ ...profile, isFollowing });
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // POST /api/users/:id/follow - Follow a user (requires auth)
+  app.post("/api/users/:id/follow", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    // Prevent following self
+    if (req.user!.id === req.params.id) {
+      return res.status(400).json({ message: "No puedes seguirte a ti mismo" });
+    }
+
+    try {
+      await storage.followUser(req.user!.id, req.params.id);
+      res.status(201).json({ message: "Ahora sigues a este usuario" });
+    } catch (error) {
+      console.error("Error following user:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // DELETE /api/users/:id/follow - Unfollow a user (requires auth)
+  app.delete("/api/users/:id/follow", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      await storage.unfollowUser(req.user!.id, req.params.id);
+      res.json({ message: "Has dejado de seguir a este usuario" });
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/listings/following - Get listings from followed users (requires auth)
+  app.get("/api/listings/following", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const listings = await storage.getFollowedListings(req.user!.id);
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching followed listings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Ratings endpoints
+  // GET /api/users/:id/ratings - Get user's ratings
+  app.get("/api/users/:id/ratings", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      
+      const ratings = await storage.getUserRatings(req.params.id, { limit, offset });
+      res.json(ratings);
+    } catch (error) {
+      console.error("Error fetching ratings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // POST /api/users/:id/ratings - Rate a user (requires auth)
+  app.post("/api/users/:id/ratings", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    // Prevent rating self
+    if (req.user!.id === req.params.id) {
+      return res.status(400).json({ message: "No puedes calificarte a ti mismo" });
+    }
+
+    try {
+      const validatedData = insertRatingSchema.parse({
+        ...req.body,
+        rateeId: req.params.id
+      });
+      
+      const rating = await storage.createRating({
+        ...validatedData,
+        raterId: req.user!.id
+      });
+      
+      res.status(201).json(rating);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error creating rating:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });
