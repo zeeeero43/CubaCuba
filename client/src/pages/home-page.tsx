@@ -6,12 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import type { Category, Product, Listing } from "@shared/schema";
+import type { Category, Listing } from "@shared/schema";
 import { 
   Search, 
   Bell, 
   MapPin, 
-  Heart,
   Settings,
   Home,
   ShirtIcon as Shirt,
@@ -30,10 +29,6 @@ export default function HomePage() {
     queryKey: ['/api/categories'],
   });
 
-  // Fetch featured products from API  
-  const { data: featuredProducts = [], isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: ['/api/products/featured'],
-  });
 
   // Fetch featured listings from API
   const { data: featuredListings = [], isLoading: listingsLoading } = useQuery<Listing[]>({
@@ -216,7 +211,7 @@ export default function HomePage() {
                 <Card 
                   key={listing.id} 
                   className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
-                  onClick={() => navigate(`/listings/${listing.id}`)}
+                  onClick={() => navigate(`/listing/${listing.id}`)}
                   data-testid={`card-listing-${listing.id}`}
                 >
                   <CardContent className="p-0">
@@ -258,63 +253,6 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Featured Products */}
-        <div className="px-4 mb-6">
-          {productsLoading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="border-0 shadow-sm">
-                  <CardContent className="p-0">
-                    <Skeleton className="w-full h-32 rounded-t-lg" />
-                    <div className="p-3">
-                      <Skeleton className="h-4 w-full mb-2" />
-                      <Skeleton className="h-6 w-20" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {featuredProducts.map((product) => (
-                <Card 
-                  key={product.id} 
-                  className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
-                  data-testid={`card-product-${product.id}`}
-                >
-                  <CardContent className="p-0">
-                    <div className="relative">
-                      <img
-                        src={product.imageUrl || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center'}
-                        alt={product.title}
-                        className="w-full h-32 object-cover rounded-t-lg"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center';
-                        }}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 w-8 h-8 bg-white/80 hover:bg-white rounded-full"
-                        data-testid={`button-favorite-${product.id}`}
-                      >
-                        <Heart className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="p-3">
-                      <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2 line-clamp-2" data-testid={`text-title-${product.id}`}>
-                        {product.title}
-                      </h4>
-                      <p className="font-bold text-lg text-gray-900 dark:text-gray-100" data-testid={`text-price-${product.id}`}>
-                        {product.price} {product.currency}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
 
       </div>
 
