@@ -43,6 +43,14 @@ export default function ListingDetailPage() {
     enabled: !!listingId,
   });
 
+  // Check if favorited
+  const { data: favoriteData } = useQuery<{ isFavorite: boolean }>({
+    queryKey: ['/api/favorites', listingId, 'check'],
+    enabled: !!listingId,
+  });
+
+  const isFavorited = favoriteData?.isFavorite || false;
+
   // Record view when listing loads
   const recordViewMutation = useMutation({
     mutationFn: () => apiRequest('POST', `/api/listings/${listingId}/view`),
@@ -51,6 +59,31 @@ export default function ListingDetailPage() {
   // Record contact
   const recordContactMutation = useMutation({
     mutationFn: () => apiRequest('POST', `/api/listings/${listingId}/contact`),
+  });
+
+  // Toggle favorite
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: () => {
+      if (isFavorited) {
+        return apiRequest('DELETE', `/api/favorites/${listingId}`);
+      } else {
+        return apiRequest('POST', `/api/favorites/${listingId}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites', listingId, 'check'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/listings', listingId] });
+      toast({
+        title: isFavorited ? "Eliminado de favoritos" : "Añadido a favoritos",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para guardar favoritos",
+        variant: "destructive",
+      });
+    },
   });
 
   useEffect(() => {
@@ -232,6 +265,14 @@ export default function ListingDetailPage() {
           </Button>
           
           <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => toggleFavoriteMutation.mutate()}
+              data-testid="button-favorite"
+            >
+              <Heart className={`w-5 h-5 ${isFavorited ? 'fill-red-500 text-red-500' : ''}`} />
+            </Button>
             <Button variant="ghost" size="icon" onClick={handleShare} data-testid="button-share">
               <Share2 className="w-5 h-5" />
             </Button>

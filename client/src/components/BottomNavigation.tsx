@@ -55,6 +55,7 @@ export default function BottomNavigation() {
             variant="ghost" 
             size="icon" 
             className="flex flex-col items-center py-2" 
+            onClick={() => navigate('/favorites')}
             data-testid="nav-favorites"
           >
             <Heart className="w-5 h-5 text-gray-600 dark:text-gray-300" />
