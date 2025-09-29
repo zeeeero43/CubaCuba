@@ -64,9 +64,7 @@ export default function CreateListingPage() {
   });
 
   const createListingMutation = useMutation({
-    mutationFn: (data: InsertListing) => apiRequest('POST', '/api/listings', {
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: InsertListing) => apiRequest('POST', '/api/listings', data),
     onSuccess: () => {
       toast({
         title: "¡Anuncio creado exitosamente!",
@@ -155,9 +153,7 @@ export default function CreateListingPage() {
       }
       
       // Step 3: Finalize upload and get object path
-      const finalizeResponse = await apiRequest('POST', '/api/listings/finalize-upload', {
-        body: JSON.stringify({ objectId }),
-      });
+      const finalizeResponse = await apiRequest('POST', '/api/listings/finalize-upload', { objectId });
       
       const { objectPath } = await finalizeResponse.json();
       
