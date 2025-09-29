@@ -177,6 +177,22 @@ export default function CreateListingPage() {
     });
     console.log('Form errors:', form.formState.errors);
     console.log('Form is valid:', form.formState.isValid);
+    console.log('Form state details:', {
+      isValidating: form.formState.isValidating,
+      isSubmitting: form.formState.isSubmitting,
+      touchedFields: form.formState.touchedFields,
+      dirtyFields: form.formState.dirtyFields,
+    });
+    
+    // Manually trigger validation to see what happens
+    const isValid = await form.trigger();
+    console.log('Manual validation result:', isValid);
+    console.log('Errors after manual validation:', form.formState.errors);
+    
+    if (!isValid) {
+      console.log('Form validation failed, not submitting');
+      return;
+    }
     
     createListingMutation.mutate({
       ...data,
