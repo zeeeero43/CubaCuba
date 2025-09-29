@@ -65,8 +65,7 @@ export default function CreateListingPage() {
   });
 
   const createListingMutation = useMutation({
-    mutationFn: (data: InsertListing) => apiRequest('/api/listings', {
-      method: 'POST',
+    mutationFn: (data: InsertListing) => apiRequest('POST', '/api/listings', {
       body: JSON.stringify(data),
     }),
     onSuccess: () => {
