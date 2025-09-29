@@ -124,17 +124,34 @@ export default function CreateListingPage() {
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     try {
+      console.log('Upload result:', result);
       const processedImages: string[] = [];
       
       // Process all files and collect their object paths
       for (const file of result.successful || []) {
-        if (file.uploadURL) {
+        console.log('Processing file:', file);
+        
+        // Try different possible properties for the upload URL
+        const uploadURL = file.uploadURL || file.url || (file.response as any)?.uploadURL || (file.response as any)?.url;
+        console.log('Found upload URL:', uploadURL);
+        
+        if (uploadURL) {
           // Set ACL policy for the uploaded image
           const response = await apiRequest('PUT', '/api/listing-images', {
-            body: JSON.stringify({ imageURL: file.uploadURL }),
+            body: JSON.stringify({ imageURL: uploadURL }),
           });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('API error:', errorData);
+            throw new Error(errorData.error || 'Failed to process image');
+          }
+          
           const data = await response.json();
+          console.log('API response:', data);
           processedImages.push(data.objectPath);
+        } else {
+          console.error('No upload URL found for file:', file);
         }
       }
       
@@ -158,7 +175,7 @@ export default function CreateListingPage() {
       console.error('Error finalizing upload:', error);
       toast({
         title: "Error al finalizar subida",
-        description: "La imagen se subió pero hubo un problema al procesarla",
+        description: error instanceof Error ? error.message : "La imagen se subió pero hubo un problema al procesarla",
         variant: "destructive",
       });
     }
@@ -403,14 +420,14 @@ export default function CreateListingPage() {
                     maxFileSize={10485760} // 10MB
                     onGetUploadParameters={handleGetUploadParameters}
                     onComplete={handleUploadComplete}
-                    buttonClassName="w-full py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent"
+                    buttonClassName="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent"
                   >
                     <div className="flex flex-col items-center">
-                      <Upload className="w-16 h-16 text-gray-400 mb-6" />
-                      <p className="text-gray-500 dark:text-gray-400 mb-3 text-lg font-medium">
+                      <Upload className="w-8 h-8 text-gray-400 mb-3" />
+                      <p className="text-gray-500 dark:text-gray-400 mb-2 text-sm font-medium">
                         Arrastra archivos aquí o haz clic para seleccionar
                       </p>
-                      <p className="text-sm text-gray-400 px-4">
+                      <p className="text-xs text-gray-400 px-4">
                         PNG, JPG, JPEG hasta 10MB (máximo {8 - images.length} restantes)
                       </p>
                     </div>
