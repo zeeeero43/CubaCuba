@@ -151,6 +151,10 @@ export default function CreateListingPage() {
   };
 
   const onSubmit = async (data: InsertListing) => {
+    console.log('Form submission data:', {
+      ...data,
+      images
+    });
     createListingMutation.mutate({
       ...data,
       images
@@ -237,7 +241,7 @@ export default function CreateListingPage() {
                   <Label htmlFor="priceType">Tipo de precio *</Label>
                   <Select 
                     onValueChange={(value) => form.setValue("priceType", value as "fixed" | "negotiable")}
-                    defaultValue="fixed"
+                    value={form.watch("priceType")}
                   >
                     <SelectTrigger data-testid="select-price-type">
                       <SelectValue placeholder="Selecciona tipo" />
@@ -263,7 +267,10 @@ export default function CreateListingPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="categoryId">Categoría *</Label>
-                <Select onValueChange={(value) => form.setValue("categoryId", value)}>
+                <Select 
+                  onValueChange={(value) => form.setValue("categoryId", value)}
+                  value={form.watch("categoryId")}
+                >
                   <SelectTrigger data-testid="select-category">
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
@@ -296,7 +303,10 @@ export default function CreateListingPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="locationRegion">Provincia *</Label>
-                  <Select onValueChange={(value) => form.setValue("locationRegion", value)}>
+                  <Select 
+                    onValueChange={(value) => form.setValue("locationRegion", value)}
+                    value={form.watch("locationRegion")}
+                  >
                     <SelectTrigger data-testid="select-province">
                       <SelectValue placeholder="Selecciona provincia" />
                     </SelectTrigger>
@@ -318,7 +328,7 @@ export default function CreateListingPage() {
                 <Label htmlFor="condition">Estado del artículo *</Label>
                 <Select 
                   onValueChange={(value) => form.setValue("condition", value as "new" | "used" | "defective")}
-                  defaultValue="used"
+                  value={form.watch("condition")}
                 >
                   <SelectTrigger data-testid="select-condition">
                     <SelectValue placeholder="Selecciona el estado" />
