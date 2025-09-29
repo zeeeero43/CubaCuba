@@ -35,6 +35,12 @@ export default function HomePage() {
     queryKey: ['/api/listings/featured'],
   });
 
+  // Fetch followed listings (only if authenticated)
+  const { data: followedListings = [], isLoading: followedLoading } = useQuery<Listing[]>({
+    queryKey: ['/api/listings/following'],
+    enabled: !!user,
+  });
+
   // Icon mapping for categories
   const iconMap: Record<string, any> = {
     'Home': Home,
@@ -156,6 +162,83 @@ export default function HomePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Followed Users' Listings */}
+        {user && followedListings.length > 0 && (
+          <div className="px-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  De quienes sigues
+                </h2>
+              </div>
+            </div>
+            {followedLoading ? (
+              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <Card key={i} className="border-0 shadow-sm">
+                    <CardContent className="p-0">
+                      <Skeleton className="w-full h-32 rounded-t-lg" />
+                      <div className="p-3">
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-6 w-20" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                {followedListings.slice(0, 6).map((listing) => (
+                  <Card 
+                    key={listing.id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm ring-2 ring-primary/20"
+                    onClick={() => navigate(`/listing/${listing.id}`)}
+                    data-testid={`card-followed-listing-${listing.id}`}
+                  >
+                    <CardContent className="p-0">
+                      <div className="relative">
+                        <img
+                          src={listing.images && listing.images.length > 0 ? listing.images[0] : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center'}
+                          alt={listing.title}
+                          className="w-full h-32 object-cover rounded-t-lg"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center';
+                          }}
+                        />
+                        {listing.condition === 'new' && (
+                          <Badge className="absolute top-2 left-2 bg-emerald-500 text-white text-xs">
+                            Nuevo
+                          </Badge>
+                        )}
+                        {listing.priceType === 'negotiable' && (
+                          <Badge className="absolute top-2 right-2 bg-blue-500 text-white text-xs">
+                            Negociable
+                          </Badge>
+                        )}
+                        <Badge className="absolute bottom-2 left-2 bg-primary text-white text-xs">
+                          Seguido
+                        </Badge>
+                      </div>
+                      <div className="p-3">
+                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2 line-clamp-2" data-testid={`text-followed-title-${listing.id}`}>
+                          {listing.title}
+                        </h4>
+                        <p className="font-bold text-lg text-gray-900 dark:text-gray-100" data-testid={`text-followed-price-${listing.id}`}>
+                          {listing.price} {listing.currency}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {listing.locationCity}, {listing.locationRegion}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Section Navigation */}
         <div className="px-4 mb-4">
