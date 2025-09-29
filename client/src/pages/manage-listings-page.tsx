@@ -61,7 +61,7 @@ export default function ManageListingsPage() {
   // Update status mutation
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => 
-      apiRequest(`/api/listings/${id}/status`, 'PATCH', { status }),
+      apiRequest('PATCH', `/api/listings/${id}/status`, { status }),
     onSuccess: () => {
       toast({
         title: "Estado actualizado",
@@ -80,7 +80,7 @@ export default function ManageListingsPage() {
 
   // Mark as sold mutation
   const markSoldMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/listings/${id}/sold`, 'PATCH'),
+    mutationFn: (id: string) => apiRequest('PATCH', `/api/listings/${id}/sold`),
     onSuccess: () => {
       toast({
         title: "Marcado como vendido",

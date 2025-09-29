@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertListingSchema, type InsertListing, type Listing } from "@shared/schema";
@@ -249,22 +249,24 @@ export default function EditListingPage() {
   };
 
   // Load existing listing data into form
-  if (existingListing && form.formState.defaultValues?.title === "") {
-    form.reset({
-      title: existingListing.title,
-      description: existingListing.description,
-      price: existingListing.price.toString(),
-      priceType: existingListing.priceType as "fixed" | "negotiable",
-      categoryId: existingListing.categoryId || "",
-      locationCity: existingListing.locationCity,
-      locationRegion: existingListing.locationRegion,
-      images: existingListing.images || [],
-      condition: existingListing.condition as "new" | "used" | "defective",
-      contactPhone: existingListing.contactPhone,
-      contactWhatsApp: existingListing.contactWhatsApp as "true" | "false",
-    });
-    setImages(existingListing.images || []);
-  }
+  useEffect(() => {
+    if (existingListing) {
+      form.reset({
+        title: existingListing.title,
+        description: existingListing.description,
+        price: existingListing.price.toString(),
+        priceType: existingListing.priceType as "fixed" | "negotiable",
+        categoryId: existingListing.categoryId || "",
+        locationCity: existingListing.locationCity,
+        locationRegion: existingListing.locationRegion,
+        images: existingListing.images || [],
+        condition: existingListing.condition as "new" | "used" | "defective",
+        contactPhone: existingListing.contactPhone,
+        contactWhatsApp: existingListing.contactWhatsApp as "true" | "false",
+      });
+      setImages(existingListing.images || []);
+    }
+  }, [existingListing]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
