@@ -9,6 +9,7 @@ import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
 import NotFound from "@/pages/not-found";
+import BottomNavigation from "@/components/BottomNavigation";
 
 function Router() {
   return (
@@ -27,7 +28,10 @@ function App() {
       <TooltipProvider>
         <AuthProvider>
           <Toaster />
-          <Router />
+          <div className="pb-20">
+            <Router />
+          </div>
+          <BottomNavigation />
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

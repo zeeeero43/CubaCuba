@@ -34,12 +34,12 @@ const provinces = [
 ];
 
 const loginSchema = z.object({
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+49 123456789) o local"),
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+1 305123456) o local"),
   password: z.string().min(1, "La contraseña es requerida"),
 });
 
 const resetSchema = z.object({
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+49 123456789) o local"),
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+1 305123456) o local"),
 });
 
 const confirmResetSchema = z.object({
@@ -235,7 +235,7 @@ export default function AuthPage() {
           <div className="space-y-4 md:space-y-3">
             <Button 
               onClick={() => setCurrentScreen("register")}
-              className="w-full py-4 md:py-3 text-lg md:text-base font-semibold"
+              className="w-full md:max-w-xs py-4 md:py-3 text-lg md:text-base font-semibold"
               size="lg"
               data-testid="button-create-account"
             >
@@ -244,7 +244,7 @@ export default function AuthPage() {
             <Button 
               onClick={() => setCurrentScreen("login")}
               variant="outline"
-              className="w-full py-4 md:py-3 text-lg md:text-base font-semibold"
+              className="w-full md:max-w-xs py-4 md:py-3 text-lg md:text-base font-semibold"
               size="lg"
               data-testid="button-login"
             >
@@ -280,7 +280,7 @@ export default function AuthPage() {
                   id="register-phone"
                   type="tel"
                   className="py-4 md:py-3 text-lg md:text-base"
-                  placeholder="+49 123 456789 o 54123456"
+                  placeholder="+1 305 123456 o 54123456"
                   maxLength={16}
                   {...registerForm.register("phone", {
                     onChange: (e) => {
@@ -292,7 +292,7 @@ export default function AuthPage() {
                 {registerForm.formState.errors.phone && (
                   <p className="text-sm text-destructive">{registerForm.formState.errors.phone.message}</p>
                 )}
-                <p className="text-sm text-muted-foreground">Formato internacional: +49 123456789 o local: 54123456</p>
+                <p className="text-sm text-muted-foreground">Formato internacional: +1 305123456 o local: 54123456</p>
               </div>
               
               <div className="space-y-2">
@@ -499,7 +499,7 @@ export default function AuthPage() {
                   id="login-phone"
                   type="tel"
                   className="py-4 md:py-3 text-lg md:text-base"
-                  placeholder="+49 123 456789 o 54123456"
+                  placeholder="+1 305 123456 o 54123456"
                   maxLength={16}
                   {...loginForm.register("phone", {
                     onChange: (e) => {
@@ -593,7 +593,7 @@ export default function AuthPage() {
                   id="reset-phone"
                   type="tel"
                   className="py-4 md:py-3 text-lg md:text-base"
-                  placeholder="+49 123 456789 o 54123456"
+                  placeholder="+1 305 123456 o 54123456"
                   maxLength={16}
                   {...resetForm.register("phone", {
                     onChange: (e) => {

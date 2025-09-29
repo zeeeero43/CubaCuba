@@ -16,7 +16,7 @@ export const users = pgTable("users", {
 });
 
 export const insertUserSchema = createInsertSchema(users, {
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+49 123456789) o local"),
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+1 305123456) o local"),
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   province: z.string().min(1, "Debe seleccionar una provincia"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
