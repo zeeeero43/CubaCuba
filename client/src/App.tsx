@@ -8,6 +8,10 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
+import CreateListingPage from "@/pages/create-listing-page";
+import ListingDetailPage from "@/pages/listing-detail-page";
+import ListingsPage from "@/pages/listings-page";
+import ManageListingsPage from "@/pages/manage-listings-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -17,6 +21,10 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/create-listing" component={CreateListingPage} />
+      <Route path="/listing/:id" component={ListingDetailPage} />
+      <Route path="/listings" component={ListingsPage} />
+      <ProtectedRoute path="/manage-listings" component={ManageListingsPage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertCategorySchema, insertProductSchema } from "@shared/schema";
+import { insertCategorySchema, insertProductSchema, insertListingSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -121,6 +121,266 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       console.error("Error creating product:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Listings endpoints
+  // GET /api/listings - Get listings with filters
+  app.get("/api/listings", async (req, res) => {
+    try {
+      const filters = {
+        q: req.query.q as string,
+        categoryId: req.query.categoryId as string,
+        region: req.query.region as string,
+        priceMin: req.query.priceMin ? Number(req.query.priceMin) : undefined,
+        priceMax: req.query.priceMax ? Number(req.query.priceMax) : undefined,
+        condition: req.query.condition as string,
+        status: (req.query.status as string) || 'active',
+        page: req.query.page ? Number(req.query.page) : 1,
+        pageSize: req.query.pageSize ? Number(req.query.pageSize) : 20,
+      };
+      
+      const result = await storage.getListings(filters);
+      
+      // Transform to match frontend expectations
+      const response = {
+        listings: result.listings,
+        totalCount: result.total,
+        currentPage: filters.page,
+        totalPages: Math.ceil(result.total / filters.pageSize)
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error("Error fetching listings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/listings/featured - Get featured listings
+  app.get("/api/listings/featured", async (req, res) => {
+    try {
+      const listings = await storage.getFeaturedListings();
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching featured listings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/listings/:id - Get single listing
+  app.get("/api/listings/:id", async (req, res) => {
+    try {
+      const listing = await storage.getListing(req.params.id);
+      if (!listing) {
+        return res.status(404).json({ message: "Anuncio no encontrado" });
+      }
+      res.json(listing);
+    } catch (error) {
+      console.error("Error fetching listing:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // POST /api/listings - Create new listing (requires auth)
+  app.post("/api/listings", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para crear anuncios" });
+    }
+
+    try {
+      const validatedData = insertListingSchema.parse(req.body);
+      const listingData = {
+        ...validatedData,
+        sellerId: req.user!.id
+      };
+      const listing = await storage.createListing(listingData);
+      res.status(201).json(listing);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error creating listing:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // PUT /api/listings/:id - Update listing (requires auth + ownership)
+  app.put("/api/listings/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const validatedData = insertListingSchema.partial().parse(req.body);
+      const listing = await storage.updateListing(req.params.id, req.user!.id, validatedData);
+      
+      if (!listing) {
+        return res.status(404).json({ message: "Anuncio no encontrado o sin permisos" });
+      }
+      
+      res.json(listing);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error updating listing:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // DELETE /api/listings/:id - Delete listing (requires auth + ownership)
+  app.delete("/api/listings/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const success = await storage.deleteListing(req.params.id, req.user!.id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Anuncio no encontrado o sin permisos" });
+      }
+      
+      res.json({ message: "Anuncio eliminado exitosamente" });
+    } catch (error) {
+      console.error("Error deleting listing:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // PATCH /api/listings/:id/status - Update listing status (requires auth + ownership)
+  app.patch("/api/listings/:id/status", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    const { status } = req.body;
+    
+    if (!status || !['active', 'paused', 'sold'].includes(status)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+
+    try {
+      const success = await storage.setListingStatus(req.params.id, req.user!.id, status);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Anuncio no encontrado o sin permisos" });
+      }
+      
+      res.json({ message: "Estado actualizado exitosamente" });
+    } catch (error) {
+      console.error("Error updating listing status:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // PATCH /api/listings/:id/sold - Mark listing as sold (requires auth + ownership)
+  app.patch("/api/listings/:id/sold", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const success = await storage.markListingSold(req.params.id, req.user!.id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Anuncio no encontrado o sin permisos" });
+      }
+      
+      res.json({ message: "Anuncio marcado como vendido" });
+    } catch (error) {
+      console.error("Error marking listing as sold:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // POST /api/listings/:id/view - Increment view count (public)
+  app.post("/api/listings/:id/view", async (req, res) => {
+    try {
+      await storage.incrementViews(req.params.id);
+      res.json({ message: "Visualización registrada" });
+    } catch (error) {
+      console.error("Error incrementing views:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // POST /api/listings/:id/contact - Increment contact count (public)
+  app.post("/api/listings/:id/contact", async (req, res) => {
+    try {
+      await storage.incrementContacts(req.params.id);
+      res.json({ message: "Contacto registrado" });
+    } catch (error) {
+      console.error("Error incrementing contacts:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/me/listings - Get current user's listings (requires auth)
+  app.get("/api/me/listings", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const listings = await storage.getMyListings(req.user!.id);
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching user listings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Premium Features endpoints
+  // GET /api/premium-options - Get available premium options
+  app.get("/api/premium-options", async (req, res) => {
+    try {
+      const options = await storage.getPremiumOptions();
+      res.json(options);
+    } catch (error) {
+      console.error("Error fetching premium options:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // POST /api/listings/:id/premium - Purchase premium feature (requires auth + ownership)
+  app.post("/api/listings/:id/premium", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    const { premiumOptionId } = req.body;
+    
+    if (!premiumOptionId) {
+      return res.status(400).json({ message: "ID de opción premium requerido" });
+    }
+
+    try {
+      // Verify listing ownership
+      const listing = await storage.getListing(req.params.id);
+      if (!listing || listing.sellerId !== req.user!.id) {
+        return res.status(404).json({ message: "Anuncio no encontrado o sin permisos" });
+      }
+
+      const purchase = await storage.purchasePremium(req.params.id, premiumOptionId);
+      res.status(201).json(purchase);
+    } catch (error) {
+      console.error("Error purchasing premium:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/listings/:id/premium - Get listing's premium features
+  app.get("/api/listings/:id/premium", async (req, res) => {
+    try {
+      const features = await storage.getActivePremiumFeatures(req.params.id);
+      res.json(features);
+    } catch (error) {
+      console.error("Error fetching premium features:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });

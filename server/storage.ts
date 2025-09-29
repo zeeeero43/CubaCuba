@@ -1,6 +1,15 @@
-import { users, categories, products, type User, type InsertUser, type Category, type InsertCategory, type Product, type InsertProduct } from "@shared/schema";
+import { 
+  users, categories, products, listings, premiumOptions, listingPremium, settings,
+  type User, type InsertUser, 
+  type Category, type InsertCategory, 
+  type Product, type InsertProduct,
+  type Listing, type InsertListing,
+  type PremiumOption, type InsertPremiumOption,
+  type ListingPremium,
+  type Setting, type InsertSetting
+} from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, or, like, sql, gte, lte, count } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -27,6 +36,42 @@ export interface IStorage {
   getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
+  
+  // Listings CRUD
+  getListings(filters?: {
+    q?: string;
+    categoryId?: string;
+    region?: string;
+    priceMin?: number;
+    priceMax?: number;
+    condition?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<{ listings: Listing[]; total: number; }>;
+  getFeaturedListings(): Promise<Listing[]>;
+  getListing(id: string): Promise<Listing | undefined>;
+  getMyListings(userId: string): Promise<Listing[]>;
+  createListing(listing: InsertListing & { sellerId: string }): Promise<Listing>;
+  updateListing(id: string, userId: string, updates: Partial<InsertListing>): Promise<Listing | undefined>;
+  deleteListing(id: string, userId: string): Promise<boolean>;
+  setListingStatus(id: string, userId: string, status: string): Promise<boolean>;
+  markListingSold(id: string, userId: string): Promise<boolean>;
+  incrementViews(id: string): Promise<void>;
+  incrementContacts(id: string): Promise<void>;
+  
+  // Premium Features
+  getPremiumOptions(): Promise<PremiumOption[]>;
+  createPremiumOption(option: InsertPremiumOption): Promise<PremiumOption>;
+  updatePremiumOption(id: string, updates: Partial<InsertPremiumOption>): Promise<PremiumOption | undefined>;
+  purchasePremium(listingId: string, premiumOptionId: string): Promise<ListingPremium>;
+  getListingPremiumFeatures(listingId: string): Promise<ListingPremium[]>;
+  getActivePremiumFeatures(listingId: string): Promise<ListingPremium[]>;
+  
+  // Settings
+  getSetting(key: string): Promise<Setting | undefined>;
+  setSetting(key: string, value: string, type?: string, description?: string): Promise<Setting>;
+  getSettings(): Promise<Setting[]>;
   
   sessionStore: session.Store;
 }
@@ -140,6 +185,270 @@ export class DatabaseStorage implements IStorage {
       .values(insertProduct)
       .returning();
     return product;
+  }
+
+  // Listings implementation
+  async getListings(filters: {
+    q?: string;
+    categoryId?: string;
+    region?: string;
+    priceMin?: number;
+    priceMax?: number;
+    condition?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+  } = {}): Promise<{ listings: Listing[]; total: number; }> {
+    const { q, categoryId, region, priceMin, priceMax, condition, status = 'active', page = 1, pageSize = 20 } = filters;
+    
+    let query = db.select().from(listings);
+    let conditions = [eq(listings.status, status)];
+
+    // Search filters
+    if (q) {
+      conditions.push(
+        or(
+          like(listings.title, `%${q}%`),
+          like(listings.description, `%${q}%`)
+        )!
+      );
+    }
+
+    if (categoryId) {
+      conditions.push(eq(listings.categoryId, categoryId));
+    }
+
+    if (region) {
+      conditions.push(eq(listings.locationRegion, region));
+    }
+
+    if (condition) {
+      conditions.push(eq(listings.condition, condition));
+    }
+
+    if (priceMin !== undefined) {
+      conditions.push(gte(sql`CAST(${listings.price} AS DECIMAL)`, priceMin));
+    }
+
+    if (priceMax !== undefined) {
+      conditions.push(lte(sql`CAST(${listings.price} AS DECIMAL)`, priceMax));
+    }
+
+    // Apply conditions
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Get total count
+    const totalQuery = db.select({ count: count() }).from(listings);
+    if (conditions.length > 0) {
+      totalQuery.where(and(...conditions));
+    }
+    const [{ count: total }] = await totalQuery;
+
+    // Apply pagination and ordering
+    const offset = (page - 1) * pageSize;
+    const result = await query
+      .orderBy(desc(listings.featured), desc(listings.createdAt))
+      .limit(pageSize)
+      .offset(offset);
+
+    return { listings: result, total };
+  }
+
+  async getFeaturedListings(): Promise<Listing[]> {
+    return await db.select().from(listings)
+      .where(and(
+        eq(listings.featured, "true"),
+        eq(listings.status, "active")
+      ))
+      .orderBy(desc(listings.createdAt))
+      .limit(6);
+  }
+
+  async getListing(id: string): Promise<Listing | undefined> {
+    const [listing] = await db.select().from(listings).where(eq(listings.id, id));
+    return listing || undefined;
+  }
+
+  async getMyListings(userId: string): Promise<Listing[]> {
+    return await db.select().from(listings)
+      .where(eq(listings.sellerId, userId))
+      .orderBy(desc(listings.createdAt));
+  }
+
+  async createListing(insertListing: InsertListing & { sellerId: string }): Promise<Listing> {
+    const [listing] = await db
+      .insert(listings)
+      .values({
+        ...insertListing,
+        updatedAt: new Date()
+      })
+      .returning();
+    return listing;
+  }
+
+  async updateListing(id: string, userId: string, updates: Partial<InsertListing>): Promise<Listing | undefined> {
+    const [listing] = await db
+      .update(listings)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(listings.id, id),
+        eq(listings.sellerId, userId)
+      ))
+      .returning();
+    return listing || undefined;
+  }
+
+  async deleteListing(id: string, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(listings)
+      .where(and(
+        eq(listings.id, id),
+        eq(listings.sellerId, userId)
+      ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async setListingStatus(id: string, userId: string, status: string): Promise<boolean> {
+    const result = await db
+      .update(listings)
+      .set({ 
+        status,
+        updatedAt: new Date() 
+      })
+      .where(and(
+        eq(listings.id, id),
+        eq(listings.sellerId, userId)
+      ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async markListingSold(id: string, userId: string): Promise<boolean> {
+    return this.setListingStatus(id, userId, 'sold');
+  }
+
+  async incrementViews(id: string): Promise<void> {
+    await db
+      .update(listings)
+      .set({ 
+        views: sql`${listings.views} + 1` 
+      })
+      .where(eq(listings.id, id));
+  }
+
+  async incrementContacts(id: string): Promise<void> {
+    await db
+      .update(listings)
+      .set({ 
+        contacts: sql`${listings.contacts} + 1` 
+      })
+      .where(eq(listings.id, id));
+  }
+
+  // Premium Features implementation
+  async getPremiumOptions(): Promise<PremiumOption[]> {
+    return await db.select().from(premiumOptions)
+      .where(eq(premiumOptions.active, "true"))
+      .orderBy(premiumOptions.order, premiumOptions.name);
+  }
+
+  async createPremiumOption(insertPremiumOption: InsertPremiumOption): Promise<PremiumOption> {
+    const [option] = await db
+      .insert(premiumOptions)
+      .values(insertPremiumOption)
+      .returning();
+    return option;
+  }
+
+  async updatePremiumOption(id: string, updates: Partial<InsertPremiumOption>): Promise<PremiumOption | undefined> {
+    const [option] = await db
+      .update(premiumOptions)
+      .set(updates)
+      .where(eq(premiumOptions.id, id))
+      .returning();
+    return option || undefined;
+  }
+
+  async purchasePremium(listingId: string, premiumOptionId: string): Promise<ListingPremium> {
+    // Get the premium option to calculate expiry
+    const option = await db.select().from(premiumOptions)
+      .where(eq(premiumOptions.id, premiumOptionId))
+      .limit(1);
+    
+    if (!option.length) {
+      throw new Error('Premium option not found');
+    }
+
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + option[0].durationDays);
+
+    const [purchase] = await db
+      .insert(listingPremium)
+      .values({
+        listingId,
+        premiumOptionId,
+        expiryDate
+      })
+      .returning();
+    return purchase;
+  }
+
+  async getListingPremiumFeatures(listingId: string): Promise<ListingPremium[]> {
+    return await db.select().from(listingPremium)
+      .where(eq(listingPremium.listingId, listingId))
+      .orderBy(desc(listingPremium.createdAt));
+  }
+
+  async getActivePremiumFeatures(listingId: string): Promise<ListingPremium[]> {
+    return await db.select().from(listingPremium)
+      .where(and(
+        eq(listingPremium.listingId, listingId),
+        gte(listingPremium.expiryDate, new Date())
+      ))
+      .orderBy(desc(listingPremium.createdAt));
+  }
+
+  // Settings implementation
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+    return setting || undefined;
+  }
+
+  async setSetting(key: string, value: string, type: string = 'string', description?: string): Promise<Setting> {
+    const existing = await this.getSetting(key);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(settings)
+        .set({ 
+          value, 
+          type, 
+          description: description || existing.description,
+          updatedAt: new Date()
+        })
+        .where(eq(settings.key, key))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(settings)
+        .values({ 
+          key, 
+          value, 
+          type, 
+          description 
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async getSettings(): Promise<Setting[]> {
+    return await db.select().from(settings).orderBy(settings.key);
   }
 }
 
