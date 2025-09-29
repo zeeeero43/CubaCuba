@@ -150,7 +150,7 @@ export const insertListingSchema = createInsertSchema(listings, {
   priceType: z.enum(["fixed", "negotiable"], { message: "Tipo de precio inválido" }),
   locationCity: z.string().min(2, "La ciudad es requerida"),
   locationRegion: z.string().min(1, "La región es requerida"),
-  images: z.array(z.string().url("URL de imagen inválida")).max(8, "Máximo 8 imágenes permitidas").default([]),
+  images: z.array(z.string().min(1, "Imagen inválida")).max(8, "Máximo 8 imágenes permitidas").default([]),
   condition: z.enum(["new", "used", "defective"], { message: "Condición inválida" }),
   contactPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido"),
   contactWhatsApp: z.enum(["true", "false"], { message: "Valor WhatsApp inválido" }),
