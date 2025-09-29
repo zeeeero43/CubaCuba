@@ -260,7 +260,7 @@ export default function CreateListingPage() {
                   <Label htmlFor="priceType">Tipo de precio *</Label>
                   <Select 
                     onValueChange={(value) => form.setValue("priceType", value as "fixed" | "negotiable")}
-                    value={form.watch("priceType")}
+                    value={form.watch("priceType") || ""}
                   >
                     <SelectTrigger data-testid="select-price-type">
                       <SelectValue placeholder="Selecciona tipo" />
@@ -288,7 +288,7 @@ export default function CreateListingPage() {
                 <Label htmlFor="categoryId">Categoría *</Label>
                 <Select 
                   onValueChange={(value) => form.setValue("categoryId", value)}
-                  value={form.watch("categoryId")}
+                  value={form.watch("categoryId") || ""}
                 >
                   <SelectTrigger data-testid="select-category">
                     <SelectValue placeholder="Selecciona una categoría" />
@@ -324,7 +324,7 @@ export default function CreateListingPage() {
                   <Label htmlFor="locationRegion">Provincia *</Label>
                   <Select 
                     onValueChange={(value) => form.setValue("locationRegion", value)}
-                    value={form.watch("locationRegion")}
+                    value={form.watch("locationRegion") || ""}
                   >
                     <SelectTrigger data-testid="select-province">
                       <SelectValue placeholder="Selecciona provincia" />
@@ -347,7 +347,7 @@ export default function CreateListingPage() {
                 <Label htmlFor="condition">Estado del artículo *</Label>
                 <Select 
                   onValueChange={(value) => form.setValue("condition", value as "new" | "used" | "defective")}
-                  value={form.watch("condition")}
+                  value={form.watch("condition") || ""}
                 >
                   <SelectTrigger data-testid="select-condition">
                     <SelectValue placeholder="Selecciona el estado" />
