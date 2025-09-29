@@ -334,7 +334,7 @@ export default function AuthPage() {
                 <Input
                   id="register-password"
                   type="password"
-                  className="py-4 text-lg"
+                  className="py-4 md:py-3 text-lg md:text-base"
                   placeholder="Mínimo 8 caracteres"
                   {...registerForm.register("password")}
                   data-testid="input-register-password"
@@ -370,7 +370,7 @@ export default function AuthPage() {
 
       {/* SMS Verification Screen */}
       {currentScreen === "sms-verification" && (
-        <div className="h-screen flex flex-col px-6 pt-16 animate-in slide-in-from-right duration-300">
+        <div className="h-screen flex flex-col px-6 md:px-8 pt-16 md:pt-12 animate-in slide-in-from-right duration-300 md:justify-center">
           <Button
             variant="ghost"
             size="icon"
@@ -381,19 +381,19 @@ export default function AuthPage() {
             <ArrowLeft className="w-6 h-6" />
           </Button>
           
-          <div className="flex-1 flex flex-col justify-center">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <MessageSquare className="w-10 h-10 text-primary" />
+          <div className="flex-1 md:flex-none flex flex-col justify-center md:max-w-md md:mx-auto">
+            <div className="text-center mb-8 md:mb-6">
+              <div className="w-20 h-20 md:w-16 md:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-4">
+                <MessageSquare className="w-10 h-10 md:w-8 md:h-8 text-primary" />
               </div>
-              <h2 className="text-3xl font-bold mb-3 text-foreground">Verificar teléfono</h2>
+              <h2 className="text-3xl md:text-2xl font-bold mb-3 text-foreground">Verificar teléfono</h2>
               <p className="text-muted-foreground text-base mb-2">Hemos enviado un código de verificación al número:</p>
               <p className="text-foreground font-semibold text-lg" data-testid="text-phone-number">
                 +53 {user?.phone || resetPhone}
               </p>
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-6 md:space-y-4">
               <div className="space-y-2">
                 <Label className="block text-center">Código de verificación</Label>
                 <div className="flex justify-center space-x-3">
@@ -402,7 +402,7 @@ export default function AuthPage() {
                       key={index}
                       type="text"
                       maxLength={1}
-                      className="w-12 h-14 text-center text-xl font-bold"
+                      className="w-12 h-14 md:w-10 md:h-12 text-center text-xl md:text-lg font-bold"
                       value={otpCode[index]}
                       onChange={(e) => handleOtpChange(index, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(index, e)}
@@ -420,7 +420,7 @@ export default function AuthPage() {
                     <Input
                       id="new-password"
                       type="password"
-                      className="py-4 text-lg"
+                      className="py-4 md:py-3 text-lg md:text-base"
                       placeholder="Mínimo 8 caracteres"
                       {...confirmResetForm.register("newPassword")}
                       data-testid="input-new-password"
@@ -432,7 +432,7 @@ export default function AuthPage() {
                   
                   <Button
                     type="submit"
-                    className="w-full py-4 text-lg font-semibold"
+                    className="w-full py-4 md:py-3 text-lg md:text-base font-semibold"
                     size="lg"
                     disabled={confirmResetMutation.isPending || otpCode.join("").length !== 6}
                     data-testid="button-confirm-reset"
@@ -443,7 +443,7 @@ export default function AuthPage() {
               ) : (
                 <Button
                   onClick={onSMSSubmit}
-                  className="w-full py-4 text-lg font-semibold"
+                  className="w-full py-4 md:py-3 text-lg md:text-base font-semibold"
                   size="lg"
                   disabled={verifySMSMutation.isPending || otpCode.join("").length !== 6}
                   data-testid="button-verify-sms"
@@ -475,7 +475,7 @@ export default function AuthPage() {
 
       {/* Login Screen */}
       {currentScreen === "login" && (
-        <div className="h-screen flex flex-col px-6 pt-16 animate-in slide-in-from-right duration-300">
+        <div className="h-screen flex flex-col px-6 md:px-8 pt-16 md:pt-12 animate-in slide-in-from-right duration-300 md:justify-center">
           <Button
             variant="ghost"
             size="icon"
@@ -486,19 +486,19 @@ export default function AuthPage() {
             <ArrowLeft className="w-6 h-6" />
           </Button>
           
-          <div className="flex-1 flex flex-col justify-center">
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold mb-3 text-foreground">Iniciar sesión</h2>
+          <div className="flex-1 md:flex-none flex flex-col justify-center md:max-w-md md:mx-auto">
+            <div className="mb-8 md:mb-6">
+              <h2 className="text-3xl md:text-2xl font-bold mb-3 text-foreground">Iniciar sesión</h2>
               <p className="text-muted-foreground text-base">Ingresa tus datos para acceder</p>
             </div>
             
-            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
+            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6 md:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-phone">Número de teléfono</Label>
                 <Input
                   id="login-phone"
                   type="tel"
-                  className="py-4 text-lg"
+                  className="py-4 md:py-3 text-lg md:text-base"
                   placeholder="+49 123 456789 o 54123456"
                   maxLength={16}
                   {...loginForm.register("phone", {
@@ -518,7 +518,7 @@ export default function AuthPage() {
                 <Input
                   id="login-password"
                   type="password"
-                  className="py-4 text-lg"
+                  className="py-4 md:py-3 text-lg md:text-base"
                   placeholder="Tu contraseña"
                   {...loginForm.register("password")}
                   data-testid="input-login-password"
@@ -542,7 +542,7 @@ export default function AuthPage() {
               
               <Button
                 type="submit"
-                className="w-full py-4 text-lg font-semibold"
+                className="w-full py-4 md:py-3 text-lg md:text-base font-semibold"
                 size="lg"
                 disabled={loginMutation.isPending}
                 data-testid="button-submit-login"
@@ -566,7 +566,7 @@ export default function AuthPage() {
 
       {/* Password Reset Screen */}
       {currentScreen === "password-reset" && (
-        <div className="h-screen flex flex-col px-6 pt-16 animate-in slide-in-from-right duration-300">
+        <div className="h-screen flex flex-col px-6 md:px-8 pt-16 md:pt-12 animate-in slide-in-from-right duration-300 md:justify-center">
           <Button
             variant="ghost"
             size="icon"
@@ -577,22 +577,22 @@ export default function AuthPage() {
             <ArrowLeft className="w-6 h-6" />
           </Button>
           
-          <div className="flex-1 flex flex-col justify-center">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Key className="w-10 h-10 text-primary" />
+          <div className="flex-1 md:flex-none flex flex-col justify-center md:max-w-md md:mx-auto">
+            <div className="text-center mb-8 md:mb-6">
+              <div className="w-20 h-20 md:w-16 md:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-4">
+                <Key className="w-10 h-10 md:w-8 md:h-8 text-primary" />
               </div>
-              <h2 className="text-3xl font-bold mb-3 text-foreground">Recuperar contraseña</h2>
+              <h2 className="text-3xl md:text-2xl font-bold mb-3 text-foreground">Recuperar contraseña</h2>
               <p className="text-muted-foreground text-base">Te enviaremos un código para restablecer tu contraseña</p>
             </div>
             
-            <form onSubmit={resetForm.handleSubmit(onResetSubmit)} className="space-y-6">
+            <form onSubmit={resetForm.handleSubmit(onResetSubmit)} className="space-y-6 md:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="reset-phone">Número de teléfono</Label>
                 <Input
                   id="reset-phone"
                   type="tel"
-                  className="py-4 text-lg"
+                  className="py-4 md:py-3 text-lg md:text-base"
                   placeholder="+49 123 456789 o 54123456"
                   maxLength={16}
                   {...resetForm.register("phone", {
@@ -609,7 +609,7 @@ export default function AuthPage() {
               
               <Button
                 type="submit"
-                className="w-full py-4 text-lg font-semibold"
+                className="w-full py-4 md:py-3 text-lg md:text-base font-semibold"
                 size="lg"
                 disabled={resetPasswordMutation.isPending}
                 data-testid="button-submit-reset"
@@ -633,12 +633,12 @@ export default function AuthPage() {
 
       {/* Success Screen */}
       {currentScreen === "success" && (
-        <div className="h-screen flex flex-col justify-center items-center px-6 animate-in fade-in duration-500">
-          <div className="text-center">
-            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-8">
-              <CheckCircle className="w-12 h-12 text-primary" />
+        <div className="h-screen flex flex-col justify-center items-center px-6 md:px-8 animate-in fade-in duration-500">
+          <div className="text-center md:max-w-md">
+            <div className="w-24 h-24 md:w-20 md:h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-8 md:mb-6">
+              <CheckCircle className="w-12 h-12 md:w-10 md:h-10 text-primary" />
             </div>
-            <h2 className="text-3xl font-bold mb-4 text-foreground">¡Bienvenido a Rico-Cuba!</h2>
+            <h2 className="text-3xl md:text-2xl font-bold mb-4 text-foreground">¡Bienvenido a Rico-Cuba!</h2>
             <p className="text-muted-foreground text-base mb-8 max-w-sm mx-auto">
               {user?.isVerified === "false" 
                 ? "Tu cuenta ha sido creada. Verifica tu teléfono para acceder a todas las funciones."
@@ -647,7 +647,7 @@ export default function AuthPage() {
             </p>
             <Button
               onClick={() => window.location.href = "/"}
-              className="px-8 py-4 text-lg font-semibold"
+              className="px-8 py-4 md:py-3 text-lg md:text-base font-semibold"
               size="lg"
               data-testid="button-go-marketplace"
             >
