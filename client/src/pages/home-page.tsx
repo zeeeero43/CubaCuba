@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import type { Category, Product } from "@shared/schema";
+import type { Category, Product, Listing } from "@shared/schema";
 import { 
   Search, 
   Bell, 
@@ -33,6 +33,11 @@ export default function HomePage() {
   // Fetch featured products from API  
   const { data: featuredProducts = [], isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ['/api/products/featured'],
+  });
+
+  // Fetch featured listings from API
+  const { data: featuredListings = [], isLoading: listingsLoading } = useQuery<Listing[]>({
+    queryKey: ['/api/listings/featured'],
   });
 
   // Icon mapping for categories
@@ -175,6 +180,82 @@ export default function HomePage() {
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
+        </div>
+
+        {/* Featured Listings - Newest Ads */}
+        <div className="px-4 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Nuevos Anuncios</h2>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/listings')}
+              data-testid="button-view-all-listings"
+            >
+              Ver todo
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+          {listingsLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="border-0 shadow-sm">
+                  <CardContent className="p-0">
+                    <Skeleton className="w-full h-32 rounded-t-lg" />
+                    <div className="p-3">
+                      <Skeleton className="h-4 w-full mb-2" />
+                      <Skeleton className="h-6 w-20" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {featuredListings.map((listing) => (
+                <Card 
+                  key={listing.id} 
+                  className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
+                  onClick={() => navigate(`/listings/${listing.id}`)}
+                  data-testid={`card-listing-${listing.id}`}
+                >
+                  <CardContent className="p-0">
+                    <div className="relative">
+                      <img
+                        src={listing.images && listing.images.length > 0 ? listing.images[0] : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center'}
+                        alt={listing.title}
+                        className="w-full h-32 object-cover rounded-t-lg"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center';
+                        }}
+                      />
+                      {listing.condition === 'new' && (
+                        <Badge className="absolute top-2 left-2 bg-emerald-500 text-white text-xs">
+                          Nuevo
+                        </Badge>
+                      )}
+                      {listing.priceType === 'negotiable' && (
+                        <Badge className="absolute top-2 right-2 bg-blue-500 text-white text-xs">
+                          Negociable
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2 line-clamp-2" data-testid={`text-title-${listing.id}`}>
+                        {listing.title}
+                      </h4>
+                      <p className="font-bold text-lg text-gray-900 dark:text-gray-100" data-testid={`text-price-${listing.id}`}>
+                        {listing.price} {listing.currency}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {listing.locationCity}, {listing.locationRegion}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Featured Products */}
