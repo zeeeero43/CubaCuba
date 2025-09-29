@@ -91,7 +91,7 @@ export function ObjectUploader({
 
   return (
     <div>
-      <Button onClick={handleOpenModal} className={buttonClassName}>
+      <Button type="button" onClick={handleOpenModal} className={buttonClassName}>
         {children}
       </Button>
 
