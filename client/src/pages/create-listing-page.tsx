@@ -15,6 +15,8 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera } from "lucide-react";
 import type { Category } from "@shared/schema";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 const provinces = [
   { value: "havana", label: "La Habana" },
@@ -90,6 +92,55 @@ export default function CreateListingPage() {
       const updatedImages = [...images, imageUrl];
       setImages(updatedImages);
       form.setValue('images', updatedImages);
+    }
+  };
+
+  // Handle file upload for images
+  const handleGetUploadParameters = async () => {
+    try {
+      const response = await apiRequest('POST', '/api/objects/upload');
+      const data = await response.json();
+      return {
+        method: 'PUT' as const,
+        url: data.uploadURL,
+      };
+    } catch (error) {
+      console.error('Error getting upload URL:', error);
+      toast({
+        title: "Error al obtener URL de subida",
+        description: "No se pudo obtener la URL para subir la imagen",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    try {
+      for (const file of result.successful || []) {
+        if (file.uploadURL) {
+          // Set ACL policy for the uploaded image
+          const response = await apiRequest('PUT', '/api/listing-images', {
+            body: JSON.stringify({ imageURL: file.uploadURL }),
+          });
+          const data = await response.json();
+          
+          // Add the normalized object path to images
+          addImageFromUpload(data.objectPath);
+        }
+      }
+      
+      toast({
+        title: "¡Imagen subida exitosamente!",
+        description: `${result.successful?.length || 0} imagen(es) agregada(s) a tu anuncio`,
+      });
+    } catch (error) {
+      console.error('Error finalizing upload:', error);
+      toast({
+        title: "Error al finalizar subida",
+        description: "La imagen se subió pero hubo un problema al procesarla",
+        variant: "destructive",
+      });
     }
   };
 
@@ -295,16 +346,23 @@ export default function CreateListingPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Sube hasta 8 imágenes para tu anuncio
                 </p>
-                {/* File upload component will be added here */}
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 mb-4">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">
-                    Arrastra archivos aquí o haz clic para seleccionar
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    PNG, JPG, JPEG hasta 10MB
-                  </p>
-                </div>
+                <ObjectUploader
+                  maxNumberOfFiles={8 - images.length}
+                  maxFileSize={10485760} // 10MB
+                  onGetUploadParameters={handleGetUploadParameters}
+                  onComplete={handleUploadComplete}
+                  buttonClassName="w-full"
+                >
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 mb-4 hover:border-primary transition-colors cursor-pointer">
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Arrastra archivos aquí o haz clic para seleccionar
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      PNG, JPG, JPEG hasta 10MB (máximo {8 - images.length} restantes)
+                    </p>
+                  </div>
+                </ObjectUploader>
               </div>
               
               <div className="grid grid-cols-2 gap-2">
