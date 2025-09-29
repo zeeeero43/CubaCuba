@@ -21,10 +21,155 @@ import {
   ChevronLeft,
   ChevronRight,
   Star,
-  Flag
+  Flag,
+  UserPlus,
+  UserMinus
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { Listing, Category } from "@shared/schema";
+
+// Types for seller profile
+interface SellerProfile {
+  user: {
+    id: string;
+    name: string;
+    createdAt: string;
+  };
+  followersCount: number;
+  followingCount: number;
+  avgRating: number;
+  ratingsCount: number;
+  isFollowing: boolean;
+}
+
+// Seller Info Component
+function SellerInfo({ sellerId }: { sellerId: string }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch seller profile
+  const { data: profile, isLoading } = useQuery<SellerProfile>({
+    queryKey: ['/api/users', sellerId, 'public'],
+    enabled: !!sellerId,
+  });
+
+  // Follow/Unfollow mutation
+  const followMutation = useMutation({
+    mutationFn: () => apiRequest('POST', `/api/users/${sellerId}/follow`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', sellerId, 'public'] });
+      toast({ title: "Ahora sigues a este vendedor" });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para seguir vendedores",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: () => apiRequest('DELETE', `/api/users/${sellerId}/follow`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', sellerId, 'public'] });
+      toast({ title: "Has dejado de seguir a este vendedor" });
+    },
+  });
+
+  const handleFollowToggle = () => {
+    if (profile?.isFollowing) {
+      unfollowMutation.mutate();
+    } else {
+      followMutation.mutate();
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="animate-pulse space-y-3">
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+            <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!profile) return null;
+
+  const joinDate = new Date(profile.user.createdAt).toLocaleDateString('es-ES', {
+    month: 'long',
+    year: 'numeric'
+  });
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg" data-testid="text-seller-name">
+              {profile.user.name}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Miembro desde {joinDate}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant={profile.isFollowing ? "outline" : "default"}
+            onClick={handleFollowToggle}
+            disabled={followMutation.isPending || unfollowMutation.isPending}
+            data-testid={profile.isFollowing ? "button-unfollow" : "button-follow"}
+          >
+            {profile.isFollowing ? (
+              <>
+                <UserMinus className="w-4 h-4 mr-1" />
+                Siguiendo
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-4 h-4 mr-1" />
+                Seguir
+              </>
+            )}
+          </Button>
+        </div>
+
+        <Separator />
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <p className="text-2xl font-bold text-primary" data-testid="text-followers-count">
+              {profile.followersCount}
+            </p>
+            <p className="text-xs text-muted-foreground">Seguidores</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-primary" data-testid="text-following-count">
+              {profile.followingCount}
+            </p>
+            <p className="text-xs text-muted-foreground">Siguiendo</p>
+          </div>
+          <div>
+            <div className="flex items-center justify-center gap-1">
+              <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+              <p className="text-2xl font-bold text-primary" data-testid="text-avg-rating">
+                {profile.avgRating > 0 ? profile.avgRating.toFixed(1) : '-'}
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {profile.ratingsCount} {profile.ratingsCount === 1 ? 'valoración' : 'valoraciones'}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function ListingDetailPage() {
   const [match, params] = useRoute("/listing/:id");
@@ -432,6 +577,9 @@ export default function ListingDetailPage() {
 
           {/* Contact Sidebar */}
           <div className="space-y-4">
+            {/* Seller Info */}
+            <SellerInfo sellerId={listing.sellerId} />
+
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-semibold mb-4">Contactar vendedor</h3>
