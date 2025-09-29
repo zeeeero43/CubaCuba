@@ -60,9 +60,22 @@ interface RatingsData {
 }
 
 // Seller Info Component
-function SellerInfo({ sellerId, currentUserId }: { sellerId: string; currentUserId?: string }) {
+function SellerInfo({ 
+  sellerId, 
+  currentUserId,
+  contactPhone,
+  contactWhatsApp,
+  onContact
+}: { 
+  sellerId: string; 
+  currentUserId?: string;
+  contactPhone?: string;
+  contactWhatsApp?: string;
+  onContact?: (type: 'phone' | 'whatsapp') => void;
+}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // Fetch seller profile
   const { data: profile, isLoading } = useQuery<SellerProfile>({
@@ -129,7 +142,11 @@ function SellerInfo({ sellerId, currentUserId }: { sellerId: string; currentUser
     <Card>
       <CardContent className="p-4 space-y-4">
         <div className="flex items-start justify-between">
-          <div className="flex-1">
+          <div 
+            className="flex-1 cursor-pointer hover:opacity-80 transition-opacity" 
+            onClick={() => setLocation(`/profile/${sellerId}`)}
+            data-testid="link-seller-profile"
+          >
             <h3 className="font-semibold text-lg" data-testid="text-seller-name">
               {profile.user.name}
             </h3>
@@ -188,6 +205,43 @@ function SellerInfo({ sellerId, currentUserId }: { sellerId: string; currentUser
             </p>
           </div>
         </div>
+
+        {/* Contact Buttons */}
+        {contactPhone && onContact && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <Button 
+                className="w-full" 
+                onClick={() => onContact('phone')}
+                data-testid="button-call"
+              >
+                <Phone className="w-4 h-4 mr-2" />
+                Llamar
+              </Button>
+              
+              {contactWhatsApp === "true" && (
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={() => onContact('whatsapp')}
+                  data-testid="button-whatsapp"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  WhatsApp
+                </Button>
+              )}
+
+              <div className="pt-2 text-center">
+                <p className="text-sm text-muted-foreground mb-1">
+                  Teléfono de contacto
+                </p>
+                <p className="font-mono text-sm" data-testid="text-phone">
+                  {contactPhone}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
@@ -815,45 +869,14 @@ export default function ListingDetailPage() {
 
           {/* Contact Sidebar */}
           <div className="space-y-4">
-            {/* Seller Info */}
-            <SellerInfo sellerId={listing.sellerId} currentUserId={user?.id} />
-
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-4">Contactar vendedor</h3>
-                
-                <div className="space-y-3">
-                  <Button 
-                    className="w-full" 
-                    onClick={() => handleContact('phone')}
-                    data-testid="button-call"
-                  >
-                    <Phone className="w-4 h-4 mr-2" />
-                    Llamar
-                  </Button>
-                  
-                  {listing.contactWhatsApp === "true" && (
-                    <Button 
-                      className="w-full bg-green-600 hover:bg-green-700"
-                      onClick={() => handleContact('whatsapp')}
-                      data-testid="button-whatsapp"
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      WhatsApp
-                    </Button>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-4 border-t text-center">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Teléfono de contacto
-                  </p>
-                  <p className="font-mono text-sm" data-testid="text-phone">
-                    {listing.contactPhone}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Seller Info with Contact */}
+            <SellerInfo 
+              sellerId={listing.sellerId} 
+              currentUserId={user?.id}
+              contactPhone={listing.contactPhone}
+              contactWhatsApp={listing.contactWhatsApp}
+              onContact={handleContact}
+            />
 
             {/* Safety Tips */}
             <Card>

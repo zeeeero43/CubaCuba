@@ -48,6 +48,7 @@ export interface IStorage {
     priceMin?: number;
     priceMax?: number;
     condition?: string;
+    sellerId?: string;
     status?: string;
     page?: number;
     pageSize?: number;
@@ -224,11 +225,12 @@ export class DatabaseStorage implements IStorage {
     priceMin?: number;
     priceMax?: number;
     condition?: string;
+    sellerId?: string;
     status?: string;
     page?: number;
     pageSize?: number;
   } = {}): Promise<{ listings: Listing[]; total: number; }> {
-    const { q, categoryId, region, priceMin, priceMax, condition, status = 'active', page = 1, pageSize = 20 } = filters;
+    const { q, categoryId, region, priceMin, priceMax, condition, sellerId, status = 'active', page = 1, pageSize = 20 } = filters;
     
     let query = db.select().from(listings);
     let conditions = [eq(listings.status, status)];
@@ -253,6 +255,10 @@ export class DatabaseStorage implements IStorage {
 
     if (condition) {
       conditions.push(eq(listings.condition, condition));
+    }
+
+    if (sellerId) {
+      conditions.push(eq(listings.sellerId, sellerId));
     }
 
     if (priceMin !== undefined) {

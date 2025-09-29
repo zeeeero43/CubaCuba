@@ -150,6 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         priceMin: req.query.priceMin ? Number(req.query.priceMin) : undefined,
         priceMax: req.query.priceMax ? Number(req.query.priceMax) : undefined,
         condition: req.query.condition as string,
+        sellerId: req.query.sellerId as string,
         status: (req.query.status as string) || 'active',
         page: req.query.page ? Number(req.query.page) : 1,
         pageSize: req.query.pageSize ? Number(req.query.pageSize) : 20,
