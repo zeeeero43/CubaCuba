@@ -165,8 +165,13 @@ export function setupAuth(app: Express) {
   // Registration endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      // Normalize phone number
-      const phoneNormalized = req.body.phone?.replace(/\D/g, '').substring(0, 8);
+      // Normalize international phone number (keep + and allow up to 15 digits)
+      let phoneNormalized = req.body.phone?.replace(/[^+\d]/g, '') || '';
+      if (phoneNormalized.startsWith('+')) {
+        phoneNormalized = phoneNormalized.substring(0, 16); // +15 digits max (international standard)
+      } else {
+        phoneNormalized = phoneNormalized.substring(0, 15); // 15 digits max without +
+      }
       const validatedData = insertUserSchema.parse({
         ...req.body,
         phone: phoneNormalized,
@@ -193,7 +198,7 @@ export function setupAuth(app: Express) {
 
       // In production, send real SMS. NEVER log in production for security
       if (process.env.NODE_ENV === "development") {
-        console.log(`SMS Verification Code for +53${user.phone}: ${verificationCode}`);
+        console.log(`SMS Verification Code for ${user.phone.startsWith('+') ? user.phone : '+' + user.phone}: ${verificationCode}`);
       }
 
       // Regenerate session on login for security
@@ -263,7 +268,7 @@ export function setupAuth(app: Express) {
 
     // NEVER log in production for security
     if (process.env.NODE_ENV === "development") {
-      console.log(`SMS Verification Code for +53${req.user!.phone}: ${verificationCode}`);
+      console.log(`SMS Verification Code for ${req.user!.phone.startsWith('+') ? req.user!.phone : '+' + req.user!.phone}: ${verificationCode}`);
     }
     
     res.json({ message: "Código de verificación reenviado" });
@@ -271,8 +276,13 @@ export function setupAuth(app: Express) {
 
   // Login endpoint
   app.post("/api/login", (req, res, next) => {
-    // Normalize phone number
-    const phoneNormalized = req.body.phone?.replace(/\D/g, '').substring(0, 8);
+    // Normalize international phone number (keep + and allow up to 15 digits)
+    let phoneNormalized = req.body.phone?.replace(/[^+\d]/g, '') || '';
+    if (phoneNormalized.startsWith('+')) {
+      phoneNormalized = phoneNormalized.substring(0, 16); // +15 digits max
+    } else {
+      phoneNormalized = phoneNormalized.substring(0, 15); // 15 digits max without +
+    }
     req.body.phone = phoneNormalized;
 
     passport.authenticate("local", (err: any, user: SelectUser, info: any) => {
@@ -297,7 +307,13 @@ export function setupAuth(app: Express) {
   // Password reset request
   app.post("/api/reset-password", async (req, res) => {
     try {
-      const phoneNormalized = req.body.phone?.replace(/\D/g, '').substring(0, 8);
+      // Normalize international phone number
+      let phoneNormalized = req.body.phone?.replace(/[^+\d]/g, '') || '';
+      if (phoneNormalized.startsWith('+')) {
+        phoneNormalized = phoneNormalized.substring(0, 16);
+      } else {
+        phoneNormalized = phoneNormalized.substring(0, 15);
+      }
       const user = await storage.getUserByPhone(phoneNormalized);
       
       // Always return success to prevent user enumeration
@@ -309,7 +325,7 @@ export function setupAuth(app: Express) {
 
         // NEVER log in production for security
         if (process.env.NODE_ENV === "development") {
-          console.log(`SMS Reset Code for +53${user.phone}: ${resetCode}`);
+          console.log(`SMS Reset Code for ${user.phone.startsWith('+') ? user.phone : '+' + user.phone}: ${resetCode}`);
         }
       }
 
@@ -324,7 +340,13 @@ export function setupAuth(app: Express) {
   app.post("/api/confirm-reset", async (req, res) => {
     try {
       const { phone, code, newPassword } = req.body;
-      const phoneNormalized = phone?.replace(/\D/g, '').substring(0, 8);
+      // Normalize international phone number
+      let phoneNormalized = phone?.replace(/[^+\d]/g, '') || '';
+      if (phoneNormalized.startsWith('+')) {
+        phoneNormalized = phoneNormalized.substring(0, 16);
+      } else {
+        phoneNormalized = phoneNormalized.substring(0, 15);
+      }
       const user = await storage.getUserByPhone(phoneNormalized);
       
       if (!user || !user.verificationCode || !user.verificationCodeExpiry) {
