@@ -1,5 +1,5 @@
 import { 
-  users, categories, products, listings, premiumOptions, listingPremium, settings, favorites,
+  users, categories, products, listings, premiumOptions, listingPremium, settings, favorites, follows, ratings,
   type User, type InsertUser, 
   type Category, type InsertCategory, 
   type Product, type InsertProduct,
@@ -7,7 +7,9 @@ import {
   type PremiumOption, type InsertPremiumOption,
   type ListingPremium,
   type Setting, type InsertSetting,
-  type Favorite
+  type Favorite,
+  type Follow,
+  type Rating, type InsertRating
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, like, sql, gte, lte, count } from "drizzle-orm";
@@ -79,6 +81,26 @@ export interface IStorage {
   removeFavorite(userId: string, listingId: string): Promise<boolean>;
   getFavoriteListings(userId: string): Promise<Listing[]>;
   isFavorite(userId: string, listingId: string): Promise<boolean>;
+  
+  // Follows
+  followUser(followerId: string, followeeId: string): Promise<Follow>;
+  unfollowUser(followerId: string, followeeId: string): Promise<boolean>;
+  isFollowing(followerId: string, followeeId: string): Promise<boolean>;
+  getFollowedListings(userId: string, limit?: number): Promise<Listing[]>;
+  
+  // User Profile
+  getUserPublicProfile(userId: string): Promise<{
+    user: Pick<User, 'id' | 'name' | 'createdAt'>;
+    followersCount: number;
+    followingCount: number;
+    avgRating: number;
+    ratingsCount: number;
+  } | undefined>;
+  
+  // Ratings
+  createRating(rating: InsertRating & { raterId: string }): Promise<Rating>;
+  getUserRatings(rateeId: string, options?: { limit?: number; offset?: number }): Promise<{ items: Rating[]; total: number; avg: number; }>;
+  getUserRatingSummary(rateeId: string): Promise<{ avg: number; count: number; }>
   
   sessionStore: session.Store;
 }
@@ -517,6 +539,158 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return result.length > 0;
+  }
+
+  // Follows implementation
+  async followUser(followerId: string, followeeId: string): Promise<Follow> {
+    // Check if already following
+    const existing = await db.select().from(follows)
+      .where(and(
+        eq(follows.followerId, followerId),
+        eq(follows.followeeId, followeeId)
+      ));
+    
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    // Add follow
+    const [follow] = await db.insert(follows)
+      .values({ followerId, followeeId })
+      .returning();
+    
+    return follow;
+  }
+
+  async unfollowUser(followerId: string, followeeId: string): Promise<boolean> {
+    const result = await db.delete(follows)
+      .where(and(
+        eq(follows.followerId, followerId),
+        eq(follows.followeeId, followeeId)
+      ))
+      .returning();
+
+    return result.length > 0;
+  }
+
+  async isFollowing(followerId: string, followeeId: string): Promise<boolean> {
+    const result = await db.select().from(follows)
+      .where(and(
+        eq(follows.followerId, followerId),
+        eq(follows.followeeId, followeeId)
+      ));
+    
+    return result.length > 0;
+  }
+
+  async getFollowedListings(userId: string, limit: number = 20): Promise<Listing[]> {
+    // Get list of followed user IDs
+    const followedUsers = await db.select({ followeeId: follows.followeeId })
+      .from(follows)
+      .where(eq(follows.followerId, userId));
+    
+    if (followedUsers.length === 0) {
+      return [];
+    }
+
+    const followedIds = followedUsers.map(f => f.followeeId);
+
+    // Get active listings from followed users
+    const result = await db.select().from(listings)
+      .where(and(
+        eq(listings.status, 'active'),
+        sql`${listings.sellerId} = ANY(${followedIds})`
+      ))
+      .orderBy(desc(listings.createdAt))
+      .limit(limit);
+
+    return result;
+  }
+
+  // User Profile implementation
+  async getUserPublicProfile(userId: string): Promise<{
+    user: Pick<User, 'id' | 'name' | 'createdAt'>;
+    followersCount: number;
+    followingCount: number;
+    avgRating: number;
+    ratingsCount: number;
+  } | undefined> {
+    // Get user
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+
+    // Get followers count
+    const [followersResult] = await db.select({ count: count() })
+      .from(follows)
+      .where(eq(follows.followeeId, userId));
+    
+    // Get following count
+    const [followingResult] = await db.select({ count: count() })
+      .from(follows)
+      .where(eq(follows.followerId, userId));
+
+    // Get rating summary
+    const ratingSummary = await this.getUserRatingSummary(userId);
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        createdAt: user.createdAt
+      },
+      followersCount: followersResult.count,
+      followingCount: followingResult.count,
+      avgRating: ratingSummary.avg,
+      ratingsCount: ratingSummary.count
+    };
+  }
+
+  // Ratings implementation
+  async createRating(ratingData: InsertRating & { raterId: string }): Promise<Rating> {
+    const [rating] = await db.insert(ratings)
+      .values(ratingData)
+      .returning();
+    
+    return rating;
+  }
+
+  async getUserRatings(rateeId: string, options: { limit?: number; offset?: number } = {}): Promise<{ items: Rating[]; total: number; avg: number; }> {
+    const { limit = 10, offset = 0 } = options;
+
+    // Get total count and average
+    const [summaryResult] = await db.select({ 
+      count: count(),
+      avg: sql<number>`COALESCE(AVG(${ratings.score}), 0)`
+    })
+      .from(ratings)
+      .where(eq(ratings.rateeId, rateeId));
+
+    // Get ratings with pagination
+    const items = await db.select().from(ratings)
+      .where(eq(ratings.rateeId, rateeId))
+      .orderBy(desc(ratings.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      items,
+      total: summaryResult.count,
+      avg: Number(summaryResult.avg) || 0
+    };
+  }
+
+  async getUserRatingSummary(rateeId: string): Promise<{ avg: number; count: number; }> {
+    const [result] = await db.select({ 
+      count: count(),
+      avg: sql<number>`COALESCE(AVG(${ratings.score}), 0)`
+    })
+      .from(ratings)
+      .where(eq(ratings.rateeId, rateeId));
+
+    return {
+      avg: Number(result.avg) || 0,
+      count: result.count
+    };
   }
 }
 

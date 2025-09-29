@@ -151,6 +151,25 @@ export const favorites = pgTable("favorites", {
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 });
 
+// User follows
+export const follows = pgTable("follows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  followerId: varchar("follower_id").references(() => users.id).notNull(),
+  followeeId: varchar("followee_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+});
+
+// User ratings/reviews
+export const ratings = pgTable("ratings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  raterId: varchar("rater_id").references(() => users.id).notNull(),
+  rateeId: varchar("ratee_id").references(() => users.id).notNull(),
+  listingId: varchar("listing_id").references(() => listings.id),
+  score: integer("score").notNull(), // 1-5
+  comment: text("comment"),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+});
+
 // Insert schemas with validation
 export const insertListingSchema = createInsertSchema(listings, {
   title: z.string().min(3, "El título debe tener al menos 3 caracteres").max(100, "El título no puede exceder 100 caracteres"),
@@ -194,6 +213,16 @@ export const insertSettingSchema = createInsertSchema(settings).pick({
   description: true,
 });
 
+export const insertRatingSchema = createInsertSchema(ratings, {
+  score: z.number().int().min(1, "La calificación debe ser al menos 1").max(5, "La calificación no puede exceder 5"),
+  comment: z.string().max(500, "El comentario no puede exceder 500 caracteres").optional(),
+}).pick({
+  rateeId: true,
+  listingId: true,
+  score: true,
+  comment: true,
+});
+
 // Type exports
 export type InsertListing = z.infer<typeof insertListingSchema>;
 export type Listing = typeof listings.$inferSelect;
@@ -203,3 +232,6 @@ export type ListingPremium = typeof listingPremium.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type Setting = typeof settings.$inferSelect;
 export type Favorite = typeof favorites.$inferSelect;
+export type Follow = typeof follows.$inferSelect;
+export type InsertRating = z.infer<typeof insertRatingSchema>;
+export type Rating = typeof ratings.$inferSelect;
