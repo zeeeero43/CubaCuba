@@ -34,6 +34,7 @@ export default function ListingDetailPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasRecordedView, setHasRecordedView] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const listingId = params?.id;
 
@@ -106,28 +107,28 @@ export default function ListingDetailPage() {
     }
   };
 
-  const handleShare = async () => {
+  const handleShareWhatsApp = () => {
+    if (!listing) return;
     const url = window.location.href;
-    const text = `Mira este anuncio en Rico-Cuba: ${listing?.title}`;
+    const text = encodeURIComponent(`Mira este anuncio en Rico-Cuba: ${listing.title}\n${url}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+    setShareDialogOpen(false);
+  };
 
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: text, url });
-      } catch (err) {
-        // Fallback to clipboard
-        navigator.clipboard.writeText(url);
-        toast({
-          title: "Enlace copiado",
-          description: "El enlace ha sido copiado al portapapeles",
-        });
-      }
-    } else {
-      navigator.clipboard.writeText(url);
-      toast({
-        title: "Enlace copiado",
-        description: "El enlace ha sido copiado al portapapeles",
-      });
-    }
+  const handleShareFacebook = () => {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    setShareDialogOpen(false);
+  };
+
+  const handleCopyLink = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "Enlace copiado",
+      description: "El enlace ha sido copiado al portapapeles",
+    });
+    setShareDialogOpen(false);
   };
 
   const generatePDF = () => {
@@ -273,7 +274,7 @@ export default function ListingDetailPage() {
             >
               <Heart className={`w-5 h-5 ${isFavorited ? 'fill-red-500 text-red-500' : ''}`} />
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleShare} data-testid="button-share">
+            <Button variant="ghost" size="icon" onClick={() => setShareDialogOpen(true)} data-testid="button-share">
               <Share2 className="w-5 h-5" />
             </Button>
             <Button variant="ghost" size="icon" onClick={generatePDF} data-testid="button-pdf">
@@ -492,6 +493,42 @@ export default function ListingDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Compartir anuncio</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Button 
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              onClick={handleShareWhatsApp}
+              data-testid="button-share-whatsapp"
+            >
+              <MessageCircle className="w-5 h-5 mr-2" />
+              Compartir por WhatsApp
+            </Button>
+            <Button 
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleShareFacebook}
+              data-testid="button-share-facebook"
+            >
+              <Share2 className="w-5 h-5 mr-2" />
+              Compartir en Facebook
+            </Button>
+            <Button 
+              variant="outline"
+              className="w-full"
+              onClick={handleCopyLink}
+              data-testid="button-copy-link"
+            >
+              <FileDown className="w-5 h-5 mr-2" />
+              Copiar enlace
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Full-size Image Dialog */}
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
