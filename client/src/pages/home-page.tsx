@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import {
 
 export default function HomePage() {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
 
   // Fetch categories from API
   const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
@@ -264,7 +266,13 @@ export default function HomePage() {
               <Heart className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">Favoritos</span>
             </Button>
-            <Button variant="ghost" size="icon" className="flex flex-col items-center py-2" data-testid="nav-profile">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="flex flex-col items-center py-2" 
+              onClick={() => navigate('/profile')}
+              data-testid="nav-profile"
+            >
               <User className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">Perfil</span>
             </Button>
