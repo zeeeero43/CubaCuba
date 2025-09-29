@@ -474,12 +474,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const objectStorageService = new ObjectStorageService();
       
-      // Use standard upload URL but we'll handle user-specific organization differently
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      
-      // Extract the object ID from the upload URL for tracking
-      const urlParts = uploadURL.split('/');
-      const objectId = urlParts[urlParts.length - 1];
+      // Get upload URL and objectId from the service
+      const { uploadURL, objectId } = await objectStorageService.getObjectEntityUploadURL();
       
       res.json({ 
         uploadURL,
