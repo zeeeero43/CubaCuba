@@ -2,18 +2,55 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "wouter";
-import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, Heart } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useLocation } from "wouter";
+import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import type { Listing } from "@shared/schema";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch user's listings
   const { data: listings = [], isLoading: listingsLoading } = useQuery<Listing[]>({
     queryKey: ['/api/me/listings'],
     enabled: !!user,
+  });
+
+  // Delete listing mutation
+  const deleteListingMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/listings/${id}`),
+    onSuccess: () => {
+      toast({ title: "Anuncio eliminado", description: "Tu anuncio ha sido eliminado exitosamente." });
+      queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "No se pudo eliminar el anuncio", variant: "destructive" });
+    },
+  });
+
+  // Update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => 
+      apiRequest('PATCH', `/api/listings/${id}/status`, { status }),
+    onSuccess: () => {
+      toast({ title: "Estado actualizado" });
+      queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
+    },
+  });
+
+  // Mark as sold mutation
+  const markSoldMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('PATCH', `/api/listings/${id}/sold`),
+    onSuccess: () => {
+      toast({ title: "Marcado como vendido" });
+      queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
+    },
   });
 
   if (!user) return <></>;
@@ -125,25 +162,29 @@ export default function ProfilePage() {
             ) : (
               <div className="space-y-3">
                 {listings.map((listing) => (
-                  <Link key={listing.id} href={`/listing/${listing.id}`} asChild>
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow" data-testid={`card-listing-${listing.id}`}>
-                      <CardContent className="p-4">
-                        <div className="flex gap-3">
-                          {/* Image */}
-                          {listing.images && listing.images.length > 0 ? (
-                            <img
-                              src={listing.images[0]}
-                              alt={listing.title}
-                              className="w-20 h-20 object-cover rounded-lg"
-                            />
-                          ) : (
-                            <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                              <Package className="w-8 h-8 text-gray-400" />
-                            </div>
-                          )}
-                          
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
+                  <Card key={listing.id} className="hover:shadow-md transition-shadow" data-testid={`card-listing-${listing.id}`}>
+                    <CardContent className="p-4">
+                      <div className="flex gap-3">
+                        {/* Image - Clickable */}
+                        <Link href={`/listing/${listing.id}`} asChild>
+                          <div className="cursor-pointer">
+                            {listing.images && listing.images.length > 0 ? (
+                              <img
+                                src={listing.images[0]}
+                                alt={listing.title}
+                                className="w-20 h-20 object-cover rounded-lg"
+                              />
+                            ) : (
+                              <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                                <Package className="w-8 h-8 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                        
+                        {/* Content - Clickable */}
+                        <Link href={`/listing/${listing.id}`} asChild>
+                          <div className="flex-1 min-w-0 cursor-pointer">
                             <h3 className="font-semibold text-sm line-clamp-1 mb-1">{listing.title}</h3>
                             <p className="text-lg font-bold text-primary mb-2">
                               ${listing.price} {listing.priceType === 'negotiable' ? '(Negociable)' : ''}
@@ -160,10 +201,51 @@ export default function ProfilePage() {
                               {getStatusBadge(listing.status || 'active')}
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                        </Link>
+
+                        {/* Actions Menu */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" data-testid={`button-menu-${listing.id}`}>
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/edit-listing/${listing.id}`)} data-testid={`menu-edit-${listing.id}`}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            {listing.status === 'active' ? (
+                              <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: listing.id, status: 'paused' })} data-testid={`menu-pause-${listing.id}`}>
+                                <Pause className="w-4 h-4 mr-2" />
+                                Pausar
+                              </DropdownMenuItem>
+                            ) : listing.status === 'paused' ? (
+                              <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ id: listing.id, status: 'active' })} data-testid={`menu-activate-${listing.id}`}>
+                                <Play className="w-4 h-4 mr-2" />
+                                Activar
+                              </DropdownMenuItem>
+                            ) : null}
+                            {listing.status !== 'sold' && (
+                              <DropdownMenuItem onClick={() => markSoldMutation.mutate(listing.id)} data-testid={`menu-sold-${listing.id}`}>
+                                <ShoppingCart className="w-4 h-4 mr-2" />
+                                Marcar vendido
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => deleteListingMutation.mutate(listing.id)} 
+                              className="text-destructive focus:text-destructive"
+                              data-testid={`menu-delete-${listing.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
