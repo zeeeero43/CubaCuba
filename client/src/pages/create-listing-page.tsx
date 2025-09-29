@@ -40,7 +40,6 @@ export default function CreateListingPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [images, setImages] = useState<string[]>([]);
-  const [newImageUrl, setNewImageUrl] = useState("");
 
   // Fetch categories
   const { data: categories = [] } = useQuery<Category[]>({
@@ -86,12 +85,11 @@ export default function CreateListingPage() {
     },
   });
 
-  const addImage = () => {
-    if (newImageUrl && images.length < 8 && !images.includes(newImageUrl)) {
-      const updatedImages = [...images, newImageUrl];
+  const addImageFromUpload = (imageUrl: string) => {
+    if (imageUrl && images.length < 8 && !images.includes(imageUrl)) {
+      const updatedImages = [...images, imageUrl];
       setImages(updatedImages);
       form.setValue('images', updatedImages);
-      setNewImageUrl("");
     }
   };
 
@@ -293,21 +291,20 @@ export default function CreateListingPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="URL de la imagen"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  data-testid="input-image-url"
-                />
-                <Button
-                  type="button"
-                  onClick={addImage}
-                  disabled={images.length >= 8 || !newImageUrl}
-                  data-testid="button-add-image"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
+              <div className="text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Sube hasta 8 imágenes para tu anuncio
+                </p>
+                {/* File upload component will be added here */}
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 mb-4">
+                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Arrastra archivos aquí o haz clic para seleccionar
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    PNG, JPG, JPEG hasta 10MB
+                  </p>
+                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-2">

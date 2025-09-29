@@ -4,6 +4,7 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertCategorySchema, insertProductSchema, insertListingSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -382,6 +383,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching premium features:", error);
       res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Object Storage Routes
+  
+  // Public objects serving endpoint
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Private objects serving endpoint (for listing images)
+  app.get("/objects/:objectPath(*)", async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error checking object access:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  // Upload URL endpoint (requires authentication for listing images)
+  app.post("/api/objects/upload", async (req, res) => {
+    // Require authentication for listing image uploads
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para subir imágenes" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
+  // Endpoint to finalize upload and set ACL policy for listing images
+  app.put("/api/listing-images", async (req, res) => {
+    // Require authentication
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para gestionar imágenes" });
+    }
+
+    if (!req.body.imageURL) {
+      return res.status(400).json({ error: "imageURL is required" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        req.body.imageURL,
+        {
+          owner: req.user!.id,
+          // Listing images should be public so they can be viewed by everyone
+          visibility: "public",
+        }
+      );
+
+      res.status(200).json({
+        objectPath: objectPath,
+      });
+    } catch (error) {
+      console.error("Error setting listing image:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
