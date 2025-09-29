@@ -12,6 +12,8 @@ import CreateListingPage from "@/pages/create-listing-page";
 import ListingDetailPage from "@/pages/listing-detail-page";
 import ListingsPage from "@/pages/listings-page";
 import ManageListingsPage from "@/pages/manage-listings-page";
+import MyListingsPage from "@/pages/my-listings-page";
+import EditListingPage from "@/pages/edit-listing-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -25,6 +27,8 @@ function Router() {
       <Route path="/listing/:id" component={ListingDetailPage} />
       <Route path="/listings" component={ListingsPage} />
       <ProtectedRoute path="/manage-listings" component={ManageListingsPage} />
+      <ProtectedRoute path="/my-listings" component={MyListingsPage} />
+      <ProtectedRoute path="/edit-listing/:id" component={EditListingPage} />
       <Route component={NotFound} />
     </Switch>
   );

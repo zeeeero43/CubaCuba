@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
-import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, TrendingUp, ChevronRight } from "lucide-react";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
@@ -75,6 +75,33 @@ export default function ProfilePage() {
                 <p className="text-xs text-muted-foreground">Miembro desde</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Links */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base">Mis Anuncios</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/my-listings" asChild>
+              <Button variant="ghost" className="w-full justify-between" data-testid="button-my-listings">
+                <div className="flex items-center space-x-3">
+                  <Package className="w-5 h-5 text-primary" />
+                  <span>Ver mis anuncios</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </Button>
+            </Link>
+            <Link href="/manage-listings" asChild>
+              <Button variant="ghost" className="w-full justify-between" data-testid="button-premium-campaigns">
+                <div className="flex items-center space-x-3">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  <span>Campañas Premium</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
