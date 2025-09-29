@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&display=swap');
+/* Uppy Dashboard CSS for file uploads */
+@import 'https://releases.transloadit.com/uppy/v3.25.3/uppy.min.css';
 
 @tailwind base;
 @tailwind components;

@@ -376,28 +376,30 @@ export default function CreateListingPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 px-4">
                   Sube hasta 8 imágenes para tu anuncio
                 </p>
                 
                 {/* Single upload button - no overlapping areas */}
-                <ObjectUploader
-                  maxNumberOfFiles={8 - images.length}
-                  maxFileSize={10485760} // 10MB
-                  onGetUploadParameters={handleGetUploadParameters}
-                  onComplete={handleUploadComplete}
-                  buttonClassName="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent"
-                >
-                  <div className="flex flex-col items-center">
-                    <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400 mb-2">
-                      Arrastra archivos aquí o haz clic para seleccionar
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      PNG, JPG, JPEG hasta 10MB (máximo {8 - images.length} restantes)
-                    </p>
-                  </div>
-                </ObjectUploader>
+                <div className="px-4">
+                  <ObjectUploader
+                    maxNumberOfFiles={8 - images.length}
+                    maxFileSize={10485760} // 10MB
+                    onGetUploadParameters={handleGetUploadParameters}
+                    onComplete={handleUploadComplete}
+                    buttonClassName="w-full py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent"
+                  >
+                    <div className="flex flex-col items-center">
+                      <Upload className="w-16 h-16 text-gray-400 mb-6" />
+                      <p className="text-gray-500 dark:text-gray-400 mb-3 text-lg font-medium">
+                        Arrastra archivos aquí o haz clic para seleccionar
+                      </p>
+                      <p className="text-sm text-gray-400 px-4">
+                        PNG, JPG, JPEG hasta 10MB (máximo {8 - images.length} restantes)
+                      </p>
+                    </div>
+                  </ObjectUploader>
+                </div>
               </div>
               
               {/* Image Gallery */}
