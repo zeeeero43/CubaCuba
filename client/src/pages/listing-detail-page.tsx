@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import {
   ArrowLeft,
@@ -42,8 +43,24 @@ interface SellerProfile {
   isFollowing: boolean;
 }
 
+// Types for ratings
+interface Rating {
+  id: string;
+  raterId: string;
+  rateeId: string;
+  score: number;
+  comment: string | null;
+  createdAt: string;
+}
+
+interface RatingsData {
+  items: Rating[];
+  total: number;
+  avg: number;
+}
+
 // Seller Info Component
-function SellerInfo({ sellerId }: { sellerId: string }) {
+function SellerInfo({ sellerId, currentUserId }: { sellerId: string; currentUserId?: string }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -105,6 +122,9 @@ function SellerInfo({ sellerId }: { sellerId: string }) {
     year: 'numeric'
   });
 
+  // Hide follow button for own listings
+  const isOwnListing = currentUserId === sellerId;
+
   return (
     <Card>
       <CardContent className="p-4 space-y-4">
@@ -117,25 +137,27 @@ function SellerInfo({ sellerId }: { sellerId: string }) {
               Miembro desde {joinDate}
             </p>
           </div>
-          <Button
-            size="sm"
-            variant={profile.isFollowing ? "outline" : "default"}
-            onClick={handleFollowToggle}
-            disabled={followMutation.isPending || unfollowMutation.isPending}
-            data-testid={profile.isFollowing ? "button-unfollow" : "button-follow"}
-          >
-            {profile.isFollowing ? (
-              <>
-                <UserMinus className="w-4 h-4 mr-1" />
-                Siguiendo
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-4 h-4 mr-1" />
-                Seguir
-              </>
-            )}
-          </Button>
+          {!isOwnListing && currentUserId && (
+            <Button
+              size="sm"
+              variant={profile.isFollowing ? "outline" : "default"}
+              onClick={handleFollowToggle}
+              disabled={followMutation.isPending || unfollowMutation.isPending}
+              data-testid={profile.isFollowing ? "button-unfollow" : "button-follow"}
+            >
+              {profile.isFollowing ? (
+                <>
+                  <UserMinus className="w-4 h-4 mr-1" />
+                  Siguiendo
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-1" />
+                  Seguir
+                </>
+              )}
+            </Button>
+          )}
         </div>
 
         <Separator />
@@ -171,11 +193,222 @@ function SellerInfo({ sellerId }: { sellerId: string }) {
   );
 }
 
+// Ratings Component
+function SellerRatings({ sellerId, currentUserId }: { sellerId: string; currentUserId?: string }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showRatingForm, setShowRatingForm] = useState(false);
+  const [selectedScore, setSelectedScore] = useState(5);
+  const [comment, setComment] = useState("");
+
+  // Fetch ratings
+  const { data: ratingsData, isLoading } = useQuery<RatingsData>({
+    queryKey: ['/api/users', sellerId, 'ratings'],
+    enabled: !!sellerId,
+  });
+
+  // Submit rating mutation
+  const submitRatingMutation = useMutation({
+    mutationFn: () => 
+      apiRequest('POST', `/api/users/${sellerId}/ratings`, {
+        score: selectedScore,
+        comment: comment.trim() || null
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', sellerId, 'ratings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users', sellerId, 'public'] });
+      toast({ title: "Valoración enviada exitosamente" });
+      setShowRatingForm(false);
+      setComment("");
+      setSelectedScore(5);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo enviar la valoración",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmitRating = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitRatingMutation.mutate();
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="animate-pulse space-y-3">
+            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+            <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const ratings = ratingsData?.items || [];
+  const avgRating = ratingsData?.avg || 0;
+  const totalRatings = ratingsData?.total || 0;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Valoraciones</h2>
+        {currentUserId && currentUserId !== sellerId && !showRatingForm && (
+          <Button
+            size="sm"
+            onClick={() => setShowRatingForm(true)}
+            data-testid="button-add-rating"
+          >
+            <Star className="w-4 h-4 mr-1" />
+            Valorar
+          </Button>
+        )}
+      </div>
+
+      {/* Rating Summary */}
+      {totalRatings > 0 && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <div className="flex items-center gap-1 justify-center mb-1">
+                <Star className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                <span className="text-3xl font-bold" data-testid="text-rating-avg">
+                  {avgRating.toFixed(1)}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {totalRatings} {totalRatings === 1 ? 'valoración' : 'valoraciones'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rating Form */}
+      {showRatingForm && (
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <form onSubmit={handleSubmitRating} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tu calificación</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((score) => (
+                    <button
+                      key={score}
+                      type="button"
+                      onClick={() => setSelectedScore(score)}
+                      className="p-1"
+                      data-testid={`button-star-${score}`}
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          score <= selectedScore
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Comentario (opcional)
+                </label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Comparte tu experiencia..."
+                  className="w-full p-2 border rounded-md min-h-[100px] bg-background"
+                  maxLength={500}
+                  data-testid="textarea-rating-comment"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {comment.length}/500 caracteres
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  disabled={submitRatingMutation.isPending}
+                  data-testid="button-submit-rating"
+                >
+                  {submitRatingMutation.isPending ? "Enviando..." : "Enviar valoración"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowRatingForm(false);
+                    setComment("");
+                    setSelectedScore(5);
+                  }}
+                  data-testid="button-cancel-rating"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Ratings List */}
+      {ratings.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <Star className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p>Aún no hay valoraciones</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {ratings.slice(0, 5).map((rating) => (
+            <Card key={rating.id} data-testid={`card-rating-${rating.id}`}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-2 mb-2">
+                  <div className="flex">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < rating.score
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(rating.createdAt).toLocaleDateString('es-ES')}
+                  </span>
+                </div>
+                {rating.comment && (
+                  <p className="text-sm text-foreground" data-testid={`text-rating-comment-${rating.id}`}>
+                    {rating.comment}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ListingDetailPage() {
   const [match, params] = useRoute("/listing/:id");
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasRecordedView, setHasRecordedView] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -573,12 +806,17 @@ export default function ListingDetailPage() {
                 </div>
               </div>
             </div>
+
+            <Separator />
+
+            {/* Seller Ratings */}
+            <SellerRatings sellerId={listing.sellerId} currentUserId={user?.id} />
           </div>
 
           {/* Contact Sidebar */}
           <div className="space-y-4">
             {/* Seller Info */}
-            <SellerInfo sellerId={listing.sellerId} />
+            <SellerInfo sellerId={listing.sellerId} currentUserId={user?.id} />
 
             <Card>
               <CardContent className="p-4">

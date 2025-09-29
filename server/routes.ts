@@ -183,6 +183,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/listings/following - Get listings from followed users (requires auth)
+  app.get("/api/listings/following", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const listings = await storage.getFollowedListings(req.user!.id);
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching followed listings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // GET /api/listings/:id - Get single listing
   app.get("/api/listings/:id", async (req, res) => {
     try {
@@ -495,21 +510,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Has dejado de seguir a este usuario" });
     } catch (error) {
       console.error("Error unfollowing user:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
-    }
-  });
-
-  // GET /api/listings/following - Get listings from followed users (requires auth)
-  app.get("/api/listings/following", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Debes iniciar sesión" });
-    }
-
-    try {
-      const listings = await storage.getFollowedListings(req.user!.id);
-      res.json(listings);
-    } catch (error) {
-      console.error("Error fetching followed listings:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });

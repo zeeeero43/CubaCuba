@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, decimal, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, decimal, integer, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -157,7 +157,11 @@ export const follows = pgTable("follows", {
   followerId: varchar("follower_id").references(() => users.id).notNull(),
   followeeId: varchar("followee_id").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
-});
+}, (table) => ({
+  uniqueFollow: uniqueIndex("unique_follow").on(table.followerId, table.followeeId),
+  followerIdx: index("follower_idx").on(table.followerId),
+  followeeIdx: index("followee_idx").on(table.followeeId),
+}));
 
 // User ratings/reviews
 export const ratings = pgTable("ratings", {
@@ -168,7 +172,11 @@ export const ratings = pgTable("ratings", {
   score: integer("score").notNull(), // 1-5
   comment: text("comment"),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
-});
+}, (table) => ({
+  uniqueRating: uniqueIndex("unique_rating").on(table.raterId, table.rateeId),
+  raterIdx: index("rater_idx").on(table.raterId),
+  rateeIdx: index("ratee_idx").on(table.rateeId),
+}));
 
 // Insert schemas with validation
 export const insertListingSchema = createInsertSchema(listings, {
