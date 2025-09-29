@@ -33,6 +33,7 @@ export default function ListingDetailPage() {
   const queryClient = useQueryClient();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasRecordedView, setHasRecordedView] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
   const listingId = params?.id;
 
@@ -245,11 +246,15 @@ export default function ListingDetailPage() {
         {/* Image Gallery */}
         {listing.images && listing.images.length > 0 ? (
           <div className="relative mb-6">
-            <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+            <div 
+              className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer"
+              onClick={() => setImageDialogOpen(true)}
+              data-testid="image-container"
+            >
               <img
                 src={listing.images[currentImageIndex]}
                 alt={`Imagen ${currentImageIndex + 1} de ${listing.title}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 onError={(e) => {
                   e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E";
                 }}
@@ -312,7 +317,7 @@ export default function ListingDetailPage() {
                 <img
                   src={image}
                   alt={`Miniatura ${index + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </button>
             ))}
@@ -446,6 +451,44 @@ export default function ListingDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Full-size Image Dialog */}
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent className="max-w-4xl w-full p-0">
+          <DialogHeader className="p-4 pb-2">
+            <DialogTitle>
+              Imagen {currentImageIndex + 1} de {listing.images?.length || 0}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="relative bg-black">
+            <img
+              src={listing.images?.[currentImageIndex]}
+              alt={`Imagen ${currentImageIndex + 1} de ${listing.title}`}
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+            {listing.images && listing.images.length > 1 && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute left-2 top-1/2 -translate-y-1/2"
+                  onClick={prevImage}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                  onClick={nextImage}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
