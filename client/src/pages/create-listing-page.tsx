@@ -356,19 +356,21 @@ export default function CreateListingPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Sube hasta 8 imágenes para tu anuncio
                 </p>
+                
+                {/* Single upload button - no overlapping areas */}
                 <ObjectUploader
                   maxNumberOfFiles={8 - images.length}
                   maxFileSize={10485760} // 10MB
                   onGetUploadParameters={handleGetUploadParameters}
                   onComplete={handleUploadComplete}
-                  buttonClassName="w-full"
+                  buttonClassName="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent"
                 >
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 mb-4 hover:border-primary transition-colors cursor-pointer">
-                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">
+                  <div className="flex flex-col items-center">
+                    <Upload className="w-12 h-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400 mb-2">
                       Arrastra archivos aquí o haz clic para seleccionar
                     </p>
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-gray-400">
                       PNG, JPG, JPEG hasta 10MB (máximo {8 - images.length} restantes)
                     </p>
                   </div>
