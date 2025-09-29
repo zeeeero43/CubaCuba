@@ -15,8 +15,6 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera } from "lucide-react";
 import type { Category } from "@shared/schema";
-import { ObjectUploader } from "@/components/ObjectUploader";
-import type { UploadResult } from "@uppy/core";
 
 const provinces = [
   { value: "havana", label: "La Habana" },
@@ -102,80 +100,83 @@ export default function CreateListingPage() {
     }
   };
 
-  // Handle file upload for images
-  const handleGetUploadParameters = async () => {
-    try {
-      const response = await apiRequest('POST', '/api/objects/upload');
-      const data = await response.json();
-      return {
-        method: 'PUT' as const,
-        url: data.uploadURL,
-      };
-    } catch (error) {
-      console.error('Error getting upload URL:', error);
+  // Simple file upload handler
+  const handleFileUpload = async (files: FileList) => {
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
       toast({
-        title: "Error al obtener URL de subida",
-        description: "No se pudo obtener la URL para subir la imagen",
+        title: "Tipo de archivo inválido",
+        description: "Solo se permiten archivos de imagen",
         variant: "destructive",
       });
-      throw error;
+      return;
     }
-  };
-
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    
+    // Validate file size (10MB)
+    if (file.size > 10485760) {
+      toast({
+        title: "Archivo demasiado grande",
+        description: "El archivo no puede superar los 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if we've reached the image limit
+    if (images.length >= 8) {
+      toast({
+        title: "Límite de imágenes alcanzado",
+        description: "Solo puedes subir un máximo de 8 imágenes",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
-      console.log('Upload result:', result);
-      const processedImages: string[] = [];
+      // Step 1: Get upload URL
+      const uploadResponse = await apiRequest('POST', '/api/listings/upload-image');
+      const { uploadURL, objectId } = await uploadResponse.json();
       
-      // Process all files and collect their object paths
-      for (const file of result.successful || []) {
-        console.log('Processing file:', file);
-        
-        // Try different possible properties for the upload URL
-        const uploadURL = file.uploadURL || (file as any).url || (file.response as any)?.uploadURL || (file.response as any)?.url;
-        console.log('Found upload URL:', uploadURL);
-        
-        if (uploadURL) {
-          // Set ACL policy for the uploaded image
-          const response = await apiRequest('PUT', '/api/listing-images', {
-            body: JSON.stringify({ imageURL: uploadURL }),
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('API error:', errorData);
-            throw new Error(errorData.error || 'Failed to process image');
-          }
-          
-          const data = await response.json();
-          console.log('API response:', data);
-          processedImages.push(data.objectPath);
-        } else {
-          console.error('No upload URL found for file:', file);
-        }
+      // Step 2: Upload file directly to storage
+      const uploadFileResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+      
+      if (!uploadFileResponse.ok) {
+        throw new Error('Failed to upload file');
       }
       
-      // Update images state once with all new images
+      // Step 3: Finalize upload and get object path
+      const finalizeResponse = await apiRequest('POST', '/api/listings/finalize-upload', {
+        body: JSON.stringify({ uploadURL }),
+      });
+      
+      const { objectPath } = await finalizeResponse.json();
+      
+      // Update images state
       setImages(prev => {
-        const newImages = [...prev];
-        for (const imageUrl of processedImages) {
-          if (!newImages.includes(imageUrl) && newImages.length < 8) {
-            newImages.push(imageUrl);
-          }
-        }
+        const newImages = [...prev, objectPath];
         form.setValue('images', newImages);
         return newImages;
       });
       
       toast({
         title: "¡Imagen subida exitosamente!",
-        description: `${processedImages.length} imagen(es) agregada(s) a tu anuncio`,
+        description: "La imagen se ha agregado a tu anuncio",
       });
     } catch (error) {
-      console.error('Error finalizing upload:', error);
+      console.error('Error uploading image:', error);
       toast({
-        title: "Error al finalizar subida",
-        description: error instanceof Error ? error.message : "La imagen se subió pero hubo un problema al procesarla",
+        title: "Error al subir imagen",
+        description: "Hubo un problema al subir la imagen. Inténtalo de nuevo.",
         variant: "destructive",
       });
     }
@@ -413,16 +414,18 @@ export default function CreateListingPage() {
                   Sube hasta 8 imágenes para tu anuncio
                 </p>
                 
-                {/* Single upload button - no overlapping areas */}
+                {/* Simple file upload input */}
                 <div className="px-4">
-                  <ObjectUploader
-                    maxNumberOfFiles={8 - images.length}
-                    maxFileSize={10485760} // 10MB
-                    onGetUploadParameters={handleGetUploadParameters}
-                    onComplete={handleUploadComplete}
-                    buttonClassName="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent"
-                  >
-                    <div className="flex flex-col items-center">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      disabled={images.length >= 8}
+                      data-testid="input-image-upload"
+                    />
+                    <div className="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent flex flex-col items-center cursor-pointer">
                       <Upload className="w-8 h-8 text-gray-400 mb-3" />
                       <p className="text-gray-500 dark:text-gray-400 mb-2 text-sm font-medium">
                         Arrastra archivos aquí o haz clic para seleccionar
@@ -431,7 +434,7 @@ export default function CreateListingPage() {
                         PNG, JPG, JPEG hasta 10MB (máximo {8 - images.length} restantes)
                       </p>
                     </div>
-                  </ObjectUploader>
+                  </div>
                 </div>
               </div>
               

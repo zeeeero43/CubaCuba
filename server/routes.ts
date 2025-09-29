@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertCategorySchema, insertProductSchema, insertListingSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { randomUUID } from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -423,8 +424,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload URL endpoint (requires authentication for listing images)
-  app.post("/api/objects/upload", async (req, res) => {
+  // Simplified image upload endpoint with user-specific folders
+  app.post("/api/listings/upload-image", async (req, res) => {
     // Require authentication for listing image uploads
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Debes iniciar sesión para subir imágenes" });
@@ -432,41 +433,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const objectStorageService = new ObjectStorageService();
+      
+      // Use standard upload URL but we'll handle user-specific organization differently
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
+      
+      // Extract the object ID from the upload URL for tracking
+      const urlParts = uploadURL.split('/');
+      const objectId = urlParts[urlParts.length - 1];
+      
+      res.json({ 
+        uploadURL,
+        objectId,
+        userId: req.user!.id
+      });
     } catch (error) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ error: "Error interno del servidor" });
     }
   });
 
-  // Endpoint to finalize upload and set ACL policy for listing images
-  app.put("/api/listing-images", async (req, res) => {
-    // Require authentication
+  // Finalize image upload and set ACL
+  app.post("/api/listings/finalize-upload", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Debes iniciar sesión para gestionar imágenes" });
     }
 
-    if (!req.body.imageURL) {
-      return res.status(400).json({ error: "imageURL is required" });
+    const { uploadURL } = req.body;
+    
+    if (!uploadURL) {
+      return res.status(400).json({ error: "uploadURL is required" });
     }
 
     try {
       const objectStorageService = new ObjectStorageService();
+      
+      // Set public ACL policy for the uploaded image
       const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        req.body.imageURL,
+        uploadURL,
         {
           owner: req.user!.id,
-          // Listing images should be public so they can be viewed by everyone
-          visibility: "public",
+          visibility: "public", // Public so listing images can be viewed by everyone
         }
       );
-
-      res.status(200).json({
-        objectPath: objectPath,
-      });
+      
+      res.json({ objectPath });
     } catch (error) {
-      console.error("Error setting listing image:", error);
+      console.error("Error finalizing upload:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
