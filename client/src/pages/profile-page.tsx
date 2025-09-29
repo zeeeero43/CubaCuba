@@ -1,13 +1,35 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, TrendingUp, ChevronRight } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, MessageSquare } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { Listing } from "@shared/schema";
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
 
+  // Fetch user's listings
+  const { data: listings = [], isLoading: listingsLoading } = useQuery<Listing[]>({
+    queryKey: ['/api/me/listings'],
+    enabled: !!user,
+  });
+
   if (!user) return <></>;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-500">Activo</Badge>;
+      case 'paused':
+        return <Badge className="bg-yellow-500">Pausado</Badge>;
+      case 'sold':
+        return <Badge className="bg-blue-500">Vendido</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -78,30 +100,73 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Quick Links */}
+        {/* User's Listings */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base">Mis Anuncios</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
+              Mis Anuncios ({listings.length})
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Link href="/my-listings" asChild>
-              <Button variant="ghost" className="w-full justify-between" data-testid="button-my-listings">
-                <div className="flex items-center space-x-3">
-                  <Package className="w-5 h-5 text-primary" />
-                  <span>Ver mis anuncios</span>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </Button>
-            </Link>
-            <Link href="/manage-listings" asChild>
-              <Button variant="ghost" className="w-full justify-between" data-testid="button-premium-campaigns">
-                <div className="flex items-center space-x-3">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  <span>Campañas Premium</span>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </Button>
-            </Link>
+          <CardContent>
+            {listingsLoading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Cargando anuncios...
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">No tienes anuncios publicados</p>
+                <Link href="/create-listing" asChild>
+                  <Button data-testid="button-create-first-listing">
+                    Crear primer anuncio
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {listings.map((listing) => (
+                  <Link key={listing.id} href={`/listing/${listing.id}`} asChild>
+                    <Card className="cursor-pointer hover:shadow-md transition-shadow" data-testid={`card-listing-${listing.id}`}>
+                      <CardContent className="p-4">
+                        <div className="flex gap-3">
+                          {/* Image */}
+                          {listing.images && listing.images.length > 0 ? (
+                            <img
+                              src={listing.images[0]}
+                              alt={listing.title}
+                              className="w-20 h-20 object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                              <Package className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
+                          
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm line-clamp-1 mb-1">{listing.title}</h3>
+                            <p className="text-lg font-bold text-primary mb-2">
+                              ${listing.price} {listing.priceType === 'negotiable' ? '(Negociable)' : ''}
+                            </p>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Eye className="w-3 h-3" />
+                                {listing.views || 0}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <MessageSquare className="w-3 h-3" />
+                                {listing.contacts || 0}
+                              </div>
+                              {getStatusBadge(listing.status || 'active')}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
