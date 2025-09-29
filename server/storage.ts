@@ -1,12 +1,13 @@
 import { 
-  users, categories, products, listings, premiumOptions, listingPremium, settings,
+  users, categories, products, listings, premiumOptions, listingPremium, settings, favorites,
   type User, type InsertUser, 
   type Category, type InsertCategory, 
   type Product, type InsertProduct,
   type Listing, type InsertListing,
   type PremiumOption, type InsertPremiumOption,
   type ListingPremium,
-  type Setting, type InsertSetting
+  type Setting, type InsertSetting,
+  type Favorite
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, like, sql, gte, lte, count } from "drizzle-orm";
@@ -72,6 +73,12 @@ export interface IStorage {
   getSetting(key: string): Promise<Setting | undefined>;
   setSetting(key: string, value: string, type?: string, description?: string): Promise<Setting>;
   getSettings(): Promise<Setting[]>;
+  
+  // Favorites
+  addFavorite(userId: string, listingId: string): Promise<Favorite>;
+  removeFavorite(userId: string, listingId: string): Promise<boolean>;
+  getFavoriteListings(userId: string): Promise<Listing[]>;
+  isFavorite(userId: string, listingId: string): Promise<boolean>;
   
   sessionStore: session.Store;
 }
@@ -449,6 +456,70 @@ export class DatabaseStorage implements IStorage {
 
   async getSettings(): Promise<Setting[]> {
     return await db.select().from(settings).orderBy(settings.key);
+  }
+
+  // Favorites implementation
+  async addFavorite(userId: string, listingId: string): Promise<Favorite> {
+    // Check if already favorited
+    const existing = await db.select().from(favorites)
+      .where(and(
+        eq(favorites.userId, userId),
+        eq(favorites.listingId, listingId)
+      ));
+    
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    // Add favorite
+    const [favorite] = await db.insert(favorites)
+      .values({ userId, listingId })
+      .returning();
+
+    // Increment favorites count on listing
+    await db.update(listings)
+      .set({ favorites: sql`${listings.favorites} + 1` })
+      .where(eq(listings.id, listingId));
+
+    return favorite;
+  }
+
+  async removeFavorite(userId: string, listingId: string): Promise<boolean> {
+    const result = await db.delete(favorites)
+      .where(and(
+        eq(favorites.userId, userId),
+        eq(favorites.listingId, listingId)
+      ))
+      .returning();
+
+    if (result.length > 0) {
+      // Decrement favorites count on listing
+      await db.update(listings)
+        .set({ favorites: sql`GREATEST(0, ${listings.favorites} - 1)` })
+        .where(eq(listings.id, listingId));
+      return true;
+    }
+    return false;
+  }
+
+  async getFavoriteListings(userId: string): Promise<Listing[]> {
+    const results = await db.select({ listing: listings })
+      .from(favorites)
+      .innerJoin(listings, eq(favorites.listingId, listings.id))
+      .where(eq(favorites.userId, userId))
+      .orderBy(desc(favorites.createdAt));
+
+    return results.map(r => r.listing);
+  }
+
+  async isFavorite(userId: string, listingId: string): Promise<boolean> {
+    const result = await db.select().from(favorites)
+      .where(and(
+        eq(favorites.userId, userId),
+        eq(favorites.listingId, listingId)
+      ));
+    
+    return result.length > 0;
   }
 }
 

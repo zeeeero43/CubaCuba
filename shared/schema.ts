@@ -143,6 +143,14 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
 });
 
+// User favorites
+export const favorites = pgTable("favorites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  listingId: varchar("listing_id").references(() => listings.id).notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+});
+
 // Insert schemas with validation
 export const insertListingSchema = createInsertSchema(listings, {
   title: z.string().min(3, "El título debe tener al menos 3 caracteres").max(100, "El título no puede exceder 100 caracteres"),
@@ -194,3 +202,4 @@ export type PremiumOption = typeof premiumOptions.$inferSelect;
 export type ListingPremium = typeof listingPremium.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type Setting = typeof settings.$inferSelect;
+export type Favorite = typeof favorites.$inferSelect;

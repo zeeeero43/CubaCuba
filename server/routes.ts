@@ -381,6 +381,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Favorites endpoints
+  // POST /api/favorites/:listingId - Add listing to favorites (requires auth)
+  app.post("/api/favorites/:listingId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      await storage.addFavorite(req.user!.id, req.params.listingId);
+      res.status(201).json({ message: "Añadido a favoritos" });
+    } catch (error) {
+      console.error("Error adding favorite:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // DELETE /api/favorites/:listingId - Remove from favorites (requires auth)
+  app.delete("/api/favorites/:listingId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      await storage.removeFavorite(req.user!.id, req.params.listingId);
+      res.json({ message: "Eliminado de favoritos" });
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/favorites - Get user's favorite listings (requires auth)
+  app.get("/api/favorites", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const favorites = await storage.getFavoriteListings(req.user!.id);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/favorites/:listingId/check - Check if listing is favorited (requires auth)
+  app.get("/api/favorites/:listingId/check", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const isFavorite = await storage.isFavorite(req.user!.id, req.params.listingId);
+      res.json({ isFavorite });
+    } catch (error) {
+      console.error("Error checking favorite:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Premium Features endpoints
   // GET /api/premium-options - Get available premium options
   app.get("/api/premium-options", async (req, res) => {
