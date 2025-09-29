@@ -4,8 +4,20 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertCategorySchema, insertProductSchema, insertListingSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectStorageService, ObjectNotFoundError, objectStorageClient } from "./objectStorage";
+import { setObjectAclPolicy } from "./objectAcl";
 import { randomUUID } from "crypto";
+
+// Helper function to parse object path
+function parseObjectPath(fullPath: string): { bucketName: string; objectName: string } {
+  const pathParts = fullPath.split("/");
+  if (pathParts.length < 3 || pathParts[0] !== "") {
+    throw new Error(`Invalid object path: ${fullPath}`);
+  }
+  const bucketName = pathParts[1];
+  const objectName = pathParts.slice(2).join("/");
+  return { bucketName, objectName };
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -480,31 +492,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Finalize image upload and set ACL
+  // Finalize image upload and set ACL (secure version)
   app.post("/api/listings/finalize-upload", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Debes iniciar sesión para gestionar imágenes" });
     }
 
-    const { uploadURL } = req.body;
+    const { objectId } = req.body;
     
-    if (!uploadURL) {
-      return res.status(400).json({ error: "uploadURL is required" });
+    if (!objectId) {
+      return res.status(400).json({ error: "objectId is required" });
     }
 
     try {
       const objectStorageService = new ObjectStorageService();
       
-      // Set public ACL policy for the uploaded image
-      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        uploadURL,
-        {
-          owner: req.user!.id,
-          visibility: "public", // Public so listing images can be viewed by everyone
-        }
-      );
+      // Construct the expected object path using server-controlled logic
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const tempObjectPath = `${privateDir}/uploads/${objectId}`;
       
-      res.json({ objectPath });
+      // Verify the object exists at the expected location
+      const { bucketName, objectName } = parseObjectPath(tempObjectPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const tempFile = bucket.file(objectName);
+      
+      const [exists] = await tempFile.exists();
+      if (!exists) {
+        return res.status(404).json({ error: "Uploaded file not found" });
+      }
+      
+      // Create user-specific final path: users/{userId}/listings/images/{objectId}
+      const userId = req.user!.id;
+      const finalObjectPath = `${privateDir}/users/${userId}/listings/images/${objectId}`;
+      const { bucketName: finalBucketName, objectName: finalObjectName } = parseObjectPath(finalObjectPath);
+      const finalFile = bucket.file(finalObjectName);
+      
+      // Move/copy the file to the user-specific location
+      await tempFile.copy(finalFile);
+      await tempFile.delete(); // Remove temp file
+      
+      // Set public ACL policy for the final image location
+      await setObjectAclPolicy(finalFile, {
+        owner: userId,
+        visibility: "public", // Public so listing images can be viewed by everyone
+      });
+      
+      // Return normalized object path for frontend use
+      const normalizedPath = `/objects/users/${userId}/listings/images/${objectId}`;
+      
+      res.json({ objectPath: normalizedPath });
     } catch (error) {
       console.error("Error finalizing upload:", error);
       res.status(500).json({ error: "Internal server error" });

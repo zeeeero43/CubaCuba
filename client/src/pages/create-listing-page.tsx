@@ -156,7 +156,7 @@ export default function CreateListingPage() {
       
       // Step 3: Finalize upload and get object path
       const finalizeResponse = await apiRequest('POST', '/api/listings/finalize-upload', {
-        body: JSON.stringify({ uploadURL }),
+        body: JSON.stringify({ objectId }),
       });
       
       const { objectPath } = await finalizeResponse.json();
