@@ -105,6 +105,7 @@ export const listings = pgTable("listings", {
   featured: text("featured").notNull().default("false"), // "true" | "false"
   views: integer("views").notNull().default(0),
   contacts: integer("contacts").notNull().default(0),
+  favorites: integer("favorites").notNull().default(0),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
   updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
 });

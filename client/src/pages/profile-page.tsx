@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, MessageSquare } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, Heart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Listing } from "@shared/schema";
 
@@ -154,8 +154,8 @@ export default function ProfilePage() {
                                 {listing.views || 0}
                               </div>
                               <div className="flex items-center gap-1">
-                                <MessageSquare className="w-3 h-3" />
-                                {listing.contacts || 0}
+                                <Heart className="w-3 h-3" />
+                                {listing.favorites || 0}
                               </div>
                               {getStatusBadge(listing.status || 'active')}
                             </div>
