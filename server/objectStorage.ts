@@ -181,6 +181,37 @@ export class ObjectStorageService {
     return objectFile;
   }
 
+  // Delete an object from storage
+  async deleteObject(objectPath: string): Promise<void> {
+    try {
+      // Normalize the path to remove /objects/ prefix if present
+      let normalizedPath = objectPath;
+      if (objectPath.startsWith('/objects/')) {
+        normalizedPath = objectPath.slice('/objects/'.length);
+      }
+      
+      // Get the full path in the private directory
+      const privateDir = this.getPrivateObjectDir();
+      const fullPath = `${privateDir}/${normalizedPath}`;
+      
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      // Check if file exists before trying to delete
+      const [exists] = await file.exists();
+      if (exists) {
+        await file.delete();
+        console.log(`Deleted object: ${objectPath}`);
+      } else {
+        console.log(`Object not found, skipping deletion: ${objectPath}`);
+      }
+    } catch (error) {
+      console.error(`Error deleting object ${objectPath}:`, error);
+      // Don't throw error - deletion should be non-blocking
+    }
+  }
+
   normalizeObjectEntityPath(
     rawPath: string,
   ): string {

@@ -245,10 +245,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      // First, get the listing to retrieve its images
+      const listing = await storage.getListing(req.params.id);
+      
+      if (!listing) {
+        return res.status(404).json({ message: "Anuncio no encontrado" });
+      }
+      
+      // Check ownership
+      if (listing.sellerId !== req.user!.id) {
+        return res.status(403).json({ message: "Sin permisos para eliminar este anuncio" });
+      }
+      
+      // Delete the listing from database first
       const success = await storage.deleteListing(req.params.id, req.user!.id);
       
       if (!success) {
-        return res.status(404).json({ message: "Anuncio no encontrado o sin permisos" });
+        return res.status(404).json({ message: "Error eliminando anuncio" });
+      }
+      
+      // Delete associated images from object storage (non-blocking)
+      if (listing.images && listing.images.length > 0) {
+        const objectStorageService = new ObjectStorageService();
+        
+        // Delete images in background - don't wait for completion
+        Promise.all(
+          listing.images.map(imagePath => objectStorageService.deleteObject(imagePath))
+        ).catch(error => {
+          console.error("Error deleting listing images:", error);
+          // Log error but don't fail the response since listing is already deleted
+        });
+        
+        console.log(`Initiated deletion of ${listing.images.length} images for listing ${req.params.id}`);
       }
       
       res.json({ message: "Anuncio eliminado exitosamente" });
