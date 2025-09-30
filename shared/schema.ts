@@ -34,7 +34,7 @@ export type User = typeof users.$inferSelect;
 export const categories = pgTable("categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  nameEn: text("name_en").notNull(),
+  nameEn: text("name_en"),
   icon: text("icon").notNull(),
   color: text("color").notNull().default("#10b981"),
   order: integer("order").notNull().default(0),
@@ -62,9 +62,7 @@ export const products = pgTable("products", {
 
 export const insertCategorySchema = createInsertSchema(categories).pick({
   name: true,
-  nameEn: true,
   icon: true,
-  color: true,
   order: true,
 });
 
