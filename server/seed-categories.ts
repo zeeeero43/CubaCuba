@@ -149,6 +149,7 @@ export async function seedCategories() {
         await db.update(categories)
           .set({
             icon: mainCat.icon,
+            color: "#10b981",
             order: mainCat.order,
             parentId: null,
           })
@@ -161,6 +162,7 @@ export async function seedCategories() {
           .values({
             name: mainCat.name,
             icon: mainCat.icon,
+            color: "#10b981",
             order: mainCat.order,
             parentId: null,
           })
@@ -183,6 +185,7 @@ export async function seedCategories() {
           await db.update(categories)
             .set({
               icon: subCat.icon,
+              color: "#10b981",
               order: i + 1,
               parentId: mainCategoryId,
             })
@@ -194,6 +197,7 @@ export async function seedCategories() {
             .values({
               name: subCat.name,
               icon: subCat.icon,
+              color: "#10b981",
               order: i + 1,
               parentId: mainCategoryId,
             });
