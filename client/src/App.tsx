@@ -11,6 +11,7 @@ import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
 import UserProfilePage from "@/pages/user-profile-page";
 import CreateListingPage from "@/pages/create-listing-page";
+import CategoryPage from "@/pages/category-page";
 import ListingDetailPage from "@/pages/listing-detail-page";
 import ListingsPage from "@/pages/listings-page";
 import ManageListingsPage from "@/pages/manage-listings-page";
@@ -37,6 +38,7 @@ function Router() {
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/category/:categoryId" component={CategoryPage} />
         <Route path="/profile/:userId" component={UserProfilePage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
         <ProtectedRoute path="/create-listing" component={CreateListingPage} />

@@ -39,6 +39,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/categories/tree", async (req, res) => {
+    try {
+      const tree = await storage.getCategoriesTree();
+      res.json(tree);
+    } catch (error) {
+      console.error("Error fetching categories tree:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  app.get("/api/categories/:id/subcategories", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const subcategories = await storage.getSubcategories(id);
+      res.json(subcategories);
+    } catch (error) {
+      console.error("Error fetching subcategories:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   app.get("/api/categories/:id", async (req, res) => {
     try {
       const category = await storage.getCategory(req.params.id);

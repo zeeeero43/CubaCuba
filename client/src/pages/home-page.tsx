@@ -17,17 +17,30 @@ import {
   Monitor,
   Tag,
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  ShoppingBag,
+  Wrench,
+  Car,
+  Building2,
+  GraduationCap,
+  Briefcase,
+  Building,
+  Package2
 } from "lucide-react";
 
 export default function HomePage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
 
-  // Fetch categories from API
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
+  // Fetch hierarchical categories from API
+  const { data: categoriesTree, isLoading: categoriesLoading } = useQuery<{
+    mainCategories: Category[];
+    subcategories: Record<string, Category[]>;
+  }>({
+    queryKey: ['/api/categories/tree'],
   });
+
+  const mainCategories = categoriesTree?.mainCategories || [];
 
 
   // Fetch featured listings from API
@@ -46,18 +59,22 @@ export default function HomePage() {
     'Home': Home,
     'Shirt': Shirt, 
     'Monitor': Monitor,
-    'Car': Monitor, // fallback
-    'Briefcase': Monitor, // fallback
-    'Building': Monitor, // fallback
+    'ShoppingBag': ShoppingBag,
+    'Wrench': Wrench,
+    'Car': Car,
+    'Building2': Building2,
+    'GraduationCap': GraduationCap,
+    'Briefcase': Briefcase,
+    'Building': Building,
+    'Package2': Package2,
   };
 
-  const colorMap: Record<string, { bg: string; icon: string }> = {
-    '#10b981': { bg: 'bg-emerald-100', icon: 'text-emerald-600' },
-    '#3b82f6': { bg: 'bg-blue-100', icon: 'text-blue-600' },
-    '#8b5cf6': { bg: 'bg-purple-100', icon: 'text-purple-600' },
-    '#f59e0b': { bg: 'bg-amber-100', icon: 'text-amber-600' },
-    '#06b6d4': { bg: 'bg-cyan-100', icon: 'text-cyan-600' },
-    '#ef4444': { bg: 'bg-red-100', icon: 'text-red-600' },
+  const colorMap: Record<string, { bg: string; text: string }> = {
+    'cyan': { bg: 'bg-cyan-500', text: 'text-white' },
+    'black': { bg: 'bg-gray-900', text: 'text-white' },
+    'yellow': { bg: 'bg-yellow-400', text: 'text-gray-900' },
+    'green': { bg: 'bg-green-600', text: 'text-white' },
+    'white': { bg: 'bg-white border border-gray-200', text: 'text-gray-900' },
   };
 
   return (
@@ -109,35 +126,35 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Categories */}
+        {/* Main Categories - 3x3 Grid */}
         <div className="px-4 mb-6">
           {categoriesLoading ? (
-            <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
-              {[1, 2, 3].map((i) => (
+            <div className="grid grid-cols-3 gap-3">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
                 <Card key={i} className="border-0 shadow-sm">
                   <CardContent className="p-4 text-center">
-                    <Skeleton className="w-12 h-12 rounded-xl mx-auto mb-2" />
-                    <Skeleton className="h-4 w-16 mx-auto" />
+                    <Skeleton className="w-full h-20 rounded-lg mb-2" />
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
-              {categories.map((category) => {
-                const IconComponent = iconMap[category.icon] || Home;
-                const colors = colorMap[category.color] || colorMap['#10b981'];
+            <div className="grid grid-cols-3 gap-3">
+              {mainCategories.map((category) => {
+                const IconComponent = iconMap[category.icon] || ShoppingBag;
+                const colors = colorMap[category.color] || colorMap['cyan'];
                 return (
                   <Card
                     key={category.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
+                    className={`cursor-pointer hover:shadow-lg transition-all border-0 overflow-hidden ${colors.bg}`}
+                    onClick={() => navigate(`/category/${category.id}`)}
                     data-testid={`card-category-${category.id}`}
                   >
                     <CardContent className="p-4 text-center">
-                      <div className={`w-12 h-12 ${colors.bg} rounded-xl flex items-center justify-center mx-auto mb-2`}>
-                        <IconComponent className={`w-6 h-6 ${colors.icon}`} />
-                      </div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{category.name}</p>
+                      <IconComponent className={`w-8 h-8 mx-auto mb-2 ${colors.text}`} />
+                      <p className={`text-xs font-semibold ${colors.text} leading-tight`}>
+                        {category.name}
+                      </p>
                     </CardContent>
                   </Card>
                 );

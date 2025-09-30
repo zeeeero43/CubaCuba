@@ -30,7 +30,9 @@ export interface IStorage {
   
   // Categories
   getCategories(): Promise<Category[]>;
+  getCategoriesTree(): Promise<{ mainCategories: Category[]; subcategories: Record<string, Category[]> }>;
   getCategory(id: string): Promise<Category | undefined>;
+  getSubcategories(parentId: string): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
   
   // Products
@@ -173,9 +175,32 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(categories).orderBy(categories.order, categories.name);
   }
 
+  async getCategoriesTree(): Promise<{ mainCategories: Category[]; subcategories: Record<string, Category[]> }> {
+    const allCategories = await db.select().from(categories).orderBy(categories.order, categories.name);
+    
+    const mainCategories = allCategories.filter(cat => !cat.parentId);
+    const subcategories: Record<string, Category[]> = {};
+    
+    // Group subcategories by parent
+    for (const cat of allCategories) {
+      if (cat.parentId) {
+        if (!subcategories[cat.parentId]) {
+          subcategories[cat.parentId] = [];
+        }
+        subcategories[cat.parentId].push(cat);
+      }
+    }
+    
+    return { mainCategories, subcategories };
+  }
+
   async getCategory(id: string): Promise<Category | undefined> {
     const [category] = await db.select().from(categories).where(eq(categories.id, id));
     return category || undefined;
+  }
+
+  async getSubcategories(parentId: string): Promise<Category[]> {
+    return await db.select().from(categories).where(eq(categories.parentId, parentId)).orderBy(categories.order, categories.name);
   }
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
