@@ -42,20 +42,34 @@ export default function EditListingPage() {
   const [images, setImages] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [listingId, setListingId] = useState<string>("");
+  const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
 
   // Extract listing ID from URL
   const urlParts = window.location.pathname.split('/');
   const id = urlParts[urlParts.length - 1];
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
+  // Fetch hierarchical categories
+  const { data: categoriesTree } = useQuery<{
+    mainCategories: Category[];
+    subcategories: Record<string, Category[]>;
+  }>({
+    queryKey: ['/api/categories/tree'],
   });
+
+  const mainCategories = categoriesTree?.mainCategories || [];
+  const subcategories = categoriesTree?.subcategories || {};
+  const availableSubcategories = selectedMainCategory ? (subcategories[selectedMainCategory] || []) : [];
 
   // Fetch existing listing data
   const { data: existingListing, isLoading: listingLoading } = useQuery<Listing>({
     queryKey: ['/api/listings', id],
     enabled: !!id,
+  });
+
+  // Fetch the category of the existing listing to determine main category
+  const { data: existingCategory } = useQuery<Category>({
+    queryKey: ['/api/categories', existingListing?.categoryId],
+    enabled: !!existingListing?.categoryId,
   });
 
   const form = useForm<InsertListing>({
@@ -268,6 +282,13 @@ export default function EditListingPage() {
     }
   }, [existingListing]);
 
+  // Set main category when existing category is loaded
+  useEffect(() => {
+    if (existingCategory && existingCategory.parentId) {
+      setSelectedMainCategory(existingCategory.parentId);
+    }
+  }, [existingCategory]);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       {/* Header */}
@@ -373,18 +394,41 @@ export default function EditListingPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="categoryId">Categoría *</Label>
+                <Label htmlFor="mainCategory">Categoría Principal *</Label>
+                <Select 
+                  onValueChange={(value) => {
+                    setSelectedMainCategory(value);
+                    form.setValue("categoryId", ""); // Reset subcategory when main category changes
+                  }}
+                  value={selectedMainCategory}
+                >
+                  <SelectTrigger data-testid="select-main-category">
+                    <SelectValue placeholder="Selecciona categoría principal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mainCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="categoryId">Subcategoría *</Label>
                 <Select 
                   onValueChange={(value) => form.setValue("categoryId", value)}
                   value={form.watch("categoryId") || ""}
+                  disabled={!selectedMainCategory}
                 >
-                  <SelectTrigger data-testid="select-category">
-                    <SelectValue placeholder="Selecciona una categoría" />
+                  <SelectTrigger data-testid="select-subcategory">
+                    <SelectValue placeholder={selectedMainCategory ? "Selecciona subcategoría" : "Primero selecciona una categoría principal"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
+                    {availableSubcategories.map((subcategory) => (
+                      <SelectItem key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

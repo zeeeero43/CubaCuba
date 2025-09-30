@@ -244,6 +244,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Received request body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertListingSchema.parse(req.body);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
+      
+      // Validate that categoryId refers to a subcategory (not a main category)
+      if (validatedData.categoryId) {
+        const category = await storage.getCategory(validatedData.categoryId);
+        if (!category) {
+          return res.status(400).json({ message: "La categoría seleccionada no existe" });
+        }
+        if (!category.parentId) {
+          return res.status(400).json({ message: "Debes seleccionar una subcategoría, no una categoría principal" });
+        }
+      }
+      
       const listingData = {
         ...validatedData,
         sellerId: req.user!.id
@@ -270,6 +282,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const validatedData = insertListingSchema.partial().parse(req.body);
+      
+      // Validate that categoryId refers to a subcategory (not a main category)
+      if (validatedData.categoryId) {
+        const category = await storage.getCategory(validatedData.categoryId);
+        if (!category) {
+          return res.status(400).json({ message: "La categoría seleccionada no existe" });
+        }
+        if (!category.parentId) {
+          return res.status(400).json({ message: "Debes seleccionar una subcategoría, no una categoría principal" });
+        }
+      }
+      
       const listing = await storage.updateListing(req.params.id, req.user!.id, validatedData);
       
       if (!listing) {

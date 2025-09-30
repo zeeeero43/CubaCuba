@@ -29,6 +29,7 @@ export default function BottomNavigation() {
             variant="ghost" 
             size="icon" 
             className="flex flex-col items-center py-2" 
+            onClick={() => navigate('/categories')}
             data-testid="nav-categories"
           >
             <div className="w-5 h-5 border border-gray-600 dark:border-gray-300 rounded grid grid-cols-2 gap-px">

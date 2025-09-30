@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Listing } from "@shared/schema";
 import { 
@@ -126,40 +127,51 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Main Categories - 3x3 Grid */}
+        {/* Main Categories - Carousel */}
         <div className="px-4 mb-6">
           {categoriesLoading ? (
             <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+              {[1, 2, 3].map((i) => (
                 <Card key={i} className="border-0 shadow-sm">
                   <CardContent className="p-4 text-center">
-                    <Skeleton className="w-full h-20 rounded-lg mb-2" />
+                    <Skeleton className="w-full h-24 rounded-lg" />
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
-              {mainCategories.map((category) => {
-                const IconComponent = iconMap[category.icon] || ShoppingBag;
-                const colors = colorMap[category.color] || colorMap['cyan'];
-                return (
-                  <Card
-                    key={category.id}
-                    className={`cursor-pointer hover:shadow-lg transition-all border-0 overflow-hidden ${colors.bg}`}
-                    onClick={() => navigate(`/category/${category.id}`)}
-                    data-testid={`card-category-${category.id}`}
-                  >
-                    <CardContent className="p-4 text-center">
-                      <IconComponent className={`w-8 h-8 mx-auto mb-2 ${colors.text}`} />
-                      <p className={`text-xs font-semibold ${colors.text} leading-tight`}>
-                        {category.name}
-                      </p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            <Carousel
+              opts={{
+                loop: true,
+                align: "start",
+              }}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {mainCategories.map((category) => {
+                  const IconComponent = iconMap[category.icon] || ShoppingBag;
+                  const colors = colorMap[category.color] || colorMap['cyan'];
+                  return (
+                    <CarouselItem key={category.id} className="pl-2 md:pl-4 basis-1/3">
+                      <Card
+                        className={`cursor-pointer hover:shadow-lg transition-all border-0 overflow-hidden ${colors.bg}`}
+                        onClick={() => navigate(`/category/${category.id}`)}
+                        data-testid={`card-category-${category.id}`}
+                      >
+                        <CardContent className="p-4 text-center">
+                          <IconComponent className={`w-8 h-8 mx-auto mb-2 ${colors.text}`} />
+                          <p className={`text-xs font-semibold ${colors.text} leading-tight`}>
+                            {category.name}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+                  );
+                })}
+              </CarouselContent>
+              <CarouselPrevious className="left-0" />
+              <CarouselNext className="right-0" />
+            </Carousel>
           )}
         </div>
 

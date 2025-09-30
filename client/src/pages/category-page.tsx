@@ -24,8 +24,11 @@ export default function CategoryPage() {
     enabled: !!categoryId,
   });
 
-  // Fetch listings in this category or subcategory
-  const activeCategory = selectedSubcategory || categoryId;
+  // Check if this is a main category (has subcategories and no parentId)
+  const isMainCategory = mainCategory?.parentId === null && subcategories.length > 0;
+
+  // Fetch listings only if it's a subcategory OR if a subcategory is selected
+  const activeCategory = selectedSubcategory || (!isMainCategory ? categoryId : null);
   const { data: listingsData, isLoading: listingsLoading } = useQuery<{ listings: Listing[]; total: number }>({
     queryKey: ['/api/listings', { categoryId: activeCategory, page: 1, pageSize: 20 }],
     enabled: !!activeCategory,
@@ -85,18 +88,40 @@ export default function CategoryPage() {
             </Button>
             <div>
               <h1 className="text-xl font-bold">{mainCategory.name}</h1>
-              <p className="text-sm opacity-90">{mainCategory.nameEn}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-md lg:max-w-6xl mx-auto px-4 py-6">
-        {/* Subcategories Filter */}
-        {subcategories.length > 0 && (
+        {/* Subcategories - Show as list for main categories */}
+        {isMainCategory && !selectedSubcategory ? (
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
+              Selecciona una subcategoría
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {subcategories.map((subcat) => (
+                <Card
+                  key={subcat.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => setSelectedSubcategory(subcat.id)}
+                  data-testid={`card-subcategory-${subcat.id}`}
+                >
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {subcat.name}
+                    </span>
+                    <Badge className={colors.badge}>Ver</Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : subcategories.length > 0 ? (
           <div className="mb-6">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              Filtrar por subcategoría
+              Subcategorías
             </h2>
             <div className="flex gap-2 overflow-x-auto pb-2">
               <Badge
@@ -126,7 +151,7 @@ export default function CategoryPage() {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Listings Grid */}
         {listingsLoading ? (
