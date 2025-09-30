@@ -38,8 +38,11 @@ export const categories = pgTable("categories", {
   icon: text("icon").notNull(),
   color: text("color").notNull().default("#10b981"),
   order: integer("order").notNull().default(0),
+  parentId: varchar("parent_id").references((): any => categories.id),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
-});
+}, (table) => ({
+  parentIdx: index("parent_idx").on(table.parentId),
+}));
 
 // Products table
 export const products = pgTable("products", {
