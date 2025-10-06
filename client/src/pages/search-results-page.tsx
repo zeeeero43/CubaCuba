@@ -32,6 +32,9 @@ export default function SearchResultsPage() {
     priceMax: searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined,
     condition: searchParams.get("condition") || undefined,
     priceType: searchParams.get("priceType") || undefined,
+    dateFilter: searchParams.get("dateFilter") || undefined,
+    hasImages: searchParams.get("hasImages") === "true" ? true : searchParams.get("hasImages") === "false" ? false : undefined,
+    excludeTerms: searchParams.get("excludeTerms") || undefined,
     sortBy: searchParams.get("sortBy") || "recent",
   });
 
@@ -49,6 +52,9 @@ export default function SearchResultsPage() {
     if (f.priceMax !== undefined) params.set("priceMax", f.priceMax.toString());
     if (f.condition) params.set("condition", f.condition);
     if (f.priceType) params.set("priceType", f.priceType);
+    if (f.dateFilter) params.set("dateFilter", f.dateFilter);
+    if (f.hasImages !== undefined) params.set("hasImages", f.hasImages.toString());
+    if (f.excludeTerms) params.set("excludeTerms", f.excludeTerms);
     if (f.sortBy && f.sortBy !== "recent") params.set("sortBy", f.sortBy);
     if (p > 1) params.set("page", p.toString());
 
@@ -76,6 +82,9 @@ export default function SearchResultsPage() {
       if (filters.priceMax !== undefined) params.set("priceMax", filters.priceMax.toString());
       if (filters.condition) params.set("condition", filters.condition);
       if (filters.priceType) params.set("priceType", filters.priceType);
+      if (filters.dateFilter) params.set("dateFilter", filters.dateFilter);
+      if (filters.hasImages !== undefined) params.set("hasImages", filters.hasImages.toString());
+      if (filters.excludeTerms) params.set("excludeTerms", filters.excludeTerms);
       if (filters.sortBy) params.set("sortBy", filters.sortBy);
       if (page > 1) params.set("page", page.toString());
       

@@ -116,6 +116,9 @@ export interface IStorage {
     priceMax?: number;
     condition?: string;
     priceType?: string;
+    dateFilter?: string;
+    hasImages?: boolean;
+    excludeTerms?: string;
     page?: number;
     pageSize?: number;
     sortBy?: string;
@@ -756,6 +759,9 @@ export class DatabaseStorage implements IStorage {
     priceMax?: number;
     condition?: string;
     priceType?: string;
+    dateFilter?: string;
+    hasImages?: boolean;
+    excludeTerms?: string;
     page?: number;
     pageSize?: number;
     sortBy?: string;
@@ -769,6 +775,9 @@ export class DatabaseStorage implements IStorage {
       priceMax,
       condition,
       priceType,
+      dateFilter,
+      hasImages,
+      excludeTerms,
       page = 1,
       pageSize = 20,
       sortBy = 'recent'
@@ -826,6 +835,51 @@ export class DatabaseStorage implements IStorage {
     // Price type filter
     if (priceType) {
       conditions.push(eq(listings.priceType, priceType));
+    }
+
+    // Date filter
+    if (dateFilter) {
+      const now = new Date();
+      let dateCondition;
+      
+      switch (dateFilter) {
+        case 'today':
+          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          dateCondition = sql`${listings.createdAt} >= ${startOfDay}`;
+          break;
+        case 'week':
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          dateCondition = sql`${listings.createdAt} >= ${weekAgo}`;
+          break;
+        case 'month':
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          dateCondition = sql`${listings.createdAt} >= ${monthAgo}`;
+          break;
+      }
+      
+      if (dateCondition) {
+        conditions.push(dateCondition);
+      }
+    }
+
+    // Has images filter
+    if (hasImages !== undefined) {
+      if (hasImages) {
+        conditions.push(sql`array_length(${listings.images}, 1) > 0`);
+      } else {
+        conditions.push(sql`(${listings.images} IS NULL OR array_length(${listings.images}, 1) IS NULL OR array_length(${listings.images}, 1) = 0)`);
+      }
+    }
+
+    // Exclude terms filter
+    if (excludeTerms && excludeTerms.trim()) {
+      const terms = excludeTerms.split(',').map(t => t.trim()).filter(t => t.length > 0);
+      if (terms.length > 0) {
+        const excludeConditions = terms.map(term => 
+          sql`NOT (${listings.title} ILIKE ${'%' + term + '%'} OR ${listings.description} ILIKE ${'%' + term + '%'})`
+        );
+        conditions.push(and(...excludeConditions)!);
+      }
     }
 
     // Get total count

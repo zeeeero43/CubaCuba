@@ -24,6 +24,9 @@ export interface SearchFilters {
   priceMax?: number;
   condition?: string;
   priceType?: string;
+  dateFilter?: string; // "today", "week", "month", "all"
+  hasImages?: boolean;
+  excludeTerms?: string;
   sortBy?: string;
 }
 
@@ -57,7 +60,14 @@ export function FilterPanel({
   }, [filters.priceMin, filters.priceMax]);
 
   const handleFilterChange = (key: keyof SearchFilters, value: string | undefined) => {
-    const newFilters = { ...filters, [key]: value || undefined };
+    const newFilters = { ...filters };
+    
+    // Special handling for boolean fields
+    if (key === "hasImages") {
+      newFilters.hasImages = value === "true" ? true : value === "false" ? false : undefined;
+    } else {
+      (newFilters as any)[key] = value || undefined;
+    }
     
     // If category changes, clear subcategory
     if (key === "categoryId") {
@@ -255,6 +265,59 @@ export function FilterPanel({
                   <SelectItem value="negotiable">Negociable</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Date Filter */}
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="dateFilter">Fecha de Publicación</Label>
+              <Select
+                value={filters.dateFilter || "all"}
+                onValueChange={(value) => handleFilterChange("dateFilter", value === "all" ? undefined : value)}
+              >
+                <SelectTrigger id="dateFilter" data-testid="select-date-filter">
+                  <SelectValue placeholder="Cualquier fecha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Cualquier fecha</SelectItem>
+                  <SelectItem value="today">Hoy</SelectItem>
+                  <SelectItem value="week">Esta Semana</SelectItem>
+                  <SelectItem value="month">Último Mes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Has Images Filter */}
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="hasImages">Imágenes</Label>
+              <Select
+                value={filters.hasImages === true ? "yes" : filters.hasImages === false ? "no" : "all"}
+                onValueChange={(value) => handleFilterChange("hasImages", value === "all" ? undefined : value === "yes" ? "true" : "false")}
+              >
+                <SelectTrigger id="hasImages" data-testid="select-has-images">
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="yes">Solo con Imágenes</SelectItem>
+                  <SelectItem value="no">Sin Imágenes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Exclude Terms */}
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="excludeTerms">Excluir Palabras</Label>
+              <Input
+                id="excludeTerms"
+                type="text"
+                placeholder="ej: roto, defectuoso"
+                value={filters.excludeTerms || ""}
+                onChange={(e) => handleFilterChange("excludeTerms", e.target.value || undefined)}
+                data-testid="input-exclude-terms"
+              />
+              <p className="text-xs text-muted-foreground">
+                Separa múltiples palabras con comas
+              </p>
             </div>
 
             <Separator className="mb-4" />
