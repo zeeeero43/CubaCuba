@@ -35,6 +35,9 @@ export default function SearchResultsPage() {
     dateFilter: searchParams.get("dateFilter") || undefined,
     hasImages: searchParams.get("hasImages") === "true" ? true : searchParams.get("hasImages") === "false" ? false : undefined,
     excludeTerms: searchParams.get("excludeTerms") || undefined,
+    latitude: searchParams.get("latitude") ? Number(searchParams.get("latitude")) : undefined,
+    longitude: searchParams.get("longitude") ? Number(searchParams.get("longitude")) : undefined,
+    radiusKm: searchParams.get("radiusKm") ? Number(searchParams.get("radiusKm")) : undefined,
     sortBy: searchParams.get("sortBy") || "recent",
   });
 
@@ -55,6 +58,9 @@ export default function SearchResultsPage() {
     if (f.dateFilter) params.set("dateFilter", f.dateFilter);
     if (f.hasImages !== undefined) params.set("hasImages", f.hasImages.toString());
     if (f.excludeTerms) params.set("excludeTerms", f.excludeTerms);
+    if (f.latitude !== undefined) params.set("latitude", f.latitude.toString());
+    if (f.longitude !== undefined) params.set("longitude", f.longitude.toString());
+    if (f.radiusKm !== undefined) params.set("radiusKm", f.radiusKm.toString());
     if (f.sortBy && f.sortBy !== "recent") params.set("sortBy", f.sortBy);
     if (p > 1) params.set("page", p.toString());
 
@@ -85,6 +91,9 @@ export default function SearchResultsPage() {
       if (filters.dateFilter) params.set("dateFilter", filters.dateFilter);
       if (filters.hasImages !== undefined) params.set("hasImages", filters.hasImages.toString());
       if (filters.excludeTerms) params.set("excludeTerms", filters.excludeTerms);
+      if (filters.latitude !== undefined) params.set("latitude", filters.latitude.toString());
+      if (filters.longitude !== undefined) params.set("longitude", filters.longitude.toString());
+      if (filters.radiusKm !== undefined) params.set("radiusKm", filters.radiusKm.toString());
       if (filters.sortBy) params.set("sortBy", filters.sortBy);
       if (page > 1) params.set("page", page.toString());
       
