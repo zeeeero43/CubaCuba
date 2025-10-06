@@ -1129,6 +1129,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get upload URL for message attachment
+  app.get("/api/messages/upload-url", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para subir archivos" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const { uploadURL, objectId } = await objectStorageService.getObjectEntityUploadURL();
+      
+      res.json({ 
+        uploadURL,
+        objectId,
+        userId: req.user!.id
+      });
+    } catch (error) {
+      console.error("Error getting upload URL for message attachment:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
+  // Finalize message attachment upload
+  app.post("/api/messages/finalize-upload", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para gestionar archivos" });
+    }
+
+    const { objectId, fileName, fileType, fileSize } = req.body;
+    
+    if (!objectId || !fileName || !fileType || !fileSize) {
+      return res.status(400).json({ error: "objectId, fileName, fileType, and fileSize are required" });
+    }
+
+    // Validate file size (max 10MB)
+    if (fileSize > 10 * 1024 * 1024) {
+      return res.status(400).json({ error: "El archivo no puede exceder 10MB" });
+    }
+
+    // Validate file types
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(fileType)) {
+      return res.status(400).json({ error: "Tipo de archivo no permitido. Solo se permiten imágenes, PDFs y documentos de Word" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      
+      // Use private directory for temp upload
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const tempObjectPath = `${privateDir}/uploads/${objectId}`;
+      
+      const { bucketName, objectName } = parseObjectPath(tempObjectPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const tempFile = bucket.file(objectName);
+      
+      const [exists] = await tempFile.exists();
+      if (!exists) {
+        return res.status(404).json({ error: "Archivo subido no encontrado" });
+      }
+      
+      // Store in public directory so attachments can be displayed
+      const userId = req.user!.id;
+      const publicSearchPaths = objectStorageService.getPublicObjectSearchPaths();
+      const publicDir = publicSearchPaths[0]; // Use first public path
+      const finalObjectPath = `${publicDir}/users/${userId}/messages/attachments/${objectId}`;
+      const { bucketName: finalBucketName, objectName: finalObjectName } = parseObjectPath(finalObjectPath);
+      
+      // Use correct bucket for final destination
+      const finalBucket = objectStorageClient.bucket(finalBucketName);
+      const finalFile = finalBucket.file(finalObjectName);
+      
+      await tempFile.copy(finalFile);
+      await tempFile.delete();
+      
+      // Set public ACL so attachments can be viewed
+      await setObjectAclPolicy(finalFile, {
+        owner: userId,
+        visibility: "public",
+      });
+      
+      // Return path that matches public object location
+      const normalizedPath = `/objects/users/${userId}/messages/attachments/${objectId}`;
+      
+      res.json({ 
+        objectPath: normalizedPath,
+        fileName,
+        fileType,
+        fileSize
+      });
+    } catch (error) {
+      console.error("Error finalizing message attachment upload:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
+  // Add attachment to message
+  app.post("/api/messages/:id/attachments", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { id: messageId } = req.params;
+      const validatedData = insertMessageAttachmentSchema.parse({
+        ...req.body,
+        messageId
+      });
+
+      const attachment = await storage.addMessageAttachment(validatedData);
+      res.status(201).json(attachment);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error adding message attachment:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get attachments for a message
+  app.get("/api/messages/:id/attachments", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { id } = req.params;
+      const attachments = await storage.getMessageAttachments(id);
+      res.json(attachments);
+    } catch (error) {
+      console.error("Error getting message attachments:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
