@@ -762,6 +762,9 @@ export class DatabaseStorage implements IStorage {
     dateFilter?: string;
     hasImages?: boolean;
     excludeTerms?: string;
+    latitude?: number;
+    longitude?: number;
+    radiusKm?: number;
     page?: number;
     pageSize?: number;
     sortBy?: string;
@@ -778,6 +781,9 @@ export class DatabaseStorage implements IStorage {
       dateFilter,
       hasImages,
       excludeTerms,
+      latitude,
+      longitude,
+      radiusKm,
       page = 1,
       pageSize = 20,
       sortBy = 'recent'
@@ -885,6 +891,28 @@ export class DatabaseStorage implements IStorage {
         );
         conditions.push(and(...excludeConditions)!);
       }
+    }
+
+    // Radius-based location search using Haversine formula
+    // Only apply if all required parameters are provided
+    if (latitude !== undefined && longitude !== undefined && radiusKm !== undefined) {
+      // Filter listings that have coordinates set
+      conditions.push(sql`${listings.latitude} IS NOT NULL AND ${listings.longitude} IS NOT NULL`);
+      
+      // Haversine formula: calculates distance between two points on Earth
+      // distance = 2 * R * asin(sqrt(sin²((lat2-lat1)/2) + cos(lat1) * cos(lat2) * sin²((lon2-lon1)/2)))
+      // R = 6371 km (Earth's radius)
+      const haversineDistance = sql`
+        (6371 * acos(
+          cos(radians(${latitude})) 
+          * cos(radians(CAST(${listings.latitude} AS NUMERIC))) 
+          * cos(radians(CAST(${listings.longitude} AS NUMERIC)) - radians(${longitude})) 
+          + sin(radians(${latitude})) 
+          * sin(radians(CAST(${listings.latitude} AS NUMERIC)))
+        ))
+      `;
+      
+      conditions.push(sql`${haversineDistance} <= ${radiusKm}`);
     }
 
     // Get total count

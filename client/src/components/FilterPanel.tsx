@@ -27,6 +27,9 @@ export interface SearchFilters {
   dateFilter?: string; // "today", "week", "month", "all"
   hasImages?: boolean;
   excludeTerms?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
   sortBy?: string;
 }
 
@@ -46,6 +49,9 @@ export function FilterPanel({
   const [isOpen, setIsOpen] = useState(false);
   const [localPriceMin, setLocalPriceMin] = useState(filters.priceMin?.toString() || "");
   const [localPriceMax, setLocalPriceMax] = useState(filters.priceMax?.toString() || "");
+  const [localLatitude, setLocalLatitude] = useState(filters.latitude?.toString() || "");
+  const [localLongitude, setLocalLongitude] = useState(filters.longitude?.toString() || "");
+  const [localRadiusKm, setLocalRadiusKm] = useState(filters.radiusKm?.toString() || "");
 
   const { data: categoriesData } = useQuery<{ mainCategories: Category[]; subcategories: Record<string, Category[]> }>({
     queryKey: ['/api/categories/tree'],
@@ -57,7 +63,10 @@ export function FilterPanel({
   useEffect(() => {
     setLocalPriceMin(filters.priceMin?.toString() || "");
     setLocalPriceMax(filters.priceMax?.toString() || "");
-  }, [filters.priceMin, filters.priceMax]);
+    setLocalLatitude(filters.latitude?.toString() || "");
+    setLocalLongitude(filters.longitude?.toString() || "");
+    setLocalRadiusKm(filters.radiusKm?.toString() || "");
+  }, [filters.priceMin, filters.priceMax, filters.latitude, filters.longitude, filters.radiusKm]);
 
   const handleFilterChange = (key: keyof SearchFilters, value: string | undefined) => {
     const newFilters = { ...filters };
@@ -92,6 +101,33 @@ export function FilterPanel({
       newFilters.priceMax = isNaN(max) ? undefined : max;
     } else {
       newFilters.priceMax = undefined;
+    }
+    
+    onFiltersChange(newFilters);
+  };
+
+  const handleGeoBlur = () => {
+    const newFilters = { ...filters };
+    
+    if (localLatitude) {
+      const lat = parseFloat(localLatitude);
+      newFilters.latitude = isNaN(lat) ? undefined : lat;
+    } else {
+      newFilters.latitude = undefined;
+    }
+    
+    if (localLongitude) {
+      const lng = parseFloat(localLongitude);
+      newFilters.longitude = isNaN(lng) ? undefined : lng;
+    } else {
+      newFilters.longitude = undefined;
+    }
+    
+    if (localRadiusKm) {
+      const radius = parseFloat(localRadiusKm);
+      newFilters.radiusKm = isNaN(radius) ? undefined : radius;
+    } else {
+      newFilters.radiusKm = undefined;
     }
     
     onFiltersChange(newFilters);
@@ -318,6 +354,49 @@ export function FilterPanel({
               <p className="text-xs text-muted-foreground">
                 Separa múltiples palabras con comas
               </p>
+            </div>
+
+            <Separator className="mb-4" />
+
+            {/* Location-based search (Umkreissuche) */}
+            <div className="space-y-2 mb-4">
+              <Label>Búsqueda por Radio</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Busca anuncios cercanos a una ubicación
+              </p>
+              <div className="space-y-2">
+                <Input
+                  id="latitude"
+                  type="number"
+                  placeholder="Latitud (ej: 23.1136)"
+                  value={localLatitude}
+                  onChange={(e) => setLocalLatitude(e.target.value)}
+                  onBlur={handleGeoBlur}
+                  step="any"
+                  data-testid="input-latitude"
+                />
+                <Input
+                  id="longitude"
+                  type="number"
+                  placeholder="Longitud (ej: -82.3666)"
+                  value={localLongitude}
+                  onChange={(e) => setLocalLongitude(e.target.value)}
+                  onBlur={handleGeoBlur}
+                  step="any"
+                  data-testid="input-longitude"
+                />
+                <Input
+                  id="radiusKm"
+                  type="number"
+                  placeholder="Radio en km (ej: 10)"
+                  value={localRadiusKm}
+                  onChange={(e) => setLocalRadiusKm(e.target.value)}
+                  onBlur={handleGeoBlur}
+                  min="0"
+                  step="1"
+                  data-testid="input-radius-km"
+                />
+              </div>
             </div>
 
             <Separator className="mb-4" />
