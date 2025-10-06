@@ -108,6 +108,9 @@ export const listings = pgTable("listings", {
   views: integer("views").notNull().default(0),
   contacts: integer("contacts").notNull().default(0),
   favorites: integer("favorites").notNull().default(0),
+  moderationStatus: text("moderation_status").notNull().default("pending"), // "pending" | "approved" | "rejected" | "appealed"
+  moderationReviewId: varchar("moderation_review_id"),
+  isPublished: text("is_published").notNull().default("false"), // "true" | "false"
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
   updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
 });
@@ -191,6 +194,97 @@ export const savedSearches = pgTable("saved_searches", {
   userIdx: index("saved_searches_user_idx").on(table.userId),
 }));
 
+// Moderation Reviews - AI moderation results
+export const moderationReviews = pgTable("moderation_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  listingId: varchar("listing_id").references(() => listings.id).notNull(),
+  status: text("status").notNull().default("pending"), // "pending" | "approved" | "rejected" | "appealed"
+  aiDecision: text("ai_decision").notNull(), // "approved" | "rejected"
+  aiConfidence: integer("ai_confidence").notNull(), // 0-100
+  aiReasons: text("ai_reasons").array().default(sql`ARRAY[]::text[]`), // reason codes
+  aiAnalysis: text("ai_analysis"), // JSON string with full AI response
+  textScore: integer("text_score"), // 0-100
+  imageScores: text("image_scores").array().default(sql`ARRAY[]::text[]`), // array of scores
+  reviewedBy: varchar("reviewed_by").references(() => users.id), // admin ID if manual review
+  reviewedAt: timestamp("reviewed_at"),
+  appealReason: text("appeal_reason"),
+  appealedAt: timestamp("appealed_at"),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  listingIdx: index("moderation_reviews_listing_idx").on(table.listingId),
+  statusIdx: index("moderation_reviews_status_idx").on(table.status),
+}));
+
+// Moderation Blacklist - Blocked content/users
+export const moderationBlacklist = pgTable("moderation_blacklist", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull(), // "word" | "phone" | "user" | "email"
+  value: text("value").notNull(),
+  reason: text("reason").notNull(),
+  isActive: text("is_active").notNull().default("true"), // "true" | "false"
+  addedBy: varchar("added_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  typeIdx: index("moderation_blacklist_type_idx").on(table.type),
+  valueIdx: index("moderation_blacklist_value_idx").on(table.value),
+}));
+
+// Moderation Reports - User reports
+export const moderationReports = pgTable("moderation_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reporterId: varchar("reporter_id").references(() => users.id).notNull(),
+  listingId: varchar("listing_id").references(() => listings.id),
+  reportedUserId: varchar("reported_user_id").references(() => users.id),
+  reason: text("reason").notNull(), // "spam" | "scam" | "inappropriate" | "duplicate" | "other"
+  description: text("description"),
+  status: text("status").notNull().default("pending"), // "pending" | "resolved" | "dismissed"
+  resolvedBy: varchar("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  resolution: text("resolution"),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  reporterIdx: index("moderation_reports_reporter_idx").on(table.reporterId),
+  listingIdx: index("moderation_reports_listing_idx").on(table.listingId),
+  statusIdx: index("moderation_reports_status_idx").on(table.status),
+}));
+
+// Moderation Settings - AI configuration
+export const moderationSettings = pgTable("moderation_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  type: text("type").notNull().default("string"), // "string" | "number" | "boolean"
+  description: text("description"),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+});
+
+// Admin Users - Admin permissions
+export const adminUsers = pgTable("admin_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull().unique(),
+  role: text("role").notNull().default("moderator"), // "moderator" | "admin" | "super_admin"
+  permissions: text("permissions").array().default(sql`ARRAY[]::text[]`), // array of permission codes
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  userIdx: index("admin_users_user_idx").on(table.userId),
+}));
+
+// Moderation Logs - Audit trail
+export const moderationLogs = pgTable("moderation_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  action: text("action").notNull(), // "approve" | "reject" | "appeal" | "blacklist_add" | "report_create" | etc
+  targetType: text("target_type").notNull(), // "listing" | "user" | "blacklist" | "report"
+  targetId: varchar("target_id").notNull(),
+  performedBy: varchar("performed_by").references(() => users.id).notNull(),
+  details: text("details"), // JSON string with additional details
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  targetIdx: index("moderation_logs_target_idx").on(table.targetType, table.targetId),
+  performerIdx: index("moderation_logs_performer_idx").on(table.performedBy),
+  actionIdx: index("moderation_logs_action_idx").on(table.action),
+}));
+
 // Insert schemas with validation
 export const insertListingSchema = createInsertSchema(listings, {
   title: z.string().min(3, "El título debe tener al menos 3 caracteres").max(100, "El título no puede exceder 100 caracteres"),
@@ -252,6 +346,64 @@ export const insertSavedSearchSchema = createInsertSchema(savedSearches, {
   searchParams: true,
 });
 
+export const insertModerationReviewSchema = createInsertSchema(moderationReviews, {
+  aiConfidence: z.number().int().min(0).max(100),
+  textScore: z.number().int().min(0).max(100).optional(),
+}).pick({
+  listingId: true,
+  aiDecision: true,
+  aiConfidence: true,
+  aiReasons: true,
+  aiAnalysis: true,
+  textScore: true,
+  imageScores: true,
+});
+
+export const insertModerationBlacklistSchema = createInsertSchema(moderationBlacklist, {
+  value: z.string().min(1, "El valor es requerido"),
+  reason: z.string().min(1, "La razón es requerida"),
+}).pick({
+  type: true,
+  value: true,
+  reason: true,
+  addedBy: true,
+});
+
+export const insertModerationReportSchema = createInsertSchema(moderationReports, {
+  reason: z.enum(["spam", "scam", "inappropriate", "duplicate", "other"], { message: "Razón inválida" }),
+  description: z.string().max(500, "La descripción no puede exceder 500 caracteres").optional(),
+}).pick({
+  reporterId: true,
+  listingId: true,
+  reportedUserId: true,
+  reason: true,
+  description: true,
+});
+
+export const insertModerationSettingSchema = createInsertSchema(moderationSettings).pick({
+  key: true,
+  value: true,
+  type: true,
+  description: true,
+});
+
+export const insertAdminUserSchema = createInsertSchema(adminUsers, {
+  role: z.enum(["moderator", "admin", "super_admin"], { message: "Rol inválido" }),
+}).pick({
+  userId: true,
+  role: true,
+  permissions: true,
+  createdBy: true,
+});
+
+export const insertModerationLogSchema = createInsertSchema(moderationLogs).pick({
+  action: true,
+  targetType: true,
+  targetId: true,
+  performedBy: true,
+  details: true,
+});
+
 // Type exports
 export type InsertListing = z.infer<typeof insertListingSchema>;
 export type Listing = typeof listings.$inferSelect;
@@ -266,3 +418,15 @@ export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Rating = typeof ratings.$inferSelect;
 export type InsertSavedSearch = z.infer<typeof insertSavedSearchSchema>;
 export type SavedSearch = typeof savedSearches.$inferSelect;
+export type InsertModerationReview = z.infer<typeof insertModerationReviewSchema>;
+export type ModerationReview = typeof moderationReviews.$inferSelect;
+export type InsertModerationBlacklist = z.infer<typeof insertModerationBlacklistSchema>;
+export type ModerationBlacklist = typeof moderationBlacklist.$inferSelect;
+export type InsertModerationReport = z.infer<typeof insertModerationReportSchema>;
+export type ModerationReport = typeof moderationReports.$inferSelect;
+export type InsertModerationSetting = z.infer<typeof insertModerationSettingSchema>;
+export type ModerationSetting = typeof moderationSettings.$inferSelect;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertModerationLog = z.infer<typeof insertModerationLogSchema>;
+export type ModerationLog = typeof moderationLogs.$inferSelect;
