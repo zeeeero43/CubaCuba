@@ -334,6 +334,7 @@ export function FilterPanel({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="recent">Más Recientes</SelectItem>
+                  <SelectItem value="relevance">Más Relevantes</SelectItem>
                   <SelectItem value="popular">Más Populares</SelectItem>
                   <SelectItem value="price_asc">Precio: Menor a Mayor</SelectItem>
                   <SelectItem value="price_desc">Precio: Mayor a Menor</SelectItem>

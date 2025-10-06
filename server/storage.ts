@@ -785,10 +785,15 @@ export class DatabaseStorage implements IStorage {
 
     const conditions = [eq(listings.status, 'active')];
 
-    // Full-text search
+    // Full-text search with fuzzy matching using pg_trgm
     if (q && q.trim()) {
+      // Use both full-text search AND similarity search for better results
+      // Full-text search for exact matches, similarity for typo tolerance
       conditions.push(
-        sql`to_tsvector('spanish', ${listings.title} || ' ' || ${listings.description}) @@ plainto_tsquery('spanish', ${q})`
+        or(
+          sql`to_tsvector('spanish', ${listings.title} || ' ' || ${listings.description}) @@ plainto_tsquery('spanish', ${q})`,
+          sql`similarity(${listings.title} || ' ' || ${listings.description}, ${q}) > 0.3`
+        )!
       );
     }
 
@@ -898,6 +903,14 @@ export class DatabaseStorage implements IStorage {
         break;
       case 'popular':
         orderClause = desc(listings.views);
+        break;
+      case 'relevance':
+        // Sort by relevance using similarity score (only useful when search query exists)
+        if (q && q.trim()) {
+          orderClause = sql`similarity(${listings.title} || ' ' || ${listings.description}, ${q}) DESC`;
+        } else {
+          orderClause = desc(listings.createdAt);
+        }
         break;
       case 'recent':
       default:
