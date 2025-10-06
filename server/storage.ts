@@ -1,6 +1,5 @@
 import { 
   users, categories, products, listings, premiumOptions, listingPremium, settings, favorites, follows, ratings, savedSearches,
-  conversations, messages, messageAttachments, userBlocks,
   type User, type InsertUser, 
   type Category, type InsertCategory, 
   type Product, type InsertProduct,
@@ -11,11 +10,7 @@ import {
   type Favorite,
   type Follow,
   type Rating, type InsertRating,
-  type SavedSearch, type InsertSavedSearch,
-  type Conversation, type InsertConversation,
-  type Message, type InsertMessage,
-  type MessageAttachment, type InsertMessageAttachment,
-  type UserBlock
+  type SavedSearch, type InsertSavedSearch
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, like, sql, gte, lte, count } from "drizzle-orm";
@@ -134,26 +129,6 @@ export interface IStorage {
   saveSearch(userId: string, search: InsertSavedSearch): Promise<SavedSearch>;
   getSavedSearches(userId: string): Promise<SavedSearch[]>;
   deleteSavedSearch(id: string, userId: string): Promise<boolean>;
-  
-  // Messaging
-  getOrCreateConversation(participant1Id: string, participant2Id: string, listingId?: string): Promise<Conversation>;
-  getConversations(userId: string): Promise<Array<Conversation & { otherUser: Pick<User, 'id' | 'name'>; unreadCount: number; lastMessage?: Message }>>;
-  getConversation(id: string, userId: string): Promise<Conversation | undefined>;
-  getMessages(conversationId: string, userId: string, limit?: number, offset?: number): Promise<Message[]>;
-  sendMessage(message: InsertMessage & { senderId: string }): Promise<Message>;
-  markMessageAsRead(messageId: string, userId: string): Promise<boolean>;
-  markConversationAsRead(conversationId: string, userId: string): Promise<void>;
-  getUnreadCount(userId: string): Promise<number>;
-  
-  // Message Attachments
-  addMessageAttachment(attachment: InsertMessageAttachment): Promise<MessageAttachment>;
-  getMessageAttachments(messageId: string): Promise<MessageAttachment[]>;
-  
-  // User Blocking
-  blockUser(blockerId: string, blockedId: string): Promise<UserBlock>;
-  unblockUser(blockerId: string, blockedId: string): Promise<boolean>;
-  isBlocked(blockerId: string, blockedId: string): Promise<boolean>;
-  getBlockedUsers(userId: string): Promise<UserBlock[]>;
   
   sessionStore: session.Store;
 }
@@ -1032,214 +1007,6 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return result.length > 0;
-  }
-
-  // Messaging implementation
-  async getOrCreateConversation(participant1Id: string, participant2Id: string, listingId?: string): Promise<Conversation> {
-    // Ensure consistent ordering of participants
-    const [p1, p2] = participant1Id < participant2Id 
-      ? [participant1Id, participant2Id] 
-      : [participant2Id, participant1Id];
-
-    // Try to find existing conversation
-    const [existing] = await db.select()
-      .from(conversations)
-      .where(and(
-        eq(conversations.participant1Id, p1),
-        eq(conversations.participant2Id, p2)
-      ));
-
-    if (existing) {
-      return existing;
-    }
-
-    // Create new conversation
-    const [conversation] = await db.insert(conversations)
-      .values({
-        participant1Id: p1,
-        participant2Id: p2,
-        listingId: listingId || null
-      })
-      .returning();
-
-    return conversation;
-  }
-
-  async getConversations(userId: string): Promise<Array<Conversation & { otherUser: Pick<User, 'id' | 'name'>; unreadCount: number; lastMessage?: Message }>> {
-    const convos = await db.select()
-      .from(conversations)
-      .where(or(
-        eq(conversations.participant1Id, userId),
-        eq(conversations.participant2Id, userId)
-      ))
-      .orderBy(desc(conversations.lastMessageAt));
-
-    const results = await Promise.all(convos.map(async (convo) => {
-      const otherUserId = convo.participant1Id === userId ? convo.participant2Id : convo.participant1Id;
-      const [otherUser] = await db.select({
-        id: users.id,
-        name: users.name
-      }).from(users).where(eq(users.id, otherUserId));
-
-      // Get last message
-      const [lastMessage] = await db.select()
-        .from(messages)
-        .where(eq(messages.conversationId, convo.id))
-        .orderBy(desc(messages.createdAt))
-        .limit(1);
-
-      // Count unread messages
-      const [unreadResult] = await db.select({ count: count() })
-        .from(messages)
-        .where(and(
-          eq(messages.conversationId, convo.id),
-          eq(messages.read, 'false'),
-          sql`${messages.senderId} != ${userId}`
-        ));
-
-      return {
-        ...convo,
-        otherUser,
-        unreadCount: unreadResult.count,
-        lastMessage
-      };
-    }));
-
-    return results;
-  }
-
-  async getConversation(id: string, userId: string): Promise<Conversation | undefined> {
-    const [conversation] = await db.select()
-      .from(conversations)
-      .where(and(
-        eq(conversations.id, id),
-        or(
-          eq(conversations.participant1Id, userId),
-          eq(conversations.participant2Id, userId)
-        )
-      ));
-
-    return conversation || undefined;
-  }
-
-  async getMessages(conversationId: string, userId: string, limit: number = 50, offset: number = 0): Promise<Message[]> {
-    // Verify user is part of conversation
-    const conversation = await this.getConversation(conversationId, userId);
-    if (!conversation) {
-      return [];
-    }
-
-    return await db.select()
-      .from(messages)
-      .where(eq(messages.conversationId, conversationId))
-      .orderBy(desc(messages.createdAt))
-      .limit(limit)
-      .offset(offset);
-  }
-
-  async sendMessage(message: InsertMessage & { senderId: string }): Promise<Message> {
-    const [newMessage] = await db.insert(messages)
-      .values(message)
-      .returning();
-
-    // Update conversation last_message_at
-    await db.update(conversations)
-      .set({ lastMessageAt: new Date() })
-      .where(eq(conversations.id, message.conversationId));
-
-    return newMessage;
-  }
-
-  async markMessageAsRead(messageId: string, userId: string): Promise<boolean> {
-    const result = await db.update(messages)
-      .set({ read: 'true' })
-      .where(and(
-        eq(messages.id, messageId),
-        sql`${messages.senderId} != ${userId}` // Can't mark own messages as read
-      ))
-      .returning();
-
-    return result.length > 0;
-  }
-
-  async markConversationAsRead(conversationId: string, userId: string): Promise<void> {
-    await db.update(messages)
-      .set({ read: 'true' })
-      .where(and(
-        eq(messages.conversationId, conversationId),
-        sql`${messages.senderId} != ${userId}`
-      ));
-  }
-
-  async getUnreadCount(userId: string): Promise<number> {
-    // Get all user's conversations
-    const convos = await db.select({ id: conversations.id })
-      .from(conversations)
-      .where(or(
-        eq(conversations.participant1Id, userId),
-        eq(conversations.participant2Id, userId)
-      ));
-
-    const convoIds = convos.map(c => c.id);
-    if (convoIds.length === 0) return 0;
-
-    const [result] = await db.select({ count: count() })
-      .from(messages)
-      .where(and(
-        sql`${messages.conversationId} = ANY(${convoIds})`,
-        eq(messages.read, 'false'),
-        sql`${messages.senderId} != ${userId}`
-      ));
-
-    return result.count;
-  }
-
-  // Message Attachments
-  async addMessageAttachment(attachment: InsertMessageAttachment): Promise<MessageAttachment> {
-    const [att] = await db.insert(messageAttachments)
-      .values(attachment)
-      .returning();
-    return att;
-  }
-
-  async getMessageAttachments(messageId: string): Promise<MessageAttachment[]> {
-    return await db.select()
-      .from(messageAttachments)
-      .where(eq(messageAttachments.messageId, messageId));
-  }
-
-  // User Blocking
-  async blockUser(blockerId: string, blockedId: string): Promise<UserBlock> {
-    const [block] = await db.insert(userBlocks)
-      .values({ blockerId, blockedId })
-      .returning();
-    return block;
-  }
-
-  async unblockUser(blockerId: string, blockedId: string): Promise<boolean> {
-    const result = await db.delete(userBlocks)
-      .where(and(
-        eq(userBlocks.blockerId, blockerId),
-        eq(userBlocks.blockedId, blockedId)
-      ))
-      .returning();
-    return result.length > 0;
-  }
-
-  async isBlocked(blockerId: string, blockedId: string): Promise<boolean> {
-    const [block] = await db.select()
-      .from(userBlocks)
-      .where(and(
-        eq(userBlocks.blockerId, blockerId),
-        eq(userBlocks.blockedId, blockedId)
-      ));
-    return !!block;
-  }
-
-  async getBlockedUsers(userId: string): Promise<UserBlock[]> {
-    return await db.select()
-      .from(userBlocks)
-      .where(eq(userBlocks.blockerId, userId));
   }
 }
 

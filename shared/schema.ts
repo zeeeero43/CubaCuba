@@ -191,59 +191,6 @@ export const savedSearches = pgTable("saved_searches", {
   userIdx: index("saved_searches_user_idx").on(table.userId),
 }));
 
-// Messaging System - Conversations
-export const conversations = pgTable("conversations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  participant1Id: varchar("participant1_id").references(() => users.id).notNull(),
-  participant2Id: varchar("participant2_id").references(() => users.id).notNull(),
-  listingId: varchar("listing_id").references(() => listings.id), // Optional: if conversation started from a listing
-  lastMessageAt: timestamp("last_message_at").default(sql`now()`).notNull(),
-  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
-}, (table) => ({
-  participant1Idx: index("conversations_participant1_idx").on(table.participant1Id),
-  participant2Idx: index("conversations_participant2_idx").on(table.participant2Id),
-  uniqueConversation: uniqueIndex("unique_conversation").on(table.participant1Id, table.participant2Id),
-}));
-
-// Messaging System - Messages
-export const messages = pgTable("messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  conversationId: varchar("conversation_id").references(() => conversations.id).notNull(),
-  senderId: varchar("sender_id").references(() => users.id).notNull(),
-  content: text("content").notNull(),
-  read: text("read").notNull().default("false"), // "true" | "false"
-  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
-}, (table) => ({
-  conversationIdx: index("messages_conversation_idx").on(table.conversationId),
-  senderIdx: index("messages_sender_idx").on(table.senderId),
-  createdAtIdx: index("messages_created_at_idx").on(table.createdAt),
-}));
-
-// Messaging System - Message Attachments
-export const messageAttachments = pgTable("message_attachments", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  messageId: varchar("message_id").references(() => messages.id).notNull(),
-  fileUrl: text("file_url").notNull(),
-  fileType: text("file_type").notNull(), // "image" | "pdf" | "document"
-  fileName: text("file_name").notNull(),
-  fileSize: integer("file_size").notNull(), // in bytes
-  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
-}, (table) => ({
-  messageIdx: index("attachments_message_idx").on(table.messageId),
-}));
-
-// User blocks (for spam protection)
-export const userBlocks = pgTable("user_blocks", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  blockerId: varchar("blocker_id").references(() => users.id).notNull(),
-  blockedId: varchar("blocked_id").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
-}, (table) => ({
-  blockerIdx: index("blocks_blocker_idx").on(table.blockerId),
-  blockedIdx: index("blocks_blocked_idx").on(table.blockedId),
-  uniqueBlock: uniqueIndex("unique_block").on(table.blockerId, table.blockedId),
-}));
-
 // Insert schemas with validation
 export const insertListingSchema = createInsertSchema(listings, {
   title: z.string().min(3, "El título debe tener al menos 3 caracteres").max(100, "El título no puede exceder 100 caracteres"),
@@ -305,30 +252,6 @@ export const insertSavedSearchSchema = createInsertSchema(savedSearches, {
   searchParams: true,
 });
 
-// Messaging insert schemas
-export const insertMessageSchema = createInsertSchema(messages, {
-  content: z.string().min(1, "El mensaje no puede estar vacío").max(5000, "El mensaje es demasiado largo"),
-}).pick({
-  conversationId: true,
-  content: true,
-});
-
-export const insertConversationSchema = createInsertSchema(conversations).pick({
-  participant2Id: true,
-  listingId: true,
-});
-
-export const insertMessageAttachmentSchema = createInsertSchema(messageAttachments, {
-  fileName: z.string().min(1, "El nombre del archivo es requerido"),
-  fileSize: z.number().max(10 * 1024 * 1024, "El archivo no puede exceder 10MB"),
-}).pick({
-  messageId: true,
-  fileUrl: true,
-  fileType: true,
-  fileName: true,
-  fileSize: true,
-});
-
 // Type exports
 export type InsertListing = z.infer<typeof insertListingSchema>;
 export type Listing = typeof listings.$inferSelect;
@@ -343,10 +266,3 @@ export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Rating = typeof ratings.$inferSelect;
 export type InsertSavedSearch = z.infer<typeof insertSavedSearchSchema>;
 export type SavedSearch = typeof savedSearches.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Message = typeof messages.$inferSelect;
-export type InsertConversation = z.infer<typeof insertConversationSchema>;
-export type Conversation = typeof conversations.$inferSelect;
-export type InsertMessageAttachment = z.infer<typeof insertMessageAttachmentSchema>;
-export type MessageAttachment = typeof messageAttachments.$inferSelect;
-export type UserBlock = typeof userBlocks.$inferSelect;
