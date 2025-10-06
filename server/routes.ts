@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertCategorySchema, insertProductSchema, insertListingSchema, insertRatingSchema } from "@shared/schema";
+import { insertCategorySchema, insertProductSchema, insertListingSchema, insertRatingSchema, insertMessageSchema, insertConversationSchema, insertMessageAttachmentSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient } from "./objectStorage";
 import { setObjectAclPolicy } from "./objectAcl";
@@ -887,6 +887,245 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error finalizing upload:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ========== MESSAGING ENDPOINTS ==========
+  
+  // Get or create conversation
+  app.post("/api/conversations", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para enviar mensajes" });
+    }
+
+    try {
+      // Validate input with schema
+      const validatedData = insertConversationSchema.parse(req.body);
+      const { participant2Id, listingId } = validatedData;
+
+      // participant2Id is the other user (logged-in user is always participant1)
+      const otherUserId = participant2Id;
+      
+      // Check if trying to message yourself
+      if (otherUserId === req.user!.id) {
+        return res.status(400).json({ message: "No puedes enviarte mensajes a ti mismo" });
+      }
+
+      // Check if either user has blocked the other
+      const blocked = await storage.isBlocked(req.user!.id, otherUserId);
+      const blockedBy = await storage.isBlocked(otherUserId, req.user!.id);
+      
+      if (blocked || blockedBy) {
+        return res.status(403).json({ message: "No puedes contactar a este usuario" });
+      }
+
+      const conversation = await storage.getOrCreateConversation(
+        req.user!.id,
+        otherUserId,
+        listingId || undefined
+      );
+
+      res.json(conversation);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error creating conversation:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get all conversations for user
+  app.get("/api/conversations", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para ver tus conversaciones" });
+    }
+
+    try {
+      const conversations = await storage.getConversations(req.user!.id);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get messages for a conversation
+  app.get("/api/conversations/:id/messages", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para ver mensajes" });
+    }
+
+    try {
+      const { id } = req.params;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+
+      const messages = await storage.getMessages(id, req.user!.id, limit, offset);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Send a message
+  app.post("/api/conversations/:id/messages", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para enviar mensajes" });
+    }
+
+    try {
+      const { id: conversationId } = req.params;
+      
+      // Verify user is part of conversation
+      const conversation = await storage.getConversation(conversationId, req.user!.id);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversación no encontrada" });
+      }
+
+      // Determine other user
+      const otherUserId = conversation.participant1Id === req.user!.id 
+        ? conversation.participant2Id 
+        : conversation.participant1Id;
+      
+      // Check if EITHER user has blocked the other (bidirectional check)
+      const userBlockedOther = await storage.isBlocked(req.user!.id, otherUserId);
+      const otherBlockedUser = await storage.isBlocked(otherUserId, req.user!.id);
+      
+      if (userBlockedOther || otherBlockedUser) {
+        return res.status(403).json({ message: "No puedes enviar mensajes a este usuario" });
+      }
+
+      // Validate message data with schema
+      const validatedData = insertMessageSchema.parse({
+        ...req.body,
+        conversationId
+      });
+
+      const message = await storage.sendMessage({
+        ...validatedData,
+        senderId: req.user!.id
+      });
+
+      res.status(201).json(message);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Mark message as read
+  app.patch("/api/messages/:id/read", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { id } = req.params;
+      const success = await storage.markMessageAsRead(id, req.user!.id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Mensaje no encontrado" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Mark all messages in conversation as read
+  app.patch("/api/conversations/:id/read", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { id } = req.params;
+      await storage.markConversationAsRead(id, req.user!.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking conversation as read:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get unread count
+  app.get("/api/messages/unread-count", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const count = await storage.getUnreadCount(req.user!.id);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error getting unread count:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Block user
+  app.post("/api/users/:id/block", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { id: blockedId } = req.params;
+      
+      if (blockedId === req.user!.id) {
+        return res.status(400).json({ message: "No puedes bloquearte a ti mismo" });
+      }
+
+      const block = await storage.blockUser(req.user!.id, blockedId);
+      res.status(201).json(block);
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Unblock user
+  app.delete("/api/users/:id/block", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { id: blockedId } = req.params;
+      const success = await storage.unblockUser(req.user!.id, blockedId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Usuario no bloqueado" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error unblocking user:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get blocked users
+  app.get("/api/users/blocked", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const blocked = await storage.getBlockedUsers(req.user!.id);
+      res.json(blocked);
+    } catch (error) {
+      console.error("Error getting blocked users:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
