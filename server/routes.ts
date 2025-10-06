@@ -7,6 +7,7 @@ import { fromZodError } from "zod-validation-error";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient } from "./objectStorage";
 import { setObjectAclPolicy } from "./objectAcl";
 import { randomUUID } from "crypto";
+import { moderateContent, type ModerationResult } from "./moderation";
 
 // Helper function to parse object path
 function parseObjectPath(fullPath: string): { bucketName: string; objectName: string } {
@@ -260,8 +261,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...validatedData,
         sellerId: req.user!.id
       };
+      
       const listing = await storage.createListing(listingData);
-      res.status(201).json(listing);
+      
+      const moderationResult: ModerationResult = await moderateContent({
+        title: listing.title,
+        description: listing.description,
+        images: listing.images || [],
+        contactPhone: listing.contactPhone,
+        userId: listing.sellerId,
+        listingId: listing.id
+      });
+
+      const review = await storage.createModerationReview({
+        listingId: listing.id,
+        aiDecision: moderationResult.decision,
+        aiConfidence: moderationResult.confidence,
+        aiReasons: moderationResult.reasons,
+        aiAnalysis: JSON.stringify(moderationResult.details),
+        textScore: moderationResult.textScore,
+        imageScores: moderationResult.imageScores ? moderationResult.imageScores.map((s: number) => s.toString()) : []
+      });
+
+      await storage.updateModerationReview(review.id, {
+        status: moderationResult.decision === "approved" ? "approved" : "rejected"
+      });
+
+      await storage.updateListingModeration(listing.id, moderationResult.decision, review.id);
+
+      if (moderationResult.decision === "approved") {
+        await storage.publishListing(listing.id);
+        await storage.createModerationLog({
+          action: "auto_approved",
+          targetType: "listing",
+          targetId: listing.id,
+          performedBy: "system",
+          details: JSON.stringify({ confidence: moderationResult.confidence, reasons: moderationResult.reasons })
+        });
+      } else {
+        await storage.createModerationLog({
+          action: "auto_rejected",
+          targetType: "listing",
+          targetId: listing.id,
+          performedBy: "system",
+          details: JSON.stringify({ confidence: moderationResult.confidence, reasons: moderationResult.reasons })
+        });
+      }
+
+      res.status(201).json({ 
+        listing, 
+        moderationReview: review,
+        moderationStatus: moderationResult.decision
+      });
     } catch (error: any) {
       if (error.name === "ZodError") {
         console.error('Zod validation error:', error.errors);

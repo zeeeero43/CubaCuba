@@ -31,11 +31,11 @@ const cubaContentRules: CubaContentRules = {
   ]
 };
 
-interface ModerationResult {
+export interface ModerationResult {
   decision: "approved" | "rejected";
   confidence: number;
   reasons: string[];
-  analysis: {
+  details: {
     textAnalysis: {
       score: number;
       issues: string[];
@@ -54,6 +54,8 @@ interface ModerationResult {
       indicators: string[];
     };
   };
+  textScore?: number;
+  imageScores?: number[];
   requiresManualReview: boolean;
 }
 
@@ -66,6 +68,36 @@ export class ModerationService {
     if (!this.apiKey) {
       console.warn("DEEPSEEK_API_KEY not set. AI moderation will be disabled.");
     }
+  }
+
+  async moderate(content: {
+    title: string;
+    description: string;
+    images: string[];
+    contactPhone: string;
+    userId: string;
+    listingId: string;
+  }): Promise<ModerationResult> {
+    if (!this.apiKey) {
+      return this.getFallbackResult();
+    }
+    
+    const listing = {
+      title: content.title,
+      description: content.description,
+      images: content.images,
+      contactPhone: content.contactPhone,
+      sellerId: content.userId,
+      price: "0",
+      priceType: "fixed" as const,
+      categoryId: null,
+      locationCity: "",
+      locationRegion: "",
+      condition: "used" as const,
+      contactWhatsApp: "false" as const
+    };
+    
+    return this.moderateListing(listing);
   }
 
   async moderateListing(listing: InsertListing & { sellerId: string }): Promise<ModerationResult> {
@@ -100,7 +132,9 @@ export class ModerationService {
         decision,
         confidence,
         reasons: reasons.length > 0 ? reasons : ["approved"],
-        analysis: {
+        textScore: textAnalysis.score,
+        imageScores: imageAnalysis.scores,
+        details: {
           textAnalysis: {
             score: textAnalysis.score,
             issues: textAnalysis.issues,
@@ -355,7 +389,9 @@ Responde SOLO con un JSON:
       decision: "approved",
       confidence: 50,
       reasons: ["ai_unavailable"],
-      analysis: {
+      textScore: 50,
+      imageScores: [],
+      details: {
         textAnalysis: {
           score: 50,
           issues: ["ai_unavailable"],
@@ -380,3 +416,14 @@ Responde SOLO con un JSON:
 }
 
 export const moderationService = new ModerationService();
+
+export async function moderateContent(content: {
+  title: string;
+  description: string;
+  images: string[];
+  contactPhone: string;
+  userId: string;
+  listingId: string;
+}): Promise<ModerationResult> {
+  return moderationService.moderate(content);
+}
