@@ -21,6 +21,7 @@ import EditListingPage from "@/pages/edit-listing-page";
 import FavoritesPage from "@/pages/favorites-page";
 import SearchResultsPage from "@/pages/search-results-page";
 import AdminDashboardPage from "@/pages/admin-dashboard-page";
+import AdminQueuePage from "@/pages/admin-queue-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -54,6 +55,7 @@ function Router() {
         <ProtectedRoute path="/edit-listing/:id" component={EditListingPage} />
         <ProtectedRoute path="/favorites" component={FavoritesPage} />
         <ProtectedRoute path="/admin" component={AdminDashboardPage} />
+        <ProtectedRoute path="/admin/queue" component={AdminQueuePage} />
         <Route component={NotFound} />
       </Switch>
     </>
