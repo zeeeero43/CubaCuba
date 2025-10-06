@@ -2,207 +2,233 @@ import { db } from "./db";
 import { categories } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
-// Category structure for Rico-Cuba - Spanish only
+// Category structure for Rico-Cuba - Complete Spanish version with 12 main categories
 const categoryData = [
-  // 1. Vender & Comprar
+  // 1. Vehículos & Transporte
   {
-    name: "Vender & Comprar",
-    icon: "ShoppingBag",
+    name: "Vehículos & Transporte",
+    icon: "Car",
     order: 1,
     subcategories: [
-      { name: "Sistemas Solares y Accesorios", icon: "Sun" },
-      { name: "Generadores y Accesorios", icon: "Zap" },
-      { name: "Aires Acondicionados y Accesorios", icon: "Wind" },
-      { name: "Electrónica y Accesorios", icon: "Smartphone" },
-      { name: "Belleza y Salud", icon: "Heart" },
-      { name: "Moda Mujer", icon: "User" },
-      { name: "Moda Hombre", icon: "UserSquare" },
-      { name: "Joyería y Relojes", icon: "Watch" },
-      { name: "Zapatos y Accesorios", icon: "Footprints" },
-      { name: "Moda y Belleza Mujer", icon: "ShoppingBag" },
-      { name: "Moda y Belleza Hombre", icon: "Shirt" },
-      { name: "Equipamiento Deportivo", icon: "Dumbbell" },
-      { name: "Medicamentos", icon: "Pill" },
+      { name: "Autos", icon: "Car" },
+      { name: "Motocicletas", icon: "Bike" },
+      { name: "Bicicletas", icon: "Bike" },
+      { name: "Camiones y Vehículos Comerciales", icon: "Truck" },
+      { name: "Piezas y Repuestos", icon: "Cog" },
+      { name: "Neumáticos y Llantas", icon: "CircleDot" },
+      { name: "Accesorios para Vehículos", icon: "Wrench" },
     ]
   },
-  // 2. Servicios
+  // 2. Inmuebles & Vivienda
+  {
+    name: "Inmuebles & Vivienda",
+    icon: "Building",
+    order: 2,
+    subcategories: [
+      { name: "Casas en Venta", icon: "Home" },
+      { name: "Apartamentos en Venta", icon: "Building2" },
+      { name: "Casas en Alquiler", icon: "Key" },
+      { name: "Apartamentos en Alquiler", icon: "DoorOpen" },
+      { name: "Terrenos y Solares", icon: "MapPin" },
+      { name: "Habitaciones", icon: "BedDouble" },
+      { name: "Locales Comerciales", icon: "Store" },
+      { name: "Alquileres Vacacionales", icon: "Palmtree" },
+    ]
+  },
+  // 3. Electrónica & Tecnología
+  {
+    name: "Electrónica & Tecnología",
+    icon: "Smartphone",
+    order: 3,
+    subcategories: [
+      { name: "Teléfonos Móviles", icon: "Smartphone" },
+      { name: "Computadoras y Laptops", icon: "Laptop" },
+      { name: "Tabletas", icon: "Tablet" },
+      { name: "Televisores", icon: "Tv" },
+      { name: "Audio y Sonido", icon: "Headphones" },
+      { name: "Cámaras y Fotografía", icon: "Camera" },
+      { name: "Electrodomésticos", icon: "Microwave" },
+      { name: "Consolas y Videojuegos", icon: "Gamepad2" },
+      { name: "Accesorios Electrónicos", icon: "Usb" },
+    ]
+  },
+  // 4. Moda & Ropa
+  {
+    name: "Moda & Ropa",
+    icon: "ShoppingBag",
+    order: 4,
+    subcategories: [
+      { name: "Ropa de Hombre", icon: "UserSquare" },
+      { name: "Ropa de Mujer", icon: "User" },
+      { name: "Ropa de Niños", icon: "Baby" },
+      { name: "Zapatos Hombre", icon: "Footprints" },
+      { name: "Zapatos Mujer", icon: "Footprints" },
+      { name: "Zapatos Niños", icon: "Footprints" },
+      { name: "Accesorios y Complementos", icon: "Watch" },
+      { name: "Joyería y Relojes", icon: "Gem" },
+      { name: "Bolsos y Carteras", icon: "Briefcase" },
+    ]
+  },
+  // 5. Hogar & Jardín
+  {
+    name: "Hogar & Jardín",
+    icon: "Home",
+    order: 5,
+    subcategories: [
+      { name: "Muebles", icon: "Sofa" },
+      { name: "Decoración", icon: "Palette" },
+      { name: "Cocina y Comedor", icon: "ChefHat" },
+      { name: "Baño", icon: "Bath" },
+      { name: "Iluminación", icon: "Lightbulb" },
+      { name: "Jardín y Exterior", icon: "Trees" },
+      { name: "Herramientas", icon: "Hammer" },
+      { name: "Materiales de Construcción", icon: "HardHat" },
+    ]
+  },
+  // 6. Deportes & Ocio
+  {
+    name: "Deportes & Ocio",
+    icon: "Dumbbell",
+    order: 6,
+    subcategories: [
+      { name: "Equipos Deportivos", icon: "Activity" },
+      { name: "Bicicletas y Patinetas", icon: "Bike" },
+      { name: "Fitness y Gimnasio", icon: "Dumbbell" },
+      { name: "Camping y Outdoor", icon: "Tent" },
+      { name: "Pesca y Caza", icon: "Fish" },
+      { name: "Juegos y Hobbies", icon: "Gamepad" },
+      { name: "Instrumentos Musicales", icon: "Music" },
+      { name: "Coleccionables", icon: "Stamp" },
+    ]
+  },
+  // 7. Servicios
   {
     name: "Servicios",
     icon: "Wrench",
-    order: 2,
+    order: 7,
     subcategories: [
-      { name: "Servicios de Seguridad", icon: "Shield" },
-      { name: "Servicios de Artesanos de A-Z", icon: "Hammer" },
-      { name: "Servicios IT y Electrónica", icon: "Laptop" },
-      { name: "Transporte y Mensajería", icon: "Truck" },
-      { name: "Peluquería, Barbería, Manicura y Belleza", icon: "Scissors" },
-      { name: "Fitness y Masajes", icon: "Activity" },
-      { name: "Niñera", icon: "Baby" },
-      { name: "Servicios de Casa y Jardín", icon: "Home" },
-      { name: "$$$ Servicios Legales y Notariales $$$", icon: "Scale" },
-      { name: "Servicio de Boletos de Avión", icon: "Plane" },
-      { name: "Taxis y Viajes en Bus", icon: "Bus" },
+      { name: "Reparaciones", icon: "Wrench" },
+      { name: "Clases y Cursos", icon: "GraduationCap" },
+      { name: "Transporte y Mudanzas", icon: "Truck" },
+      { name: "Limpieza", icon: "Sparkles" },
+      { name: "Belleza y Estética", icon: "Scissors" },
+      { name: "Salud y Bienestar", icon: "Heart" },
+      { name: "Eventos y Celebraciones", icon: "PartyPopper" },
+      { name: "Servicios Profesionales", icon: "Briefcase" },
       { name: "Otros Servicios", icon: "MoreHorizontal" },
     ]
   },
-  // 3. Vehículos
+  // 8. Animales & Accesorios
   {
-    name: "Vehículos",
-    icon: "Car",
-    order: 3,
+    name: "Animales & Accesorios",
+    icon: "Dog",
+    order: 8,
     subcategories: [
-      { name: "Autos", icon: "Car" },
-      { name: "Camiones y Vehículos Comerciales", icon: "Truck" },
-      { name: "Remolques", icon: "Plug" },
-      { name: "Piezas de Auto, Neumáticos y Accesorios", icon: "Cog" },
-      { name: "Reparaciones de Autos de A-Z", icon: "Wrench" },
-      { name: "Bicicletas y Accesorios", icon: "Bike" },
-      { name: "Triciclos, Motocicletas y Scooters", icon: "Bike" },
-      { name: "Piezas y Accesorios de Motos", icon: "Wrench" },
-      { name: "Equipos de Montaje de Neumáticos", icon: "CircleDot" },
-      { name: "Servicio de Reparación de Dos y Tres Ruedas", icon: "Wrench" },
-      { name: "Alquiler de Autos Privados", icon: "Key" },
+      { name: "Perros", icon: "Dog" },
+      { name: "Gatos", icon: "Cat" },
+      { name: "Aves", icon: "Bird" },
+      { name: "Peces y Acuarios", icon: "Fish" },
+      { name: "Otros Animales", icon: "Rabbit" },
+      { name: "Alimentos para Mascotas", icon: "Bone" },
+      { name: "Accesorios para Mascotas", icon: "PawPrint" },
+      { name: "Cuidado y Veterinaria", icon: "Stethoscope" },
     ]
   },
-  // 4. Materiales de Construcción
+  // 9. Libros & Medios
   {
-    name: "Materiales de Construcción",
-    icon: "Building2",
-    order: 4,
+    name: "Libros & Medios",
+    icon: "Book",
+    order: 9,
     subcategories: [
-      { name: "Materiales de Construcción de A-Z", icon: "Package" },
-      { name: "Maquinaria de Construcción", icon: "Construction" },
-      { name: "Equipos y Herramientas", icon: "Wrench" },
-      { name: "Servicio de Ingeniería de Construcción", icon: "HardHat" },
+      { name: "Libros", icon: "BookOpen" },
+      { name: "Revistas y Periódicos", icon: "Newspaper" },
+      { name: "Música CDs y Vinilos", icon: "Disc" },
+      { name: "Películas y Series", icon: "Film" },
+      { name: "Libros Digitales", icon: "FileText" },
+      { name: "Cómics y Manga", icon: "BookMarked" },
     ]
   },
-  // 5. Clases y Cursos
+  // 10. Bebé & Familia
   {
-    name: "Clases y Cursos",
-    icon: "GraduationCap",
-    order: 5,
+    name: "Bebé & Familia",
+    icon: "Baby",
+    order: 10,
     subcategories: [
-      { name: "Cursos de Idiomas", icon: "Languages" },
-      { name: "Cursos de Computación", icon: "Monitor" },
-      { name: "Cocina y Repostería", icon: "ChefHat" },
-      { name: "Música y Canto", icon: "Music" },
-      { name: "Tutorías", icon: "BookOpen" },
-      { name: "Cursos Deportivos", icon: "Activity" },
-      { name: "Cursos de Baile, Entretenimiento y Animación", icon: "Music2" },
-      { name: "Más Clases y Cursos", icon: "MoreHorizontal" },
+      { name: "Ropa de Bebé", icon: "Shirt" },
+      { name: "Carriolas y Coches", icon: "Baby" },
+      { name: "Cunas y Muebles", icon: "BedDouble" },
+      { name: "Juguetes", icon: "Blocks" },
+      { name: "Alimentación de Bebé", icon: "Milk" },
+      { name: "Seguridad Infantil", icon: "Shield" },
+      { name: "Artículos de Maternidad", icon: "Heart" },
     ]
   },
-  // 6. Empleos
+  // 11. Alimentos & Bebidas
   {
-    name: "Empleos",
-    icon: "Briefcase",
-    order: 6,
+    name: "Alimentos & Bebidas",
+    icon: "Apple",
+    order: 11,
     subcategories: [
-      { name: "Busco Empleo", icon: "Search" },
-      { name: "Ofertas de Empleo", icon: "FileText" },
+      { name: "Productos Locales", icon: "Store" },
+      { name: "Frutas y Verduras", icon: "Apple" },
+      { name: "Carnes y Pescados", icon: "Fish" },
+      { name: "Bebidas", icon: "Coffee" },
+      { name: "Repostería y Dulces", icon: "Cake" },
+      { name: "Productos Orgánicos", icon: "Leaf" },
+      { name: "Especias y Condimentos", icon: "Pepper" },
     ]
   },
-  // 7. Ofertas de Inmuebles
-  {
-    name: "Ofertas de Inmuebles",
-    icon: "Building",
-    order: 7,
-    subcategories: [
-      { name: "Casas y Apartamentos en Venta", icon: "Home" },
-      { name: "Casas y Apartamentos en Alquiler", icon: "Key" },
-      { name: "Alquileres Vacacionales para Cubanos", icon: "Palmtree" },
-      { name: "Alquileres Vacacionales para Extranjeros", icon: "Globe" },
-      { name: "Terrenos", icon: "MapPin" },
-      { name: "Otros Inmuebles", icon: "MoreHorizontal" },
-    ]
-  },
-  // 8. Varios
+  // 12. Varios
   {
     name: "Varios",
     icon: "Package2",
-    order: 8,
+    order: 12,
     subcategories: [
-      { name: "Satélite", icon: "Satellite" },
-      { name: "Divisas", icon: "DollarSign" },
-      { name: "Libros y Revistas", icon: "Book" },
-      { name: "Antigüedades y Colección", icon: "Stamp" },
-      { name: "Arte", icon: "Palette" },
+      { name: "Artículos de Oficina", icon: "Briefcase" },
+      { name: "Arte y Artesanía", icon: "Palette" },
+      { name: "Antigüedades", icon: "Stamp" },
+      { name: "Salud y Belleza", icon: "Heart" },
+      { name: "Divisas y Monedas", icon: "DollarSign" },
+      { name: "Otros Artículos", icon: "MoreHorizontal" },
     ]
   },
 ];
 
 export async function seedCategories() {
-  console.log("Starting category seed...");
+  console.log("Starting category seed - deleting all existing categories...");
   
   try {
+    // Delete all existing categories
+    await db.delete(categories);
+    console.log("All existing categories deleted.");
+    
     for (const mainCat of categoryData) {
-      // Insert or update main category
-      const existingMain = await db.select()
-        .from(categories)
-        .where(eq(categories.name, mainCat.name))
-        .limit(1);
+      // Insert main category
+      const inserted = await db.insert(categories)
+        .values({
+          name: mainCat.name,
+          icon: mainCat.icon,
+          color: "#10b981",
+          order: mainCat.order,
+          parentId: null,
+        })
+        .returning();
+      const mainCategoryId = inserted[0].id;
+      console.log(`Created main category: ${mainCat.name}`);
       
-      let mainCategoryId: string;
-      
-      if (existingMain.length > 0) {
-        // Update existing
-        await db.update(categories)
-          .set({
-            icon: mainCat.icon,
-            color: "#10b981",
-            order: mainCat.order,
-            parentId: null,
-          })
-          .where(eq(categories.id, existingMain[0].id));
-        mainCategoryId = existingMain[0].id;
-        console.log(`Updated main category: ${mainCat.name}`);
-      } else {
-        // Insert new
-        const inserted = await db.insert(categories)
-          .values({
-            name: mainCat.name,
-            icon: mainCat.icon,
-            color: "#10b981",
-            order: mainCat.order,
-            parentId: null,
-          })
-          .returning();
-        mainCategoryId = inserted[0].id;
-        console.log(`Created main category: ${mainCat.name}`);
-      }
-      
-      // Insert or update subcategories
+      // Insert subcategories
       for (let i = 0; i < mainCat.subcategories.length; i++) {
         const subCat = mainCat.subcategories[i];
         
-        const existingSub = await db.select()
-          .from(categories)
-          .where(eq(categories.name, subCat.name))
-          .limit(1);
-        
-        if (existingSub.length > 0) {
-          // Update existing
-          await db.update(categories)
-            .set({
-              icon: subCat.icon,
-              color: "#10b981",
-              order: i + 1,
-              parentId: mainCategoryId,
-            })
-            .where(eq(categories.id, existingSub[0].id));
-          console.log(`  Updated subcategory: ${subCat.name}`);
-        } else {
-          // Insert new
-          await db.insert(categories)
-            .values({
-              name: subCat.name,
-              icon: subCat.icon,
-              color: "#10b981",
-              order: i + 1,
-              parentId: mainCategoryId,
-            });
-          console.log(`  Created subcategory: ${subCat.name}`);
-        }
+        await db.insert(categories)
+          .values({
+            name: subCat.name,
+            icon: subCat.icon,
+            color: "#10b981",
+            order: i + 1,
+            parentId: mainCategoryId,
+          });
+        console.log(`  Created subcategory: ${subCat.name}`);
       }
     }
     
