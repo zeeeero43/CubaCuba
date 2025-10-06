@@ -226,7 +226,7 @@ export default function SearchResultsPage() {
                         <Card 
                           key={listing.id} 
                           className="hover:shadow-lg transition-shadow cursor-pointer"
-                          onClick={() => navigate(`/listings/${listing.id}`)}
+                          onClick={() => navigate(`/listing/${listing.id}`)}
                           data-testid={`card-listing-${listing.id}`}
                         >
                           <CardContent className="p-0">
