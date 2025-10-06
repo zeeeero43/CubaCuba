@@ -442,6 +442,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search endpoints
+  // GET /api/search - Advanced search with filters
+  app.get("/api/search", async (req, res) => {
+    try {
+      const params = {
+        q: req.query.q as string,
+        categoryId: req.query.categoryId as string,
+        subcategoryId: req.query.subcategoryId as string,
+        region: req.query.region as string,
+        priceMin: req.query.priceMin ? Number(req.query.priceMin) : undefined,
+        priceMax: req.query.priceMax ? Number(req.query.priceMax) : undefined,
+        condition: req.query.condition as string,
+        priceType: req.query.priceType as string,
+        page: req.query.page ? Number(req.query.page) : 1,
+        pageSize: req.query.pageSize ? Number(req.query.pageSize) : 20,
+        sortBy: req.query.sortBy as string || 'recent',
+      };
+
+      const result = await storage.searchListings(params);
+
+      const response = {
+        listings: result.listings,
+        totalCount: result.total,
+        currentPage: params.page,
+        totalPages: Math.ceil(result.total / params.pageSize),
+        appliedFilters: params
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Error searching listings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/search/suggestions - Autocomplete suggestions
+  app.get("/api/search/suggestions", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.trim().length < 2) {
+        return res.json([]);
+      }
+
+      const suggestions = await storage.getSearchSuggestions(query);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error getting search suggestions:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/search/saved - Get user's saved searches (requires auth)
+  app.get("/api/search/saved", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const savedSearches = await storage.getSavedSearches(req.user!.id);
+      res.json(savedSearches);
+    } catch (error) {
+      console.error("Error fetching saved searches:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // POST /api/search/saved - Save a search (requires auth)
+  app.post("/api/search/saved", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { name, searchParams } = req.body;
+      if (!name || searchParams === undefined) {
+        return res.status(400).json({ message: "Nombre y parámetros de búsqueda son requeridos" });
+      }
+
+      // Ensure searchParams is stored as a string (it should already be a query string)
+      const paramsString = typeof searchParams === 'string' 
+        ? searchParams 
+        : String(searchParams);
+
+      const savedSearch = await storage.saveSearch(req.user!.id, {
+        name,
+        searchParams: paramsString
+      });
+
+      res.status(201).json(savedSearch);
+    } catch (error) {
+      console.error("Error saving search:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // DELETE /api/search/saved/:id - Delete a saved search (requires auth)
+  app.delete("/api/search/saved/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const success = await storage.deleteSavedSearch(req.params.id, req.user!.id);
+      if (!success) {
+        return res.status(404).json({ message: "Búsqueda guardada no encontrada" });
+      }
+
+      res.json({ message: "Búsqueda eliminada" });
+    } catch (error) {
+      console.error("Error deleting saved search:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Favorites endpoints
   // POST /api/favorites/:listingId - Add listing to favorites (requires auth)
   app.post("/api/favorites/:listingId", async (req, res) => {

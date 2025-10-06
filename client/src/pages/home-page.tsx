@@ -3,13 +3,12 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { SearchBar } from "@/components/SearchBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Listing } from "@shared/schema";
 import { 
-  Search, 
   Bell, 
   MapPin, 
   Settings,
@@ -104,27 +103,10 @@ export default function HomePage() {
       <div className="max-w-md lg:max-w-6xl mx-auto">
         {/* Search Bar */}
         <div className="px-4 py-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Buscar"
-              className="pl-10 pr-12 rounded-xl border-gray-200 dark:border-gray-700"
-              data-testid="input-search"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 transform -translate-y-1/2"
-              data-testid="button-search-filter"
-            >
-              <div className="w-5 h-5 border border-gray-400 rounded grid grid-cols-2 gap-px">
-                <div className="bg-gray-400 rounded-tl"></div>
-                <div className="bg-gray-400 rounded-tr"></div>
-                <div className="bg-gray-400 rounded-bl"></div>
-                <div className="bg-gray-400 rounded-br"></div>
-              </div>
-            </Button>
-          </div>
+          <SearchBar 
+            placeholder="Buscar productos, servicios..."
+            className="w-full"
+          />
         </div>
 
         {/* Main Categories - Carousel */}

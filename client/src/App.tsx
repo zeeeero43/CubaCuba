@@ -19,6 +19,7 @@ import ManageListingsPage from "@/pages/manage-listings-page";
 import MyListingsPage from "@/pages/my-listings-page";
 import EditListingPage from "@/pages/edit-listing-page";
 import FavoritesPage from "@/pages/favorites-page";
+import SearchResultsPage from "@/pages/search-results-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -39,6 +40,7 @@ function Router() {
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/search" component={SearchResultsPage} />
         <Route path="/categories" component={CategoriesPage} />
         <Route path="/category/:categoryId" component={CategoryPage} />
         <Route path="/profile/:userId" component={UserProfilePage} />

@@ -178,6 +178,17 @@ export const ratings = pgTable("ratings", {
   rateeIdx: index("ratee_idx").on(table.rateeId),
 }));
 
+// Saved searches
+export const savedSearches = pgTable("saved_searches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  searchParams: text("search_params").notNull(), // JSON string
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  userIdx: index("saved_searches_user_idx").on(table.userId),
+}));
+
 // Insert schemas with validation
 export const insertListingSchema = createInsertSchema(listings, {
   title: z.string().min(3, "El título debe tener al menos 3 caracteres").max(100, "El título no puede exceder 100 caracteres"),
@@ -231,6 +242,14 @@ export const insertRatingSchema = createInsertSchema(ratings, {
   comment: true,
 });
 
+export const insertSavedSearchSchema = createInsertSchema(savedSearches, {
+  name: z.string().min(1, "El nombre es requerido").max(100, "El nombre no puede exceder 100 caracteres"),
+  searchParams: z.string().min(1, "Los parámetros de búsqueda son requeridos"),
+}).pick({
+  name: true,
+  searchParams: true,
+});
+
 // Type exports
 export type InsertListing = z.infer<typeof insertListingSchema>;
 export type Listing = typeof listings.$inferSelect;
@@ -243,3 +262,5 @@ export type Favorite = typeof favorites.$inferSelect;
 export type Follow = typeof follows.$inferSelect;
 export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Rating = typeof ratings.$inferSelect;
+export type InsertSavedSearch = z.infer<typeof insertSavedSearchSchema>;
+export type SavedSearch = typeof savedSearches.$inferSelect;

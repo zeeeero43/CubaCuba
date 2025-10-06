@@ -1,5 +1,5 @@
 import { 
-  users, categories, products, listings, premiumOptions, listingPremium, settings, favorites, follows, ratings,
+  users, categories, products, listings, premiumOptions, listingPremium, settings, favorites, follows, ratings, savedSearches,
   type User, type InsertUser, 
   type Category, type InsertCategory, 
   type Product, type InsertProduct,
@@ -9,7 +9,8 @@ import {
   type Setting, type InsertSetting,
   type Favorite,
   type Follow,
-  type Rating, type InsertRating
+  type Rating, type InsertRating,
+  type SavedSearch, type InsertSavedSearch
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, like, sql, gte, lte, count } from "drizzle-orm";
@@ -104,6 +105,27 @@ export interface IStorage {
   createRating(rating: InsertRating & { raterId: string }): Promise<Rating>;
   getUserRatings(rateeId: string, options?: { limit?: number; offset?: number }): Promise<{ items: Rating[]; total: number; avg: number; }>;
   getUserRatingSummary(rateeId: string): Promise<{ avg: number; count: number; }>
+  
+  // Search
+  searchListings(params: {
+    q?: string;
+    categoryId?: string;
+    subcategoryId?: string;
+    region?: string;
+    priceMin?: number;
+    priceMax?: number;
+    condition?: string;
+    priceType?: string;
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+  }): Promise<{ listings: Listing[]; total: number; }>;
+  getSearchSuggestions(query: string, limit?: number): Promise<string[]>;
+  
+  // Saved Searches
+  saveSearch(userId: string, search: InsertSavedSearch): Promise<SavedSearch>;
+  getSavedSearches(userId: string): Promise<SavedSearch[]>;
+  deleteSavedSearch(id: string, userId: string): Promise<boolean>;
   
   sessionStore: session.Store;
 }
@@ -722,6 +744,174 @@ export class DatabaseStorage implements IStorage {
       avg: Number(result.avg) || 0,
       count: result.count
     };
+  }
+
+  // Search implementation
+  async searchListings(params: {
+    q?: string;
+    categoryId?: string;
+    subcategoryId?: string;
+    region?: string;
+    priceMin?: number;
+    priceMax?: number;
+    condition?: string;
+    priceType?: string;
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+  }): Promise<{ listings: Listing[]; total: number; }> {
+    const {
+      q,
+      categoryId,
+      subcategoryId,
+      region,
+      priceMin,
+      priceMax,
+      condition,
+      priceType,
+      page = 1,
+      pageSize = 20,
+      sortBy = 'recent'
+    } = params;
+
+    const conditions = [eq(listings.status, 'active')];
+
+    // Full-text search
+    if (q && q.trim()) {
+      conditions.push(
+        sql`to_tsvector('spanish', ${listings.title} || ' ' || ${listings.description}) @@ plainto_tsquery('spanish', ${q})`
+      );
+    }
+
+    // Category filter - handle both main categories and subcategories
+    if (subcategoryId) {
+      conditions.push(eq(listings.categoryId, subcategoryId));
+    } else if (categoryId) {
+      // Get all subcategories for this main category
+      const subcats = await db.select({ id: categories.id })
+        .from(categories)
+        .where(eq(categories.parentId, categoryId));
+      
+      if (subcats.length > 0) {
+        const subcatIds = subcats.map(s => s.id);
+        conditions.push(
+          or(
+            eq(listings.categoryId, categoryId),
+            sql`${listings.categoryId} = ANY(${subcatIds})`
+          )!
+        );
+      } else {
+        conditions.push(eq(listings.categoryId, categoryId));
+      }
+    }
+
+    // Region filter
+    if (region) {
+      conditions.push(eq(listings.locationRegion, region));
+    }
+
+    // Price range filter - use SQL to cast decimal to numeric for comparison
+    if (priceMin !== undefined) {
+      conditions.push(sql`CAST(${listings.price} AS NUMERIC) >= ${priceMin}`);
+    }
+    if (priceMax !== undefined) {
+      conditions.push(sql`CAST(${listings.price} AS NUMERIC) <= ${priceMax}`);
+    }
+
+    // Condition filter
+    if (condition) {
+      conditions.push(eq(listings.condition, condition));
+    }
+
+    // Price type filter
+    if (priceType) {
+      conditions.push(eq(listings.priceType, priceType));
+    }
+
+    // Get total count
+    const [totalResult] = await db.select({ count: count() })
+      .from(listings)
+      .where(and(...conditions));
+
+    // Get listings with sorting
+    let orderClause;
+    switch (sortBy) {
+      case 'price_asc':
+        orderClause = sql`CAST(${listings.price} AS NUMERIC) ASC`;
+        break;
+      case 'price_desc':
+        orderClause = sql`CAST(${listings.price} AS NUMERIC) DESC`;
+        break;
+      case 'popular':
+        orderClause = desc(listings.views);
+        break;
+      case 'recent':
+      default:
+        orderClause = desc(listings.createdAt);
+        break;
+    }
+
+    const offset = (page - 1) * pageSize;
+    const results = await db.select()
+      .from(listings)
+      .where(and(...conditions))
+      .orderBy(orderClause)
+      .limit(pageSize)
+      .offset(offset);
+
+    return {
+      listings: results,
+      total: totalResult.count
+    };
+  }
+
+  async getSearchSuggestions(query: string, limit: number = 5): Promise<string[]> {
+    if (!query || query.trim().length < 2) {
+      return [];
+    }
+
+    // Get unique titles that match the query using full-text search
+    const results = await db.selectDistinct({ title: listings.title })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.status, 'active'),
+          sql`to_tsvector('spanish', ${listings.title}) @@ plainto_tsquery('spanish', ${query})`
+        )
+      )
+      .limit(limit);
+
+    return results.map(r => r.title);
+  }
+
+  // Saved searches implementation
+  async saveSearch(userId: string, search: InsertSavedSearch): Promise<SavedSearch> {
+    const [savedSearch] = await db.insert(savedSearches)
+      .values({
+        ...search,
+        userId
+      })
+      .returning();
+    
+    return savedSearch;
+  }
+
+  async getSavedSearches(userId: string): Promise<SavedSearch[]> {
+    return await db.select()
+      .from(savedSearches)
+      .where(eq(savedSearches.userId, userId))
+      .orderBy(desc(savedSearches.createdAt));
+  }
+
+  async deleteSavedSearch(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(savedSearches)
+      .where(and(
+        eq(savedSearches.id, id),
+        eq(savedSearches.userId, userId)
+      ))
+      .returning();
+    
+    return result.length > 0;
   }
 }
 
