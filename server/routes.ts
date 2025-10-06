@@ -890,6 +890,568 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ MODERATION ROUTES ============
+  
+  // Submit appeal for rejected listing
+  app.post("/api/moderation/appeal/:reviewId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { reviewId } = req.params;
+      const { appealReason } = req.body;
+
+      if (!appealReason || appealReason.trim().length < 10) {
+        return res.status(400).json({ message: "La razón del apelación debe tener al menos 10 caracteres" });
+      }
+
+      const review = await storage.getModerationReview(reviewId);
+      if (!review) {
+        return res.status(404).json({ message: "Revisión no encontrada" });
+      }
+
+      const listing = await storage.getListing(review.listingId);
+      if (!listing || listing.sellerId !== req.user!.id) {
+        return res.status(403).json({ message: "No tienes permiso para apelar esta revisión" });
+      }
+
+      if (review.status !== "rejected") {
+        return res.status(400).json({ message: "Solo se pueden apelar anuncios rechazados" });
+      }
+
+      const updated = await storage.updateModerationReview(reviewId, {
+        status: "appealed",
+        appealReason,
+        appealedAt: new Date()
+      });
+
+      await storage.createModerationLog({
+        action: "appeal_submitted",
+        targetType: "listing",
+        targetId: review.listingId,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ reviewId, appealReason })
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error submitting appeal:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get moderation status for a listing
+  app.get("/api/moderation/status/:listingId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { listingId } = req.params;
+      const listing = await storage.getListing(listingId);
+      
+      if (!listing) {
+        return res.status(404).json({ message: "Anuncio no encontrado" });
+      }
+
+      if (listing.sellerId !== req.user!.id) {
+        return res.status(403).json({ message: "No tienes permiso para ver este anuncio" });
+      }
+
+      const review = await storage.getModerationReviewByListing(listingId);
+      
+      res.json({
+        moderationStatus: listing.moderationStatus,
+        isPublished: listing.isPublished,
+        review
+      });
+    } catch (error) {
+      console.error("Error getting moderation status:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Submit user report
+  app.post("/api/moderation/report", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para reportar" });
+    }
+
+    try {
+      const { listingId, reportedUserId, reason, description } = req.body;
+
+      if (!reason) {
+        return res.status(400).json({ message: "El motivo del reporte es requerido" });
+      }
+
+      if (!listingId && !reportedUserId) {
+        return res.status(400).json({ message: "Debes reportar un anuncio o un usuario" });
+      }
+
+      const report = await storage.createModerationReport({
+        reporterId: req.user!.id,
+        listingId: listingId || null,
+        reportedUserId: reportedUserId || null,
+        reason,
+        description: description || null,
+        status: "pending"
+      });
+
+      await storage.createModerationLog({
+        action: "report_created",
+        targetType: listingId ? "listing" : "user",
+        targetId: listingId || reportedUserId,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ reportId: report.id, reason })
+      });
+
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating report:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get user's reports
+  app.get("/api/moderation/my-reports", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const reports = await storage.getUserReports(req.user!.id);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching user reports:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // ============ ADMIN ROUTES ============
+  
+  // Middleware to check admin access
+  const requireAdmin = async (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    const isAdmin = await storage.isAdmin(req.user!.id);
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Acceso denegado. Se requiere permisos de administrador" });
+    }
+
+    next();
+  };
+
+  // Check if user is admin
+  app.get("/api/admin/check", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.json({ isAdmin: false });
+    }
+
+    try {
+      const isAdmin = await storage.isAdmin(req.user!.id);
+      const admin = isAdmin ? await storage.getAdminUser(req.user!.id) : null;
+      res.json({ isAdmin, admin });
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Admin Dashboard Stats
+  app.get("/api/admin/dashboard", requireAdmin, async (req, res) => {
+    try {
+      const moderationStats = await storage.getModerationStats();
+      const { items: pendingReviews } = await storage.getPendingReviews({ limit: 5 });
+      const { items: appealedReviews } = await storage.getAppealedReviews({ limit: 5 });
+      const { items: pendingReports } = await storage.getPendingReports({ limit: 5 });
+      const { items: recentLogs } = await storage.getModerationLogs({ limit: 10 });
+
+      res.json({
+        stats: moderationStats,
+        pendingReviews,
+        appealedReviews,
+        pendingReports,
+        recentLogs
+      });
+    } catch (error) {
+      console.error("Error fetching admin dashboard:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get pending reviews queue
+  app.get("/api/admin/reviews/pending", requireAdmin, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = (page - 1) * limit;
+
+      const result = await storage.getPendingReviews({ limit, offset });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching pending reviews:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get appealed reviews queue
+  app.get("/api/admin/reviews/appealed", requireAdmin, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = (page - 1) * limit;
+
+      const result = await storage.getAppealedReviews({ limit, offset });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching appealed reviews:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Manual review decision
+  app.post("/api/admin/reviews/:reviewId/decide", requireAdmin, async (req, res) => {
+    try {
+      const { reviewId } = req.params;
+      const { decision, notes } = req.body;
+
+      if (!decision || !["approved", "rejected"].includes(decision)) {
+        return res.status(400).json({ message: "Decisión inválida" });
+      }
+
+      const review = await storage.getModerationReview(reviewId);
+      if (!review) {
+        return res.status(404).json({ message: "Revisión no encontrada" });
+      }
+
+      const updated = await storage.updateModerationReview(reviewId, {
+        status: decision,
+        reviewedBy: req.user!.id,
+        reviewedAt: new Date(),
+        aiAnalysis: notes ? `${review.aiAnalysis || ''}\n\nNotas del moderador: ${notes}` : review.aiAnalysis
+      });
+
+      await storage.updateListingModeration(review.listingId, decision, reviewId);
+
+      if (decision === "approved") {
+        await storage.publishListing(review.listingId);
+      }
+
+      await storage.createModerationLog({
+        action: "manual_review",
+        targetType: "listing",
+        targetId: review.listingId,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ reviewId, decision, notes })
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error making review decision:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get all reports
+  app.get("/api/admin/reports", requireAdmin, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = (page - 1) * limit;
+
+      const result = await storage.getPendingReports({ limit, offset });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Resolve report
+  app.post("/api/admin/reports/:reportId/resolve", requireAdmin, async (req, res) => {
+    try {
+      const { reportId } = req.params;
+      const { resolution } = req.body;
+
+      if (!resolution) {
+        return res.status(400).json({ message: "La resolución es requerida" });
+      }
+
+      const resolved = await storage.resolveReport(reportId, req.user!.id, resolution);
+      
+      if (!resolved) {
+        return res.status(404).json({ message: "Reporte no encontrado" });
+      }
+
+      await storage.createModerationLog({
+        action: "report_resolved",
+        targetType: "report",
+        targetId: reportId,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ resolution })
+      });
+
+      res.json(resolved);
+    } catch (error) {
+      console.error("Error resolving report:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get blacklist
+  app.get("/api/admin/blacklist", requireAdmin, async (req, res) => {
+    try {
+      const type = req.query.type as string | undefined;
+      const blacklist = await storage.getBlacklist(type);
+      res.json(blacklist);
+    } catch (error) {
+      console.error("Error fetching blacklist:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Add blacklist item
+  app.post("/api/admin/blacklist", requireAdmin, async (req, res) => {
+    try {
+      const { type, value, reason } = req.body;
+
+      if (!type || !value || !reason) {
+        return res.status(400).json({ message: "Tipo, valor y razón son requeridos" });
+      }
+
+      const item = await storage.createBlacklistItem({
+        type,
+        value: value.toLowerCase(),
+        reason,
+        addedBy: req.user!.id,
+        isActive: "true"
+      });
+
+      await storage.createModerationLog({
+        action: "blacklist_added",
+        targetType: "blacklist",
+        targetId: item.id,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ type, value, reason })
+      });
+
+      res.status(201).json(item);
+    } catch (error) {
+      console.error("Error adding blacklist item:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Update blacklist item
+  app.patch("/api/admin/blacklist/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const updated = await storage.updateBlacklistItem(id, updates);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Item no encontrado" });
+      }
+
+      await storage.createModerationLog({
+        action: "blacklist_updated",
+        targetType: "blacklist",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: JSON.stringify(updates)
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating blacklist item:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Delete blacklist item
+  app.delete("/api/admin/blacklist/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteBlacklistItem(id);
+
+      if (!deleted) {
+        return res.status(404).json({ message: "Item no encontrado" });
+      }
+
+      await storage.createModerationLog({
+        action: "blacklist_deleted",
+        targetType: "blacklist",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: null
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting blacklist item:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get moderation settings
+  app.get("/api/admin/settings", requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getModerationSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Update moderation setting
+  app.post("/api/admin/settings", requireAdmin, async (req, res) => {
+    try {
+      const { key, value, type, description } = req.body;
+
+      if (!key || !value) {
+        return res.status(400).json({ message: "Clave y valor son requeridos" });
+      }
+
+      const setting = await storage.setModerationSetting(key, value, type, description);
+
+      await storage.createModerationLog({
+        action: "setting_updated",
+        targetType: "setting",
+        targetId: setting.id,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ key, value })
+      });
+
+      res.json(setting);
+    } catch (error) {
+      console.error("Error updating setting:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get admin users
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const admins = await storage.getAdminUsers();
+      res.json(admins);
+    } catch (error) {
+      console.error("Error fetching admin users:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Create admin user
+  app.post("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const { userId, role, permissions } = req.body;
+
+      if (!userId || !role) {
+        return res.status(400).json({ message: "ID de usuario y rol son requeridos" });
+      }
+
+      const admin = await storage.createAdminUser({
+        userId,
+        role,
+        permissions: permissions || [],
+        createdBy: req.user!.id
+      });
+
+      await storage.createModerationLog({
+        action: "admin_created",
+        targetType: "admin",
+        targetId: admin.id,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ userId, role })
+      });
+
+      res.status(201).json(admin);
+    } catch (error) {
+      console.error("Error creating admin user:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Update admin user
+  app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const updated = await storage.updateAdminUser(id, updates);
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Administrador no encontrado" });
+      }
+
+      await storage.createModerationLog({
+        action: "admin_updated",
+        targetType: "admin",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: JSON.stringify(updates)
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating admin user:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Delete admin user
+  app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteAdminUser(id);
+
+      if (!deleted) {
+        return res.status(404).json({ message: "Administrador no encontrado" });
+      }
+
+      await storage.createModerationLog({
+        action: "admin_deleted",
+        targetType: "admin",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: null
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting admin user:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get moderation logs
+  app.get("/api/admin/logs", requireAdmin, async (req, res) => {
+    try {
+      const { targetType, targetId, performedBy, action } = req.query;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = (page - 1) * limit;
+
+      const result = await storage.getModerationLogs({
+        targetType: targetType as string | undefined,
+        targetId: targetId as string | undefined,
+        performedBy: performedBy as string | undefined,
+        action: action as string | undefined,
+        limit,
+        offset
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching moderation logs:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

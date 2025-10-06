@@ -362,22 +362,26 @@ export const insertModerationReviewSchema = createInsertSchema(moderationReviews
 export const insertModerationBlacklistSchema = createInsertSchema(moderationBlacklist, {
   value: z.string().min(1, "El valor es requerido"),
   reason: z.string().min(1, "La razón es requerida"),
+  isActive: z.enum(["true", "false"]).default("true"),
 }).pick({
   type: true,
   value: true,
   reason: true,
   addedBy: true,
+  isActive: true,
 });
 
 export const insertModerationReportSchema = createInsertSchema(moderationReports, {
   reason: z.enum(["spam", "scam", "inappropriate", "duplicate", "other"], { message: "Razón inválida" }),
   description: z.string().max(500, "La descripción no puede exceder 500 caracteres").optional(),
+  status: z.enum(["pending", "resolved", "dismissed"]).default("pending"),
 }).pick({
   reporterId: true,
   listingId: true,
   reportedUserId: true,
   reason: true,
   description: true,
+  status: true,
 });
 
 export const insertModerationSettingSchema = createInsertSchema(moderationSettings).pick({
