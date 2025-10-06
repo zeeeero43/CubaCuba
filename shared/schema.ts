@@ -222,7 +222,7 @@ export const moderationBlacklist = pgTable("moderation_blacklist", {
   value: text("value").notNull(),
   reason: text("reason").notNull(),
   isActive: text("is_active").notNull().default("true"), // "true" | "false"
-  addedBy: varchar("added_by").references(() => users.id).notNull(),
+  addedBy: varchar("added_by").references(() => users.id), // Nullable for system entries
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 }, (table) => ({
   typeIdx: index("moderation_blacklist_type_idx").on(table.type),
@@ -363,6 +363,7 @@ export const insertModerationBlacklistSchema = createInsertSchema(moderationBlac
   value: z.string().min(1, "El valor es requerido"),
   reason: z.string().min(1, "La razón es requerida"),
   isActive: z.enum(["true", "false"]).default("true"),
+  addedBy: z.string().nullable().optional(),
 }).pick({
   type: true,
   value: true,
