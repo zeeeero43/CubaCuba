@@ -20,6 +20,7 @@ import MyListingsPage from "@/pages/my-listings-page";
 import EditListingPage from "@/pages/edit-listing-page";
 import FavoritesPage from "@/pages/favorites-page";
 import SearchResultsPage from "@/pages/search-results-page";
+import AdminDashboardPage from "@/pages/admin-dashboard-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -52,6 +53,7 @@ function Router() {
         <ProtectedRoute path="/my-listings" component={MyListingsPage} />
         <ProtectedRoute path="/edit-listing/:id" component={EditListingPage} />
         <ProtectedRoute path="/favorites" component={FavoritesPage} />
+        <ProtectedRoute path="/admin" component={AdminDashboardPage} />
         <Route component={NotFound} />
       </Switch>
     </>

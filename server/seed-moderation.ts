@@ -109,7 +109,7 @@ export async function seedModerationSystem() {
           type: "word",
           value: word.value.toLowerCase(),
           reason: word.reason,
-          addedBy: "system",
+          addedBy: null,
           isActive: "true"
         });
         console.log(`  ✓ Blacklisted word: ${word.value}`);
