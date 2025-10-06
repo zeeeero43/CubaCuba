@@ -97,6 +97,8 @@ export const listings = pgTable("listings", {
   sellerId: varchar("seller_id").references(() => users.id).notNull(),
   locationCity: text("location_city").notNull(),
   locationRegion: text("location_region").notNull(), // province
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),  // Geographical coordinates
+  longitude: decimal("longitude", { precision: 11, scale: 8 }), // for distance-based search
   images: text("images").array().default(sql`ARRAY[]::text[]`), // max 8 image URLs
   condition: text("condition").notNull().default("used"), // "new" | "used" | "defective"
   contactPhone: text("contact_phone").notNull(),
