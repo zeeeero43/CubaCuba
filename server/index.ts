@@ -63,6 +63,19 @@ const authSlowDown = slowDown({
   skip: (req) => req.method === 'GET'
 });
 
+// Messaging endpoints rate limiting (anti-spam)
+const messagingLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // Max 10 messages per minute
+  message: { message: "Estás enviando mensajes demasiado rápido, espera un momento" },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Only limit POST requests (sending messages)
+    return req.method !== 'POST';
+  }
+});
+
 app.use(globalLimiter);
 
 // Body parsing with size limits
@@ -76,6 +89,10 @@ app.use('/api/verify-sms', authLimiter, authSlowDown);
 app.use('/api/resend-verification', authLimiter, authSlowDown);
 app.use('/api/reset-password', authLimiter, authSlowDown);
 app.use('/api/confirm-reset', authLimiter, authSlowDown);
+
+// Apply rate limiting to messaging endpoints (anti-spam)
+app.use('/api/conversations/:id/messages', messagingLimiter);
+app.use('/api/conversations', messagingLimiter);
 
 app.use((req, res, next) => {
   const start = Date.now();
