@@ -11,6 +11,11 @@ async function throwIfResNotOk(res: Response) {
 let csrfTokenCache: { token: string; timestamp: number } | null = null;
 const CSRF_TOKEN_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Invalidate CSRF token cache (call after login/register)
+export function invalidateCSRFTokenCache(): void {
+  csrfTokenCache = null;
+}
+
 // Get CSRF token with caching
 async function getCSRFToken(): Promise<string> {
   const now = Date.now();

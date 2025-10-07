@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { User as SelectUser, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { getQueryFn, apiRequest, queryClient, invalidateCSRFTokenCache } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      invalidateCSRFTokenCache(); // Invalidate CSRF cache after login
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "¡Bienvenido!",
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (response: any) => {
+      invalidateCSRFTokenCache(); // Invalidate CSRF cache after register
       queryClient.setQueryData(["/api/user"], response);
       if (response.needsVerification) {
         toast({
