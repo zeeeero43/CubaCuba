@@ -52,28 +52,28 @@ export default function AdminDashboardPage() {
 
   const statsCards = [
     {
-      title: "Revisiones Pendientes",
+      title: "Ausstehende Reviews",
       value: data?.stats.pending || 0,
       icon: Clock,
       color: "text-orange-600 dark:text-orange-400",
       bgColor: "bg-orange-100 dark:bg-orange-900/20",
     },
     {
-      title: "Apelaciones",
+      title: "Einsprüche",
       value: data?.stats.appealed || 0,
       icon: Flag,
       color: "text-red-600 dark:text-red-400",
       bgColor: "bg-red-100 dark:bg-red-900/20",
     },
     {
-      title: "Aprobadas",
+      title: "Genehmigt",
       value: data?.stats.approved || 0,
       icon: CheckCircle,
       color: "text-green-600 dark:text-green-400",
       bgColor: "bg-green-100 dark:bg-green-900/20",
     },
     {
-      title: "Rechazadas",
+      title: "Abgelehnt",
       value: data?.stats.rejected || 0,
       icon: XCircle,
       color: "text-red-600 dark:text-red-400",
@@ -88,17 +88,17 @@ export default function AdminDashboardPage() {
 
   const todayStats = [
     {
-      title: "Total Revisiones",
+      title: "Gesamt Reviews",
       value: totalReviews,
       icon: ListChecks,
     },
     {
-      title: "Tasa de Aprobación",
+      title: "Genehmigungsrate",
       value: `${approvalRate}%`,
       icon: CheckCircle,
     },
     {
-      title: "Reportes Pendientes",
+      title: "Ausstehende Meldungen",
       value: data?.pendingReports?.length || 0,
       icon: Flag,
     },
@@ -122,10 +122,10 @@ export default function AdminDashboardPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Panel Principal
+            Dashboard
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Vista general del sistema de moderación
+            Übersicht des Moderationssystems
           </p>
         </div>
 
@@ -180,7 +180,7 @@ export default function AdminDashboardPage() {
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
+            <CardTitle>Letzte Aktivitäten</CardTitle>
           </CardHeader>
           <CardContent>
             {!data?.recentLogs || data.recentLogs.length === 0 ? (

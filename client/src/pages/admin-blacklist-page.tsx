@@ -31,7 +31,7 @@ export default function AdminBlacklistPage() {
   const [activeTab, setActiveTab] = useState("word");
 
   const { data: items, isLoading } = useQuery<BlacklistItem[]>({
-    queryKey: ["/api/admin/blacklist", { type: activeTab }],
+    queryKey: [`/api/admin/blacklist?type=${activeTab}`],
   });
 
   const addMutation = useMutation({

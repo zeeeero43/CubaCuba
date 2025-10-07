@@ -33,12 +33,12 @@ export default function AdminReportsPage() {
   const [activeTab, setActiveTab] = useState("pending");
 
   const { data: pendingData, isLoading: isPendingLoading } = useQuery<Report[]>({
-    queryKey: ["/api/admin/reports", { status: "pending" }],
+    queryKey: ["/api/admin/reports?status=pending"],
     enabled: activeTab === "pending",
   });
 
   const { data: resolvedData, isLoading: isResolvedLoading } = useQuery<Report[]>({
-    queryKey: ["/api/admin/reports", { status: "resolved" }],
+    queryKey: ["/api/admin/reports?status=resolved"],
     enabled: activeTab === "resolved",
   });
 
