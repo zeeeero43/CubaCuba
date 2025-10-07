@@ -1247,15 +1247,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all reports
+  // Get all reports (filtered by status)
   app.get("/api/admin/reports", requireAdmin, async (req, res) => {
     try {
+      const status = req.query.status as string || "pending";
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
 
-      const result = await storage.getPendingReports({ limit, offset });
-      res.json(result);
+      const reports = await storage.getReportsByStatus(status, { limit, offset });
+      res.json(reports);
     } catch (error) {
       console.error("Error fetching reports:", error);
       res.status(500).json({ message: "Error interno del servidor" });

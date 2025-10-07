@@ -1181,6 +1181,15 @@ export class DatabaseStorage implements IStorage {
     return { items, total };
   }
 
+  async getReportsByStatus(status: string, options: { limit?: number; offset?: number } = {}): Promise<ModerationReport[]> {
+    const { limit = 50, offset = 0 } = options;
+    return await db.select().from(moderationReports)
+      .where(eq(moderationReports.status, status))
+      .orderBy(desc(moderationReports.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
   async resolveReport(id: string, resolvedBy: string, resolution: string): Promise<ModerationReport | undefined> {
     const [updated] = await db.update(moderationReports).set({ status: "resolved", resolvedBy, resolvedAt: new Date(), resolution }).where(eq(moderationReports.id, id)).returning();
     return updated || undefined;
