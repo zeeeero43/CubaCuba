@@ -23,7 +23,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Listing } from "@shared/schema";
-import { ArrowLeft, MoreVertical, Edit, Pause, Play, Trash2, CheckCircle, Eye, Phone } from "lucide-react";
+import { ArrowLeft, MoreVertical, Edit, Pause, Play, Trash2, CheckCircle, Eye, Phone, MessageSquare } from "lucide-react";
+import { ModerationStatusBadge } from "@/components/ModerationStatusBadge";
+import { AppealDialog } from "@/components/AppealDialog";
 
 export default function MyListingsPage() {
   const [, navigate] = useLocation();
@@ -31,6 +33,8 @@ export default function MyListingsPage() {
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [appealDialogOpen, setAppealDialogOpen] = useState(false);
+  const [appealListing, setAppealListing] = useState<Listing | null>(null);
 
   // Fetch user's listings
   const { data: listings = [], isLoading } = useQuery<Listing[]>({
@@ -164,7 +168,14 @@ export default function MyListingsPage() {
                           <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1" data-testid={`text-title-${listing.id}`}>
                             {listing.title}
                           </h3>
-                          {getStatusBadge(listing.status)}
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(listing.status)}
+                            {listing.moderationStatus && (
+                              <ModerationStatusBadge 
+                                status={listing.moderationStatus}
+                              />
+                            )}
+                          </div>
                         </div>
                         
                         <DropdownMenu>
@@ -234,6 +245,23 @@ export default function MyListingsPage() {
                           <span>{listing.contacts || 0}</span>
                         </div>
                       </div>
+
+                      {/* Appeal Button for Rejected Listings */}
+                      {listing.moderationStatus === 'rejected' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 w-full"
+                          onClick={() => {
+                            setAppealListing(listing);
+                            setAppealDialogOpen(true);
+                          }}
+                          data-testid={`button-appeal-${listing.id}`}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Apelar Rechazo
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -264,6 +292,15 @@ export default function MyListingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Appeal Dialog */}
+      {appealListing && (
+        <AppealDialog
+          open={appealDialogOpen}
+          onOpenChange={setAppealDialogOpen}
+          listingId={appealListing.id}
+        />
+      )}
     </div>
   );
 }

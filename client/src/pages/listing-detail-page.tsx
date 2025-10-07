@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { Listing, Category } from "@shared/schema";
+import { ReportDialog } from "@/components/ReportDialog";
 
 // Types for seller profile
 interface SellerProfile {
@@ -139,13 +140,15 @@ function SellerInfo({
   currentUserId,
   contactPhone,
   contactWhatsApp,
-  onContact
+  onContact,
+  onReport
 }: { 
   sellerId: string; 
   currentUserId?: string;
   contactPhone?: string;
   contactWhatsApp?: string;
   onContact?: (type: 'phone' | 'whatsapp') => void;
+  onReport?: () => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -313,6 +316,17 @@ function SellerInfo({
                   {contactPhone}
                 </p>
               </div>
+              
+              {/* Report Button */}
+              <Button
+                variant="outline"
+                className="w-full mt-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
+                onClick={onReport}
+                data-testid="button-report"
+              >
+                <Flag className="w-4 h-4 mr-2" />
+                Reportar Anuncio
+              </Button>
             </div>
           </>
         )}
@@ -541,6 +555,7 @@ export default function ListingDetailPage() {
   const [hasRecordedView, setHasRecordedView] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   const listingId = params?.id;
 
@@ -980,6 +995,7 @@ export default function ListingDetailPage() {
               contactPhone={listing.contactPhone}
               contactWhatsApp={listing.contactWhatsApp}
               onContact={handleContact}
+              onReport={() => setReportDialogOpen(true)}
             />
 
             {/* Safety Tips */}
@@ -1080,6 +1096,14 @@ export default function ListingDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Report Dialog */}
+      <ReportDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        targetType="listing"
+        targetId={listingId || ""}
+      />
     </div>
   );
 }
