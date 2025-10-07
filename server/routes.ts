@@ -1079,6 +1079,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User-friendly report endpoint (used by ReportDialog)
+  app.post("/api/reports", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para reportar" });
+    }
+
+    try {
+      const { type, targetId, reason, description } = req.body;
+
+      if (!reason) {
+        return res.status(400).json({ message: "El motivo del reporte es requerido" });
+      }
+
+      if (!type || !targetId) {
+        return res.status(400).json({ message: "Tipo y ID del objetivo son requeridos" });
+      }
+
+      const report = await storage.createModerationReport({
+        reporterId: req.user!.id,
+        listingId: type === "listing" ? targetId : null,
+        reportedUserId: type === "user" ? targetId : null,
+        reason,
+        description: description || null,
+        status: "pending"
+      });
+
+      await storage.createModerationLog({
+        action: "report_created",
+        targetType: type,
+        targetId: targetId,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ reportId: report.id, reason })
+      });
+
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating report:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // ============ ADMIN ROUTES ============
   
   // Middleware to check admin access

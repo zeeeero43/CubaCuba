@@ -1231,6 +1231,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async isAdmin(userId: string): Promise<boolean> {
+    // Check users.role first
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (user && user.role === 'admin') {
+      return true;
+    }
+    
+    // Then check admin_users table
     const admin = await this.getAdminUser(userId);
     return !!admin;
   }
