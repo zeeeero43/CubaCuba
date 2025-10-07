@@ -42,8 +42,8 @@ export default function AdminBlacklistPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blacklist"] });
       toast({
-        title: "Item agregado",
-        description: "El item ha sido agregado a la lista negra",
+        title: "Eintrag hinzugefügt",
+        description: "Der Eintrag wurde zur Sperrliste hinzugefügt",
       });
       setShowAddDialog(false);
       setNewItem({ type: "word", value: "", reason: "" });
@@ -65,8 +65,8 @@ export default function AdminBlacklistPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blacklist"] });
       toast({
-        title: "Item eliminado",
-        description: "El item ha sido eliminado de la lista negra",
+        title: "Eintrag gelöscht",
+        description: "Der Eintrag wurde von der Sperrliste entfernt",
       });
     },
     onError: (error: Error) => {

@@ -53,8 +53,8 @@ export default function AdminReportsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/reports"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
       toast({
-        title: "Reporte resuelto",
-        description: "El reporte ha sido resuelto exitosamente",
+        title: "Meldung bearbeitet",
+        description: "Die Meldung wurde erfolgreich bearbeitet",
       });
       setSelectedReport(null);
       setResolution("");
@@ -85,10 +85,10 @@ export default function AdminReportsPage() {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-base">
-              {report.type === "listing" ? "Reporte de Anuncio" : "Reporte de Usuario"}
+              {report.type === "listing" ? "Anzeigenmeldung" : "Benutzermeldung"}
             </CardTitle>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              ID: {report.targetId.slice(0, 8)} | Reportado: {new Date(report.createdAt).toLocaleDateString("es-CU")}
+              ID: {report.targetId?.slice(0, 8) || 'N/A'} | Gemeldet: {new Date(report.createdAt).toLocaleDateString("de-DE")}
             </p>
           </div>
           <Badge className={getReasonBadge(report.reason)}>
@@ -99,7 +99,7 @@ export default function AdminReportsPage() {
       <CardContent className="space-y-3">
         {report.description && (
           <div>
-            <p className="text-sm font-medium mb-1">Descripción:</p>
+            <p className="text-sm font-medium mb-1">Beschreibung:</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {report.description}
             </p>
@@ -109,13 +109,13 @@ export default function AdminReportsPage() {
         {report.status === "resolved" && report.resolution && (
           <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded">
             <p className="text-sm font-medium text-green-800 dark:text-green-400 mb-1">
-              Resolución:
+              Lösung:
             </p>
             <p className="text-sm text-green-700 dark:text-green-300">
               {report.resolution}
             </p>
             <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-              Resuelto: {report.resolvedAt ? new Date(report.resolvedAt).toLocaleDateString("es-CU") : "-"}
+              Gelöst: {report.resolvedAt ? new Date(report.resolvedAt).toLocaleDateString("de-DE") : "-"}
             </p>
           </div>
         )}
@@ -129,7 +129,7 @@ export default function AdminReportsPage() {
             className="w-full"
           >
             <Eye className="h-4 w-4 mr-2" />
-            Resolver Reporte
+            Meldung bearbeiten
           </Button>
         )}
       </CardContent>
@@ -144,20 +144,20 @@ export default function AdminReportsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Reportes de Usuarios
+            Meldungen
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Gestiona reportes de anuncios y usuarios
+            Verwalte Meldungen zu Anzeigen und Benutzern
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList data-testid="tabs-reports">
             <TabsTrigger value="pending" data-testid="tab-pending">
-              Pendientes ({pendingData?.length || 0})
+              Ausstehend ({pendingData?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="resolved" data-testid="tab-resolved">
-              Resueltos ({resolvedData?.length || 0})
+              Gelöst ({resolvedData?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -174,10 +174,10 @@ export default function AdminReportsPage() {
                   <div className="text-center">
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      No hay reportes pendientes
+                      Keine ausstehenden Meldungen
                     </h3>
                     <p className="text-gray-500 dark:text-gray-400 mt-2">
-                      Todos los reportes han sido resueltos
+                      Alle Meldungen wurden bearbeitet
                     </p>
                   </div>
                 </CardContent>
@@ -202,7 +202,7 @@ export default function AdminReportsPage() {
                   <div className="text-center">
                     <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      No hay reportes resueltos
+                      Keine gelösten Meldungen
                     </h3>
                   </div>
                 </CardContent>
@@ -225,20 +225,20 @@ export default function AdminReportsPage() {
       }}>
         <DialogContent data-testid="dialog-resolve">
           <DialogHeader>
-            <DialogTitle>Resolver Reporte</DialogTitle>
+            <DialogTitle>Meldung bearbeiten</DialogTitle>
           </DialogHeader>
 
           {selectedReport && (
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-medium mb-1">Tipo:</p>
+                <p className="text-sm font-medium mb-1">Typ:</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {selectedReport.type === "listing" ? "Anuncio" : "Usuario"}
+                  {selectedReport.type === "listing" ? "Anzeige" : "Benutzer"}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm font-medium mb-1">Razón:</p>
+                <p className="text-sm font-medium mb-1">Grund:</p>
                 <Badge className={getReasonBadge(selectedReport.reason)}>
                   {selectedReport.reason}
                 </Badge>
@@ -246,7 +246,7 @@ export default function AdminReportsPage() {
 
               {selectedReport.description && (
                 <div>
-                  <p className="text-sm font-medium mb-1">Descripción:</p>
+                  <p className="text-sm font-medium mb-1">Beschreibung:</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {selectedReport.description}
                   </p>
@@ -255,11 +255,11 @@ export default function AdminReportsPage() {
 
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Resolución <span className="text-red-500">*</span>
+                  Lösung <span className="text-red-500">*</span>
                 </label>
                 <Textarea
                   data-testid="textarea-resolution"
-                  placeholder="Describe las acciones tomadas para resolver este reporte..."
+                  placeholder="Beschreibe die ergriffenen Maßnahmen zur Lösung dieser Meldung..."
                   value={resolution}
                   onChange={(e) => setResolution(e.target.value)}
                   rows={4}
@@ -278,7 +278,7 @@ export default function AdminReportsPage() {
               disabled={resolveMutation.isPending}
               data-testid="button-cancel"
             >
-              Cancelar
+              Abbrechen
             </Button>
             <Button
               onClick={() => {
@@ -292,7 +292,7 @@ export default function AdminReportsPage() {
               disabled={resolveMutation.isPending || !resolution.trim()}
               data-testid="button-confirm-resolve"
             >
-              {resolveMutation.isPending ? "Resolviendo..." : "Resolver"}
+              {resolveMutation.isPending ? "Bearbeite..." : "Bearbeiten"}
             </Button>
           </DialogFooter>
         </DialogContent>

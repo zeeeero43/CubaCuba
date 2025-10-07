@@ -66,8 +66,8 @@ export default function AdminQueuePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/reviews/appealed"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
       toast({
-        title: "Revisión completada",
-        description: "La decisión ha sido registrada exitosamente",
+        title: "Review abgeschlossen",
+        description: "Die Entscheidung wurde erfolgreich registriert",
       });
       setSelectedReview(null);
       setReviewAction(null);
@@ -102,11 +102,11 @@ export default function AdminQueuePage() {
             <div className="flex-1">
               <CardTitle className="text-lg">{review.listing.title}</CardTitle>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Precio: ${review.listing.price} | ID: {review.listing.id.slice(0, 8)}
+                Preis: ${review.listing.price} | ID: {review.listing.id.slice(0, 8)}
               </p>
             </div>
             <Badge variant={review.status === "appealed" ? "destructive" : "secondary"}>
-              {review.status === "appealed" ? `Apelación #${review.appealCount}` : "Pendiente"}
+              {review.status === "appealed" ? `Einspruch #${review.appealCount}` : "Ausstehend"}
             </Badge>
           </div>
         </CardHeader>
@@ -123,7 +123,7 @@ export default function AdminQueuePage() {
                 <img
                   key={idx}
                   src={img}
-                  alt={`Imagen ${idx + 1}`}
+                  alt={`Bild ${idx + 1}`}
                   className="h-20 w-20 object-cover rounded"
                 />
               ))}
@@ -132,7 +132,7 @@ export default function AdminQueuePage() {
 
           <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Confianza IA:</span>
+              <span className="text-sm font-medium">KI-Vertrauen:</span>
               <span className={`text-sm font-bold ${scoreColor}`}>
                 {confidenceScore.toFixed(1)}%
               </span>
@@ -140,7 +140,7 @@ export default function AdminQueuePage() {
 
             {review.aiAnalysis && review.aiAnalysis.flags && review.aiAnalysis.flags.length > 0 && (
               <div>
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Señales:</span>
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Signale:</span>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {review.aiAnalysis.flags.map((flag, idx) => (
                     <Badge key={idx} variant="outline" className="text-xs">
@@ -153,7 +153,7 @@ export default function AdminQueuePage() {
 
             {review.aiAnalysis && review.aiAnalysis.concerns && review.aiAnalysis.concerns.length > 0 && (
               <div>
-                <span className="text-xs font-medium text-red-600 dark:text-red-400">Preocupaciones:</span>
+                <span className="text-xs font-medium text-red-600 dark:text-red-400">Bedenken:</span>
                 <ul className="text-xs text-gray-600 dark:text-gray-400 mt-1 space-y-1">
                   {review.aiAnalysis.concerns.map((concern, idx) => (
                     <li key={idx}>• {concern}</li>
@@ -175,7 +175,7 @@ export default function AdminQueuePage() {
               className="flex-1"
             >
               <Eye className="h-4 w-4 mr-2" />
-              Revisar
+              Überprüfen
             </Button>
             <Button
               data-testid={`button-approve-${review.id}`}
@@ -188,7 +188,7 @@ export default function AdminQueuePage() {
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              Aprobar
+              Genehmigen
             </Button>
             <Button
               data-testid={`button-reject-${review.id}`}
@@ -201,7 +201,7 @@ export default function AdminQueuePage() {
               className="flex-1"
             >
               <XCircle className="h-4 w-4 mr-2" />
-              Rechazar
+              Ablehnen
             </Button>
           </div>
         </CardContent>
@@ -217,20 +217,20 @@ export default function AdminQueuePage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Cola de Revisión
+            Review-Warteschlange
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Revisa y modera anuncios pendientes y apelaciones
+            Überprüfe und moderiere ausstehende Anzeigen und Einsprüche
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList data-testid="tabs-queue">
             <TabsTrigger value="pending" data-testid="tab-pending">
-              Pendientes ({pendingData?.total || 0})
+              Ausstehend ({pendingData?.total || 0})
             </TabsTrigger>
             <TabsTrigger value="appeals" data-testid="tab-appeals">
-              Apelaciones ({appealData?.total || 0})
+              Einsprüche ({appealData?.total || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -247,10 +247,10 @@ export default function AdminQueuePage() {
                   <div className="text-center">
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      No hay revisiones pendientes
+                      Keine ausstehenden Reviews
                     </h3>
                     <p className="text-gray-500 dark:text-gray-400 mt-2">
-                      Todos los anuncios han sido revisados
+                      Alle Anzeigen wurden überprüft
                     </p>
                   </div>
                 </CardContent>
@@ -275,10 +275,10 @@ export default function AdminQueuePage() {
                   <div className="text-center">
                     <MessageCircle className="h-12 w-12 text-blue-500 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      No hay apelaciones pendientes
+                      Keine ausstehenden Einsprüche
                     </h3>
                     <p className="text-gray-500 dark:text-gray-400 mt-2">
-                      No hay usuarios apelando decisiones de moderación
+                      Keine Benutzer legen Einspruch gegen Moderationsentscheidungen ein
                     </p>
                   </div>
                 </CardContent>
@@ -303,7 +303,7 @@ export default function AdminQueuePage() {
         <DialogContent className="max-w-2xl" data-testid="dialog-review-decision">
           <DialogHeader>
             <DialogTitle>
-              {reviewAction === "approve" ? "Aprobar Anuncio" : reviewAction === "reject" ? "Rechazar Anuncio" : "Revisar Anuncio"}
+              {reviewAction === "approve" ? "Anzeige genehmigen" : reviewAction === "reject" ? "Anzeige ablehnen" : "Anzeige überprüfen"}
             </DialogTitle>
             <DialogDescription>
               {selectedReview?.listing.title}
@@ -314,24 +314,24 @@ export default function AdminQueuePage() {
             <ScrollArea className="max-h-96">
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-medium mb-2">Descripción del Anuncio</h4>
+                  <h4 className="font-medium mb-2">Anzeigenbeschreibung</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {selectedReview.listing.description}
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="font-medium mb-2">Análisis de IA</h4>
+                  <h4 className="font-medium mb-2">KI-Analyse</h4>
                   <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded space-y-2 text-sm">
                     <p>
-                      <span className="font-medium">Puntuación:</span>{" "}
+                      <span className="font-medium">Bewertung:</span>{" "}
                       <span className={`font-bold ${parseFloat(selectedReview.aiConfidenceScore) >= 70 ? "text-green-600" : "text-red-600"}`}>
                         {parseFloat(selectedReview.aiConfidenceScore).toFixed(1)}%
                       </span>
                     </p>
                     {selectedReview.aiAnalysis?.concerns && selectedReview.aiAnalysis.concerns.length > 0 && (
                       <div>
-                        <p className="font-medium text-red-600 dark:text-red-400">Preocupaciones:</p>
+                        <p className="font-medium text-red-600 dark:text-red-400">Bedenken:</p>
                         <ul className="mt-1 space-y-1">
                           {selectedReview.aiAnalysis.concerns.map((concern, idx) => (
                             <li key={idx}>• {concern}</li>
@@ -345,14 +345,14 @@ export default function AdminQueuePage() {
                 {reviewAction && (
                   <div>
                     <label className="block text-sm font-medium mb-2">
-                      Notas del Moderador {reviewAction === "reject" && <span className="text-red-500">*</span>}
+                      Moderatornotizen {reviewAction === "reject" && <span className="text-red-500">*</span>}
                     </label>
                     <Textarea
                       data-testid="textarea-moderator-notes"
                       placeholder={
                         reviewAction === "approve"
-                          ? "Notas opcionales sobre la aprobación..."
-                          : "Explica por qué este anuncio fue rechazado..."
+                          ? "Optionale Notizen zur Genehmigung..."
+                          : "Erkläre, warum diese Anzeige abgelehnt wurde..."
                       }
                       value={moderatorNotes}
                       onChange={(e) => setModeratorNotes(e.target.value)}
@@ -366,7 +366,7 @@ export default function AdminQueuePage() {
                   <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded">
                     <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                     <div className="text-sm text-green-800 dark:text-green-300">
-                      Este anuncio será publicado y visible para todos los usuarios.
+                      Diese Anzeige wird veröffentlicht und für alle Benutzer sichtbar sein.
                     </div>
                   </div>
                 )}
@@ -375,7 +375,7 @@ export default function AdminQueuePage() {
                   <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded">
                     <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
                     <div className="text-sm text-red-800 dark:text-red-300">
-                      El usuario será notificado y podrá apelar esta decisión.
+                      Der Benutzer wird benachrichtigt und kann gegen diese Entscheidung Einspruch einlegen.
                     </div>
                   </div>
                 )}
@@ -394,7 +394,7 @@ export default function AdminQueuePage() {
                   }}
                   data-testid="button-cancel-action"
                 >
-                  Cancelar
+                  Abbrechen
                 </Button>
                 <Button
                   onClick={handleReviewDecision}
@@ -404,10 +404,10 @@ export default function AdminQueuePage() {
                   className={reviewAction === "approve" ? "bg-green-600 hover:bg-green-700" : ""}
                 >
                   {reviewMutation.isPending
-                    ? "Procesando..."
+                    ? "Verarbeite..."
                     : reviewAction === "approve"
-                    ? "Confirmar Aprobación"
-                    : "Confirmar Rechazo"}
+                    ? "Genehmigung bestätigen"
+                    : "Ablehnung bestätigen"}
                 </Button>
               </>
             ) : (
@@ -418,7 +418,7 @@ export default function AdminQueuePage() {
                   className="flex-1"
                   data-testid="button-close-dialog"
                 >
-                  Cerrar
+                  Schließen
                 </Button>
                 <Button
                   onClick={() => setReviewAction("approve")}
@@ -426,7 +426,7 @@ export default function AdminQueuePage() {
                   data-testid="button-choose-approve"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Aprobar
+                  Genehmigen
                 </Button>
                 <Button
                   onClick={() => setReviewAction("reject")}
@@ -435,7 +435,7 @@ export default function AdminQueuePage() {
                   data-testid="button-choose-reject"
                 >
                   <XCircle className="h-4 w-4 mr-2" />
-                  Rechazar
+                  Ablehnen
                 </Button>
               </div>
             )}
