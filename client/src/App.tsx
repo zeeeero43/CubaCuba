@@ -22,6 +22,10 @@ import FavoritesPage from "@/pages/favorites-page";
 import SearchResultsPage from "@/pages/search-results-page";
 import AdminDashboardPage from "@/pages/admin-dashboard-page";
 import AdminQueuePage from "@/pages/admin-queue-page";
+import AdminReportsPage from "@/pages/admin-reports-page";
+import AdminBlacklistPage from "@/pages/admin-blacklist-page";
+import AdminSettingsPage from "@/pages/admin-settings-page";
+import AdminUsersPage from "@/pages/admin-users-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -56,6 +60,10 @@ function Router() {
         <ProtectedRoute path="/favorites" component={FavoritesPage} />
         <ProtectedRoute path="/admin" component={AdminDashboardPage} />
         <ProtectedRoute path="/admin/queue" component={AdminQueuePage} />
+        <ProtectedRoute path="/admin/reports" component={AdminReportsPage} />
+        <ProtectedRoute path="/admin/blacklist" component={AdminBlacklistPage} />
+        <ProtectedRoute path="/admin/settings" component={AdminSettingsPage} />
+        <ProtectedRoute path="/admin/users" component={AdminUsersPage} />
         <Route component={NotFound} />
       </Switch>
     </>
