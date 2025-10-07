@@ -34,7 +34,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Lädt...</p>
         </div>
       </div>
     );
@@ -45,12 +45,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   const navigation = [
-    { name: "Panel Principal", href: "/admin", icon: LayoutDashboard },
-    { name: "Cola de Revisión", href: "/admin/queue", icon: ListChecks },
-    { name: "Reportes", href: "/admin/reports", icon: Flag },
-    { name: "Lista Negra", href: "/admin/blacklist", icon: Ban },
-    { name: "Configuración", href: "/admin/settings", icon: Settings },
-    { name: "Usuarios", href: "/admin/users", icon: Users },
+    { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { name: "Review-Queue", href: "/admin/queue", icon: ListChecks },
+    { name: "Meldungen", href: "/admin/reports", icon: Flag },
+    { name: "Sperrliste", href: "/admin/blacklist", icon: Ban },
+    { name: "Einstellungen", href: "/admin/settings", icon: Settings },
+    { name: "Benutzer", href: "/admin/users", icon: Users },
   ];
 
   return (
@@ -62,10 +62,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <Shield className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             <div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Moderación
+                Moderation
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Panel de Administración
+                Admin-Panel
               </p>
             </div>
           </div>
@@ -113,7 +113,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                {user.name || "Administrador"}
+                {user.name || "Administrator"}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {user.email}
@@ -128,7 +128,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             size="sm"
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Cerrar Sesión
+            Abmelden
           </Button>
         </div>
       </aside>
