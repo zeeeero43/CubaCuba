@@ -177,7 +177,8 @@ export class ModerationService {
   private async analyzeText(listing: InsertListing & { sellerId: string }): Promise<{ score: number; issues: string[]; problematicWords?: string[] }> {
     const text = `${listing.title}\n${listing.description}`;
     
-    const systemPrompt = `You are an ULTRA-STRICT content moderator for a Cuban marketplace platform. You enforce Cuban content regulations with ZERO tolerance. Analyze text in ANY language and reject violations immediately.
+    // Load AI system prompt from settings
+    let systemPrompt = `You are an ULTRA-STRICT content moderator for a Cuban marketplace platform. You enforce Cuban content regulations with ZERO tolerance. Analyze text in ANY language and reject violations immediately.
 
 🌐 MULTI-LANGUAGE DETECTION (MANDATORY):
 - Content can be in ANY language: Spanish, English, German, French, Russian, Chinese, Arabic, Portuguese, etc.
@@ -240,6 +241,16 @@ Respond ONLY with JSON:
   "explanation": "<brief explanation of decision>",
   "detected_language": "<detected language>"
 }`;
+
+    try {
+      const promptSetting = await this.storage.getModerationSetting("ai_system_prompt");
+      if (promptSetting && promptSetting.value) {
+        systemPrompt = promptSetting.value;
+        console.log("✓ Using custom AI system prompt from settings");
+      }
+    } catch (error) {
+      console.log("⚠️ Using default AI system prompt (settings not available)");
+    }
 
     try {
       console.log("🤖 Calling DeepSeek AI for text analysis...");

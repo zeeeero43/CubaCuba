@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -101,6 +102,29 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="grid gap-6">
+          {/* AI System Prompt */}
+          <Card data-testid="card-ai-prompt">
+            <CardHeader>
+              <CardTitle>KI System-Prompt (DeepSeek)</CardTitle>
+              <CardDescription>
+                Bearbeite den System-Prompt der KI-Moderation. Damit kannst du das Verhalten der KI präzise steuern.
+                Änderungen werden sofort bei der nächsten Moderation angewendet.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={settings.ai_system_prompt || ""}
+                onChange={(e) => updateSetting("ai_system_prompt", e.target.value)}
+                placeholder="System-Prompt für DeepSeek AI..."
+                className="min-h-[400px] font-mono text-sm"
+                data-testid="textarea-ai-prompt"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Tipp: Der Prompt sollte JSON-Format fordern mit: score, issues, problematic_words, explanation, detected_language
+              </p>
+            </CardContent>
+          </Card>
+
           {/* AI Confidence Threshold */}
           <Card data-testid="card-ai-confidence">
             <CardHeader>
