@@ -272,6 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: listing.sellerId,
         listingId: listing.id
       });
+      console.log("✅ Moderation complete. Decision:", moderationResult.decision);
 
       const review = await storage.createModerationReview({
         listingId: listing.id,
@@ -282,15 +283,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         textScore: moderationResult.textScore,
         imageScores: moderationResult.imageScores ? moderationResult.imageScores.map((s: number) => s.toString()) : []
       });
+      console.log("✅ Review created:", review.id);
 
       await storage.updateModerationReview(review.id, {
         status: moderationResult.decision === "approved" ? "approved" : "rejected"
       });
+      console.log("✅ Review status updated");
 
       await storage.updateListingModeration(listing.id, moderationResult.decision, review.id);
+      console.log("✅ Listing moderation updated");
 
       if (moderationResult.decision === "approved") {
         await storage.publishListing(listing.id);
+        console.log("✅ Listing published");
         await storage.createModerationLog({
           action: "auto_approved",
           targetType: "listing",
@@ -298,6 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           performedBy: null,
           details: JSON.stringify({ confidence: moderationResult.confidence, reasons: moderationResult.reasons })
         });
+        console.log("✅ Auto-approved log created");
       } else {
         await storage.createModerationLog({
           action: "auto_rejected",
@@ -306,8 +312,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           performedBy: null,
           details: JSON.stringify({ confidence: moderationResult.confidence, reasons: moderationResult.reasons })
         });
+        console.log("✅ Auto-rejected log created");
       }
 
+      console.log("📤 Sending response...");
       res.status(201).json({ 
         listing, 
         moderationReview: review,
