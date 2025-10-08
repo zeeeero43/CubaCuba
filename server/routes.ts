@@ -334,6 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Extract specific AI analysis
         const specificIssues = moderationResult.details.textAnalysis?.issues || [];
+        const problematicWords = moderationResult.details.textAnalysis?.problematicWords || [];
         
         // Extract explanation from raw AI analysis if available
         let aiExplanation = "";
@@ -362,6 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Tu anuncio ha sido rechazado por violar nuestras normas de contenido",
           reasons: translatedReasons,
           specificIssues: specificIssues,
+          problematicWords: problematicWords,
           aiExplanation: aiExplanation,
           confidence: moderationResult.confidence,
           warning: "⚠️ ADVERTENCIA POLICIAL: Las violaciones repetidas de las normas de contenido serán reportadas a las autoridades competentes cubanas.",

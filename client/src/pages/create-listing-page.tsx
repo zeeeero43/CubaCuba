@@ -52,6 +52,7 @@ type RejectionData = {
   message: string;
   reasons: string[];
   specificIssues: string[];
+  problematicWords?: string[];
   aiExplanation: string;
   confidence: number;
   warning: string;
@@ -134,6 +135,7 @@ export default function CreateListingPage() {
               message: parsed.message || errorData.message,
               reasons: parsed.reasons || [],
               specificIssues: parsed.specificIssues || [],
+              problematicWords: parsed.problematicWords || [],
               aiExplanation: parsed.aiExplanation || "",
               confidence: parsed.confidence || 0,
               warning: parsed.warning || "",
@@ -715,21 +717,24 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            {/* Specific AI Issues */}
-            {rejectionData && rejectionData.specificIssues.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Problemas Específicos Detectados:
-                </h4>
-                <div className="space-y-1">
-                  {rejectionData.specificIssues.map((issue, idx) => (
-                    <Badge key={idx} variant="destructive" className="mr-1 mb-1">
-                      {issue}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+            {/* Problematic Words */}
+            {rejectionData && rejectionData.problematicWords && rejectionData.problematicWords.length > 0 && (
+              <Alert variant="destructive" className="bg-red-50 dark:bg-red-950">
+                <Ban className="h-5 w-5" />
+                <AlertTitle className="font-bold">Palabras/Frases Problemáticas Detectadas:</AlertTitle>
+                <AlertDescription>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {rejectionData.problematicWords.map((word, idx) => (
+                      <Badge key={idx} variant="destructive" className="text-base px-3 py-1 font-bold">
+                        "{word}"
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-sm font-semibold">
+                    Estas palabras o frases violan nuestras normas de contenido.
+                  </p>
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* AI Explanation */}
@@ -770,7 +775,10 @@ export default function CreateListingPage() {
               onClick={() => {
                 if (rejectionData?.reviewId) {
                   setShowRejectionDialog(false);
-                  setShowAppealDialog(true);
+                  // Small delay to prevent removeChild error
+                  setTimeout(() => {
+                    setShowAppealDialog(true);
+                  }, 100);
                 } else {
                   toast({
                     title: "Error",

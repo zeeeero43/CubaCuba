@@ -49,6 +49,7 @@ export interface ModerationResult {
       score: number;
       issues: string[];
       cubaViolations: string[];
+      problematicWords?: string[];
     };
     imageAnalysis: {
       scores: number[];
@@ -155,7 +156,8 @@ export class ModerationService {
           textAnalysis: {
             score: textAnalysis.score,
             issues: textAnalysis.issues,
-            cubaViolations
+            cubaViolations,
+            problematicWords: textAnalysis.problematicWords
           },
           imageAnalysis: {
             scores: imageAnalysis.scores,
@@ -172,7 +174,7 @@ export class ModerationService {
     }
   }
 
-  private async analyzeText(listing: InsertListing & { sellerId: string }): Promise<{ score: number; issues: string[] }> {
+  private async analyzeText(listing: InsertListing & { sellerId: string }): Promise<{ score: number; issues: string[]; problematicWords?: string[] }> {
     const text = `${listing.title}\n${listing.description}`;
     
     const systemPrompt = `You are an ULTRA-STRICT content moderator for a Cuban marketplace platform. You enforce Cuban content regulations with ZERO tolerance. Analyze text in ANY language and reject violations immediately.
@@ -234,6 +236,7 @@ Respond ONLY with JSON:
 {
   "score": <0-100, where 100 is completely appropriate, <70 = reject>,
   "issues": [<specific issues found, e.g. "Anti-government content", "Political criticism">],
+  "problematic_words": [<EXACT words/phrases from text that caused violation, e.g. ["contra revolución", "fuck the government"]>],
   "explanation": "<brief explanation of decision>",
   "detected_language": "<detected language>"
 }`;
@@ -269,7 +272,8 @@ Respond ONLY with JSON:
         const result = JSON.parse(jsonMatch[0]);
         return {
           score: result.score || 50,
-          issues: result.issues || []
+          issues: result.issues || [],
+          problematicWords: result.problematic_words || []
         };
       }
 
