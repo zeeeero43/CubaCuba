@@ -792,7 +792,7 @@ export default function CreateListingPage() {
               size="lg"
               className="w-full sm:w-auto bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
             >
-              ✓ Akzeptieren
+              ✓ Aceptar
             </Button>
           </DialogFooter>
         </DialogContent>
