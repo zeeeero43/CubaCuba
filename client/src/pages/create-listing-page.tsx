@@ -683,15 +683,15 @@ export default function CreateListingPage() {
         </form>
       </div>
 
-      {/* Rejection Dialog */}
+      {/* Rejection Dialog - PROMINENT WARNING */}
       <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
-        <DialogContent className="sm:max-w-[600px]" data-testid="dialog-rejection">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <Ban className="h-5 w-5" />
-              Anuncio Rechazado
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto border-4 border-red-600 dark:border-red-500" data-testid="dialog-rejection">
+          <DialogHeader className="bg-red-600 dark:bg-red-700 text-white -mx-6 -mt-6 px-6 py-6 mb-6">
+            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+              <AlertTriangle className="h-8 w-8 animate-pulse" />
+              ⚠️ ANUNCIO RECHAZADO - VIOLACIÓN DE NORMAS ⚠️
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-red-50 text-base font-medium mt-2">
               {rejectionData?.message}
             </DialogDescription>
           </DialogHeader>
@@ -753,23 +753,25 @@ export default function CreateListingPage() {
               </Alert>
             )}
 
-            {/* Warning */}
+            {/* Warning - POLICE WARNING */}
             {rejectionData && rejectionData.warning && (
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Advertencia Legal:</AlertTitle>
-                <AlertDescription className="text-sm">
+              <Alert variant="destructive" className="border-yellow-600 dark:border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+                <AlertTriangle className="h-5 w-5 text-yellow-700 dark:text-yellow-400" />
+                <AlertTitle className="text-yellow-800 dark:text-yellow-300 font-bold">🚨 ADVERTENCIA POLICIAL 🚨</AlertTitle>
+                <AlertDescription className="text-sm text-yellow-900 dark:text-yellow-200 font-semibold">
                   {rejectionData.warning}
                 </AlertDescription>
               </Alert>
             )}
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-3 mt-6 flex-col sm:flex-row">
             <Button
               variant="outline"
               onClick={() => setShowRejectionDialog(false)}
               data-testid="button-close-rejection"
+              size="lg"
+              className="w-full sm:w-auto"
             >
               Cerrar
             </Button>
@@ -789,8 +791,10 @@ export default function CreateListingPage() {
               }}
               data-testid="button-appeal"
               disabled={!rejectionData?.reviewId}
+              size="lg"
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
             >
-              Presentar Apelación
+              📋 Presentar Apelación
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error.name === "ZodError") {
         const validationError = fromZodError(error);
-        return res.status(400).json({ message: validationError.message });
+        return res.status(400).json({ message: `Error de validación: Por favor verifica los datos ingresados` });
       }
       console.error("Error creating category:", error);
       res.status(500).json({ message: "Error interno del servidor" });
@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error.name === "ZodError") {
         const validationError = fromZodError(error);
-        return res.status(400).json({ message: validationError.message });
+        return res.status(400).json({ message: `Error de validación: Por favor verifica los datos ingresados` });
       }
       console.error("Error creating product:", error);
       res.status(500).json({ message: "Error interno del servidor" });
@@ -364,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           specificIssues: specificIssues,
           aiExplanation: aiExplanation,
           confidence: moderationResult.confidence,
-          warning: "⚠️ ADVERTENCIA: Bei wiederholten Verstößen können wir gezwungen sein, dies den Behörden zu melden.",
+          warning: "⚠️ ADVERTENCIA POLICIAL: Las violaciones repetidas de las normas de contenido serán reportadas a las autoridades competentes cubanas.",
           reviewId: review.id, // Include review ID for appeals
           listingId: listing.id
         });
@@ -408,7 +408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Zod validation error:', error.errors);
         console.error('Request body that failed:', JSON.stringify(req.body, null, 2));
         const validationError = fromZodError(error);
-        return res.status(400).json({ message: validationError.message });
+        return res.status(400).json({ message: `Error de validación: Por favor verifica los datos ingresados` });
       }
       console.error("Error creating listing:", error);
       res.status(500).json({ message: "Error interno del servidor" });
@@ -445,7 +445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error.name === "ZodError") {
         const validationError = fromZodError(error);
-        return res.status(400).json({ message: validationError.message });
+        return res.status(400).json({ message: `Error de validación: Por favor verifica los datos ingresados` });
       }
       console.error("Error updating listing:", error);
       res.status(500).json({ message: "Error interno del servidor" });
