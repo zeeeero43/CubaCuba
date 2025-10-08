@@ -697,16 +697,6 @@ export default function CreateListingPage() {
           </DialogHeader>
 
           <div className="space-y-4 my-4">
-            {/* AI Confidence Score */}
-            {rejectionData && rejectionData.confidence > 0 && (
-              <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <span className="text-sm font-medium">Confianza de IA:</span>
-                <Badge variant="outline" className="font-mono">
-                  {rejectionData.confidence}%
-                </Badge>
-              </div>
-            )}
-
             {/* General Reasons */}
             {rejectionData && rejectionData.reasons.length > 0 && (
               <div>
