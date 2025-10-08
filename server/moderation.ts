@@ -113,16 +113,22 @@ export class ModerationService {
 
   async moderateListing(listing: InsertListing & { sellerId: string }): Promise<ModerationResult> {
     if (!this.apiKey) {
+      console.log("⚠️  DEEPSEEK_API_KEY not set - using fallback");
       return this.getFallbackResult();
     }
 
     try {
+      console.log("🔍 Starting moderation for:", listing.title);
       const textAnalysis = await this.analyzeText(listing);
+      console.log("📝 Text analysis:", textAnalysis);
+      
       const imageAnalysis = await this.analyzeImages(listing.images || []);
       const duplicateCheck = await this.checkDuplicates(listing);
       const spamCheck = this.detectSpam(listing);
 
       const cubaViolations = await this.checkCubaRules(listing);
+      console.log("🇨🇺 Cuba violations found:", cubaViolations);
+      
       const requiresManualReview = this.shouldRequireManualReview(listing, cubaViolations);
 
       const score = this.calculateOverallScore(textAnalysis, imageAnalysis, spamCheck);
@@ -198,6 +204,7 @@ Respond ONLY with JSON in this format:
 }`;
 
     try {
+      console.log("🤖 Calling DeepSeek AI for text analysis...");
       const response = await fetch(this.apiUrl, {
         method: "POST",
         headers: {
