@@ -5,10 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Ban, Shield, Search } from "lucide-react";
+import { Ban, Shield, Search, ShieldCheck, AlertTriangle, UserCheck, Edit } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type User = {
   id: string;
@@ -17,12 +25,18 @@ type User = {
   email: string | null;
   role: string;
   isVerified: string;
+  moderationStrikes: number;
+  isBanned: string;
+  bannedAt: string | null;
+  banReason: string | null;
   createdAt: string;
 };
 
 export default function AdminUsersPage() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingStrikes, setEditingStrikes] = useState<{ userId: string; currentStrikes: number } | null>(null);
+  const [strikesValue, setStrikesValue] = useState(0);
 
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
@@ -30,7 +44,7 @@ export default function AdminUsersPage() {
 
   const blockMutation = useMutation({
     mutationFn: async ({ userId, action }: { userId: string; action: "block" | "unblock" }) => {
-      const res = await apiRequest("POST", `/api/admin/users/${userId}/${action}`);
+      const res = await apiRequest("POST", `/api/admin/users/${userId}/${action}`, { reason: "Bloqueado por administrador" });
       return await res.json();
     },
     onSuccess: () => {
@@ -38,6 +52,27 @@ export default function AdminUsersPage() {
       toast({
         title: "Benutzer aktualisiert",
         description: "Der Benutzerstatus wurde aktualisiert",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Fehler",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const strikesMutation = useMutation({
+    mutationFn: async ({ userId, strikes }: { userId: string; strikes: number }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/strikes`, { strikes });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Strikes aktualisiert",
+        description: "Die Strikes wurden erfolgreich aktualisiert",
       });
     },
     onError: (error: Error) => {
@@ -130,28 +165,131 @@ export default function AdminUsersPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}
+                  <div className="space-y-2">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}
+                    </div>
+                    
+                    {/* Strikes Display */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className={`h-4 w-4 ${user.moderationStrikes > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
+                        <span className="text-sm font-medium">
+                          Strikes: {user.moderationStrikes}
+                        </span>
+                      </div>
+                      {user.role !== "admin" && (
+                        <Button
+                          data-testid={`button-edit-strikes-${user.id}`}
+                          onClick={() => {
+                            setEditingStrikes({ userId: user.id, currentStrikes: user.moderationStrikes });
+                            setStrikesValue(user.moderationStrikes);
+                          }}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Banned Status */}
+                    {user.isBanned === "true" && (
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-2">
+                        <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                          <Ban className="h-4 w-4" />
+                          <span className="font-medium">Gesperrt</span>
+                        </div>
+                        {user.banReason && (
+                          <p className="text-xs text-red-500 dark:text-red-400 mt-1">{user.banReason}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
+                  {/* Actions */}
                   {user.role !== "admin" && (
-                    <Button
-                      data-testid={`button-block-${user.id}`}
-                      onClick={() => blockMutation.mutate({ userId: user.id, action: "block" })}
-                      variant="destructive"
-                      size="sm"
-                      className="w-full"
-                      disabled={blockMutation.isPending}
-                    >
-                      <Ban className="h-4 w-4 mr-2" />
-                      Benutzer sperren
-                    </Button>
+                    <div className="flex gap-2">
+                      {user.isBanned === "true" ? (
+                        <Button
+                          data-testid={`button-unblock-${user.id}`}
+                          onClick={() => blockMutation.mutate({ userId: user.id, action: "unblock" })}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          disabled={blockMutation.isPending}
+                        >
+                          <UserCheck className="h-4 w-4 mr-2" />
+                          Entsperren
+                        </Button>
+                      ) : (
+                        <Button
+                          data-testid={`button-block-${user.id}`}
+                          onClick={() => blockMutation.mutate({ userId: user.id, action: "block" })}
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1"
+                          disabled={blockMutation.isPending}
+                        >
+                          <Ban className="h-4 w-4 mr-2" />
+                          Sperren
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
+
+        {/* Strikes Edit Dialog */}
+        <Dialog open={!!editingStrikes} onOpenChange={(open) => !open && setEditingStrikes(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Strikes bearbeiten</DialogTitle>
+              <DialogDescription>
+                Ändere die Anzahl der Moderation Strikes für diesen Benutzer.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="space-y-2">
+                <label htmlFor="strikes" className="text-sm font-medium">
+                  Strikes
+                </label>
+                <Input
+                  id="strikes"
+                  type="number"
+                  min="0"
+                  value={strikesValue}
+                  onChange={(e) => setStrikesValue(parseInt(e.target.value) || 0)}
+                  data-testid="input-strikes"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setEditingStrikes(null)}
+                data-testid="button-cancel-strikes"
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={() => {
+                  if (editingStrikes) {
+                    strikesMutation.mutate({ userId: editingStrikes.userId, strikes: strikesValue });
+                    setEditingStrikes(null);
+                  }
+                }}
+                disabled={strikesMutation.isPending}
+                data-testid="button-save-strikes"
+              >
+                Speichern
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

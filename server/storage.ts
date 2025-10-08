@@ -31,6 +31,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
   getUserByPhone(phone: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUserVerification(id: string, isVerified: boolean): Promise<void>;
   updateUserPassword(id: string, password: string): Promise<void>;
@@ -38,6 +39,7 @@ export interface IStorage {
   clearVerificationCode(id: string): Promise<void>;
   updateUserStrikes(id: string, strikes: number): Promise<void>;
   banUser(id: string, reason: string): Promise<void>;
+  unbanUser(id: string): Promise<void>;
   
   // Categories
   getCategories(): Promise<Category[]>;
@@ -223,6 +225,10 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -283,6 +289,17 @@ export class DatabaseStorage implements IStorage {
         isBanned: "true",
         bannedAt: new Date(),
         banReason: reason
+      })
+      .where(eq(users.id, id));
+  }
+
+  async unbanUser(id: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        isBanned: "false",
+        bannedAt: null,
+        banReason: null
       })
       .where(eq(users.id, id));
   }

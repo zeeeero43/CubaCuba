@@ -1577,13 +1577,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get admin users
+  // Get all users (for admin panel)
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
-      const admins = await storage.getAdminUsers();
-      res.json(admins);
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers);
     } catch (error) {
-      console.error("Error fetching admin users:", error);
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Block user
+  app.post("/api/admin/users/:id/block", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+
+      await storage.banUser(id, reason || "Bloqueado por administrador");
+      
+      await storage.createModerationLog({
+        action: "user_blocked",
+        targetType: "user",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ reason })
+      });
+
+      res.json({ success: true, message: "Usuario bloqueado exitosamente" });
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Unblock user
+  app.post("/api/admin/users/:id/unblock", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      await storage.unbanUser(id);
+      
+      await storage.createModerationLog({
+        action: "user_unblocked",
+        targetType: "user",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: null
+      });
+
+      res.json({ success: true, message: "Usuario desbloqueado exitosamente" });
+    } catch (error) {
+      console.error("Error unblocking user:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Update user strikes
+  app.patch("/api/admin/users/:id/strikes", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { strikes } = req.body;
+
+      if (typeof strikes !== 'number' || strikes < 0) {
+        return res.status(400).json({ message: "Número de strikes inválido" });
+      }
+
+      await storage.updateUserStrikes(id, strikes);
+      
+      await storage.createModerationLog({
+        action: "strikes_updated",
+        targetType: "user",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: JSON.stringify({ strikes })
+      });
+
+      res.json({ success: true, message: "Strikes actualizados exitosamente" });
+    } catch (error) {
+      console.error("Error updating strikes:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });
