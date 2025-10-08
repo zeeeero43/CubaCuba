@@ -46,9 +46,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { name: "Review-Queue", href: "/admin/queue", icon: ListChecks },
+    { name: "Live-Sperrungs-Log", href: "/admin/queue", icon: ListChecks },
     { name: "Meldungen", href: "/admin/reports", icon: Flag },
-    { name: "Sperrliste", href: "/admin/blacklist", icon: Ban },
     { name: "Einstellungen", href: "/admin/settings", icon: Settings },
     { name: "Benutzer", href: "/admin/users", icon: Users },
   ];

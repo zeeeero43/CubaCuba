@@ -42,13 +42,13 @@ export default function AdminSettingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
       toast({
-        title: "Configuración guardada",
-        description: "Los cambios han sido guardados exitosamente",
+        title: "Einstellungen gespeichert",
+        description: "Die Änderungen wurden erfolgreich gespeichert",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Fehler",
         description: error.message,
         variant: "destructive",
       });
@@ -84,10 +84,10 @@ export default function AdminSettingsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Configuración de Moderación
+              Moderationseinstellungen
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Ajusta los parámetros del sistema de moderación
+              Passe die Parameter des Moderationssystems an
             </p>
           </div>
           <Button
@@ -96,7 +96,7 @@ export default function AdminSettingsPage() {
             disabled={updateMutation.isPending}
           >
             <Save className="h-4 w-4 mr-2" />
-            {updateMutation.isPending ? "Guardando..." : "Guardar Cambios"}
+            {updateMutation.isPending ? "Speichern..." : "Änderungen speichern"}
           </Button>
         </div>
 
@@ -104,9 +104,9 @@ export default function AdminSettingsPage() {
           {/* AI Confidence Threshold */}
           <Card data-testid="card-ai-confidence">
             <CardHeader>
-              <CardTitle>Umbral de Confianza IA</CardTitle>
+              <CardTitle>KI-Vertrauensschwelle</CardTitle>
               <CardDescription>
-                Puntuación mínima (0-100) para aprobación automática
+                Minimale Punktzahl (0-100) für automatische Genehmigung
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -121,7 +121,7 @@ export default function AdminSettingsPage() {
                   data-testid="input-confidence"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Actual: {settings.ai_confidence_threshold || "70"}%
+                  Aktuell: {settings.ai_confidence_threshold || "70"}%
                 </span>
               </div>
             </CardContent>
@@ -130,9 +130,9 @@ export default function AdminSettingsPage() {
           {/* Strictness Level */}
           <Card data-testid="card-strictness">
             <CardHeader>
-              <CardTitle>Nivel de Rigidez</CardTitle>
+              <CardTitle>Strenge-Level</CardTitle>
               <CardDescription>
-                Qué tan estricto es el sistema de moderación
+                Wie streng das Moderationssystem arbeitet
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -144,9 +144,9 @@ export default function AdminSettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Bajo</SelectItem>
-                  <SelectItem value="medium">Medio</SelectItem>
-                  <SelectItem value="high">Alto</SelectItem>
+                  <SelectItem value="low">Niedrig</SelectItem>
+                  <SelectItem value="medium">Mittel</SelectItem>
+                  <SelectItem value="high">Hoch</SelectItem>
                   <SelectItem value="ultra">Ultra</SelectItem>
                 </SelectContent>
               </Select>
@@ -156,9 +156,9 @@ export default function AdminSettingsPage() {
           {/* Cuba Rules Enforcement */}
           <Card data-testid="card-cuba-rules">
             <CardHeader>
-              <CardTitle>Aplicación de Reglas Cubanas</CardTitle>
+              <CardTitle>Kubanische Regeln</CardTitle>
               <CardDescription>
-                Nivel de aplicación de regulaciones cubanas
+                Durchsetzungslevel der kubanischen Vorschriften
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -170,20 +170,41 @@ export default function AdminSettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="relaxed">Relajado</SelectItem>
-                  <SelectItem value="standard">Estándar</SelectItem>
-                  <SelectItem value="strict">Estricto</SelectItem>
+                  <SelectItem value="relaxed">Entspannt</SelectItem>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="strict">Streng</SelectItem>
                 </SelectContent>
               </Select>
+            </CardContent>
+          </Card>
+
+          {/* Max Strikes Before Ban */}
+          <Card data-testid="card-max-strikes">
+            <CardHeader>
+              <CardTitle>Maximale Strikes vor Sperrung</CardTitle>
+              <CardDescription>
+                Anzahl der Verstöße bevor ein Benutzer automatisch gesperrt wird
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Input
+                type="number"
+                min="1"
+                max="20"
+                value={settings.max_strikes_before_ban || "5"}
+                onChange={(e) => updateSetting("max_strikes_before_ban", e.target.value)}
+                className="w-32"
+                data-testid="input-max-strikes"
+              />
             </CardContent>
           </Card>
 
           {/* Max Appeals */}
           <Card data-testid="card-max-appeals">
             <CardHeader>
-              <CardTitle>Máximo de Apelaciones</CardTitle>
+              <CardTitle>Maximale Einsprüche</CardTitle>
               <CardDescription>
-                Número máximo de apelaciones permitidas por anuncio
+                Maximal erlaubte Einsprüche pro Anzeige
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -202,18 +223,18 @@ export default function AdminSettingsPage() {
           {/* Feature Toggles */}
           <Card data-testid="card-features">
             <CardHeader>
-              <CardTitle>Funcionalidades</CardTitle>
+              <CardTitle>Funktionen</CardTitle>
               <CardDescription>
-                Activar o desactivar características del sistema
+                Systemfunktionen aktivieren oder deaktivieren
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="auto-approve" className="flex-1">
                   <div>
-                    <p className="font-medium">Aprobación Automática</p>
+                    <p className="font-medium">Automatische Genehmigung</p>
                     <p className="text-sm text-gray-500">
-                      Aprobar anuncios automáticamente con alta confianza
+                      Anzeigen mit hoher Vertrauenswürdigkeit automatisch genehmigen
                     </p>
                   </div>
                 </Label>
@@ -228,9 +249,9 @@ export default function AdminSettingsPage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="manual-review" className="flex-1">
                   <div>
-                    <p className="font-medium">Revisión Manual Requerida</p>
+                    <p className="font-medium">Manuelle Überprüfung erforderlich</p>
                     <p className="text-sm text-gray-500">
-                      Requerir revisión manual para todos los anuncios
+                      Manuelle Überprüfung für alle Anzeigen erforderlich
                     </p>
                   </div>
                 </Label>
@@ -243,28 +264,11 @@ export default function AdminSettingsPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="blacklist" className="flex-1">
-                  <div>
-                    <p className="font-medium">Lista Negra</p>
-                    <p className="text-sm text-gray-500">
-                      Verificar contra lista negra
-                    </p>
-                  </div>
-                </Label>
-                <Switch
-                  id="blacklist"
-                  checked={settings.blacklist_enabled === "true"}
-                  onCheckedChange={(checked) => updateSetting("blacklist_enabled", checked ? "true" : "false")}
-                  data-testid="switch-blacklist"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
                 <Label htmlFor="spam" className="flex-1">
                   <div>
-                    <p className="font-medium">Detección de Spam</p>
+                    <p className="font-medium">Spam-Erkennung</p>
                     <p className="text-sm text-gray-500">
-                      Detectar y bloquear spam automáticamente
+                      Spam automatisch erkennen und blockieren
                     </p>
                   </div>
                 </Label>
@@ -279,9 +283,9 @@ export default function AdminSettingsPage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="duplicate" className="flex-1">
                   <div>
-                    <p className="font-medium">Detección de Duplicados</p>
+                    <p className="font-medium">Duplikatserkennung</p>
                     <p className="text-sm text-gray-500">
-                      Detectar anuncios duplicados
+                      Doppelte Anzeigen erkennen
                     </p>
                   </div>
                 </Label>
@@ -296,9 +300,9 @@ export default function AdminSettingsPage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="image-mod" className="flex-1">
                   <div>
-                    <p className="font-medium">Moderación de Imágenes</p>
+                    <p className="font-medium">Bildmoderation</p>
                     <p className="text-sm text-gray-500">
-                      Analizar imágenes con IA
+                      Bilder mit KI analysieren
                     </p>
                   </div>
                 </Label>

@@ -185,7 +185,7 @@ export default function AdminDashboardPage() {
           <CardContent>
             {!data?.recentLogs || data.recentLogs.length === 0 ? (
               <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                No hay actividad reciente
+                Keine aktuellen Aktivitäten
               </p>
             ) : (
               <div className="space-y-4">

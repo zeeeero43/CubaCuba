@@ -36,13 +36,13 @@ export default function AdminUsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
-        title: "Usuario actualizado",
-        description: "El estado del usuario ha sido actualizado",
+        title: "Benutzer aktualisiert",
+        description: "Der Benutzerstatus wurde aktualisiert",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Fehler",
         description: error.message,
         variant: "destructive",
       });
@@ -60,10 +60,10 @@ export default function AdminUsersPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Gestión de Usuarios
+            Benutzerverwaltung
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Administra usuarios y permisos
+            Verwalte Benutzer und Berechtigungen
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export default function AdminUsersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               data-testid="input-search"
-              placeholder="Buscar por nombre, teléfono o email..."
+              placeholder="Suche nach Name, Telefon oder E-Mail..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -92,10 +92,10 @@ export default function AdminUsersPage() {
               <div className="text-center">
                 <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  No se encontraron usuarios
+                  Keine Benutzer gefunden
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 mt-2">
-                  Intenta con otro término de búsqueda
+                  Versuche es mit einem anderen Suchbegriff
                 </p>
               </div>
             </CardContent>
@@ -119,11 +119,11 @@ export default function AdminUsersPage() {
                     </div>
                     <div className="space-y-1 flex flex-col items-end">
                       <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                        {user.role === "admin" ? "Admin" : "Usuario"}
+                        {user.role === "admin" ? "Admin" : "Benutzer"}
                       </Badge>
                       {user.isVerified === "true" && (
                         <Badge variant="outline" className="text-xs">
-                          Verificado
+                          Verifiziert
                         </Badge>
                       )}
                     </div>
@@ -131,7 +131,7 @@ export default function AdminUsersPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Registrado: {new Date(user.createdAt).toLocaleDateString("es-CU")}
+                    Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}
                   </div>
                   
                   {user.role !== "admin" && (
@@ -144,7 +144,7 @@ export default function AdminUsersPage() {
                       disabled={blockMutation.isPending}
                     >
                       <Ban className="h-4 w-4 mr-2" />
-                      Bloquear Usuario
+                      Benutzer sperren
                     </Button>
                   )}
                 </CardContent>
