@@ -257,22 +257,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Check if user is banned
+      const user = await storage.getUserById(req.user!.id);
+      if (user?.isBanned === "true") {
+        return res.status(403).json({ 
+          message: "Tu cuenta ha sido suspendida por violar las normas de moderación",
+          reason: user.banReason || "Múltiples violaciones de las normas"
+        });
+      }
+
       const listingData = {
         ...validatedData,
         sellerId: req.user!.id
       };
       
-      const listing = await storage.createListing(listingData);
-      
+      // Moderation BEFORE creating listing
       const moderationResult: ModerationResult = await moderateContent(storage, {
-        title: listing.title,
-        description: listing.description,
-        images: listing.images || [],
-        contactPhone: listing.contactPhone,
-        userId: listing.sellerId,
-        listingId: listing.id
+        title: listingData.title,
+        description: listingData.description,
+        images: listingData.images || [],
+        contactPhone: listingData.contactPhone,
+        userId: req.user!.id,
+        listingId: "temp-id" // temporary, will be replaced
       });
       console.log("✅ Moderation complete. Decision:", moderationResult.decision);
+
+      // If REJECTED: Don't create listing, return error, add strike
+      if (moderationResult.decision === "rejected") {
+        // Add strike to user
+        const currentStrikes = (user?.moderationStrikes || 0) + 1;
+        await storage.updateUserStrikes(req.user!.id, currentStrikes);
+        
+        // Check if user should be banned
+        const maxStrikesSetting = await storage.getModerationSetting("max_strikes_before_ban");
+        const maxStrikes = parseInt(maxStrikesSetting?.value || "5");
+        
+        if (currentStrikes >= maxStrikes) {
+          await storage.banUser(req.user!.id, `Cuenta baneada automáticamente por ${currentStrikes} strikes de moderación`);
+        }
+
+        // Create rejection log
+        await storage.createModerationLog({
+          action: "auto_rejected",
+          targetType: "listing",
+          targetId: "draft",
+          performedBy: null,
+          details: JSON.stringify({ 
+            userId: req.user!.id,
+            title: listingData.title,
+            confidence: moderationResult.confidence, 
+            reasons: moderationResult.reasons,
+            strikes: currentStrikes
+          })
+        });
+
+        // Return error with clear reasons
+        const reasonsInSpanish: Record<string, string> = {
+          "inappropriate_text": "Contenido inapropiado detectado en el texto",
+          "cuba_policy_violation": "Violación de las políticas de contenido cubanas",
+          "inappropriate_images": "Imágenes inapropiadas detectadas",
+          "spam_detected": "Contenido spam detectado",
+          "duplicate_listing": "Anuncio duplicado detectado"
+        };
+
+        const translatedReasons = moderationResult.reasons.map(r => reasonsInSpanish[r] || r);
+        
+        return res.status(400).json({ 
+          message: "Tu anuncio ha sido rechazado por no cumplir con las normas de moderación",
+          reasons: translatedReasons,
+          strikes: currentStrikes,
+          maxStrikes: maxStrikes,
+          warning: currentStrikes >= maxStrikes - 1 ? "¡Advertencia! Estás cerca del límite de strikes." : undefined
+        });
+      }
+
+      // If APPROVED: Create listing and publish
+      const listing = await storage.createListing(listingData);
 
       const review = await storage.createModerationReview({
         listingId: listing.id,
@@ -283,43 +343,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         textScore: moderationResult.textScore,
         imageScores: moderationResult.imageScores ? moderationResult.imageScores.map((s: number) => s.toString()) : []
       });
-      console.log("✅ Review created:", review.id);
 
       await storage.updateModerationReview(review.id, {
-        status: moderationResult.decision === "approved" ? "approved" : "rejected"
+        status: "approved"
       });
-      console.log("✅ Review status updated");
 
-      await storage.updateListingModeration(listing.id, moderationResult.decision, review.id);
-      console.log("✅ Listing moderation updated");
+      await storage.updateListingModeration(listing.id, "approved", review.id);
+      await storage.publishListing(listing.id);
+      
+      await storage.createModerationLog({
+        action: "auto_approved",
+        targetType: "listing",
+        targetId: listing.id,
+        performedBy: null,
+        details: JSON.stringify({ confidence: moderationResult.confidence, reasons: moderationResult.reasons })
+      });
 
-      if (moderationResult.decision === "approved") {
-        await storage.publishListing(listing.id);
-        console.log("✅ Listing published");
-        await storage.createModerationLog({
-          action: "auto_approved",
-          targetType: "listing",
-          targetId: listing.id,
-          performedBy: null,
-          details: JSON.stringify({ confidence: moderationResult.confidence, reasons: moderationResult.reasons })
-        });
-        console.log("✅ Auto-approved log created");
-      } else {
-        await storage.createModerationLog({
-          action: "auto_rejected",
-          targetType: "listing",
-          targetId: listing.id,
-          performedBy: null,
-          details: JSON.stringify({ confidence: moderationResult.confidence, reasons: moderationResult.reasons })
-        });
-        console.log("✅ Auto-rejected log created");
-      }
-
-      console.log("📤 Sending response...");
       res.status(201).json({ 
         listing, 
         moderationReview: review,
-        moderationStatus: moderationResult.decision
+        moderationStatus: "approved"
       });
     } catch (error: any) {
       if (error.name === "ZodError") {

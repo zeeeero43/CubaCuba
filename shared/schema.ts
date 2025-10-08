@@ -14,6 +14,10 @@ export const users = pgTable("users", {
   isVerified: text("is_verified").notNull().default("false"),
   verificationCode: text("verification_code"),
   verificationCodeExpiry: timestamp("verification_code_expiry"),
+  moderationStrikes: integer("moderation_strikes").notNull().default(0),
+  isBanned: text("is_banned").notNull().default("false"), // "true" | "false"
+  bannedAt: timestamp("banned_at"),
+  banReason: text("ban_reason"),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 });
 

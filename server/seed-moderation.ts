@@ -64,6 +64,12 @@ export async function seedModerationSystem() {
       value: "strict",
       type: "string",
       description: "Nivel de aplicación de reglas cubanas: relaxed, standard, strict"
+    },
+    {
+      key: "max_strikes_before_ban",
+      value: "5",
+      type: "number",
+      description: "Número máximo de strikes antes de banear la cuenta automáticamente"
     }
   ];
 

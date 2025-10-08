@@ -29,12 +29,15 @@ const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>;
   getUserByPhone(phone: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserVerification(id: string, isVerified: boolean): Promise<void>;
   updateUserPassword(id: string, password: string): Promise<void>;
   setVerificationCode(id: string, code: string, expiry: Date): Promise<void>;
   clearVerificationCode(id: string): Promise<void>;
+  updateUserStrikes(id: string, strikes: number): Promise<void>;
+  banUser(id: string, reason: string): Promise<void>;
   
   // Categories
   getCategories(): Promise<Category[]>;
@@ -258,6 +261,28 @@ export class DatabaseStorage implements IStorage {
       .set({ 
         verificationCode: null,
         verificationCodeExpiry: null 
+      })
+      .where(eq(users.id, id));
+  }
+
+  async getUserById(id: string): Promise<User | undefined> {
+    return this.getUser(id); // Alias for getUser
+  }
+
+  async updateUserStrikes(id: string, strikes: number): Promise<void> {
+    await db
+      .update(users)
+      .set({ moderationStrikes: strikes })
+      .where(eq(users.id, id));
+  }
+
+  async banUser(id: string, reason: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        isBanned: "true",
+        bannedAt: new Date(),
+        banReason: reason
       })
       .where(eq(users.id, id));
   }
