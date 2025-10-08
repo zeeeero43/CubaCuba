@@ -762,15 +762,6 @@ export default function CreateListingPage() {
 
           <DialogFooter className="gap-3 mt-6 flex-col sm:flex-row">
             <Button
-              variant="outline"
-              onClick={() => setShowRejectionDialog(false)}
-              data-testid="button-close-rejection"
-              size="lg"
-              className="w-full sm:w-auto"
-            >
-              Cerrar
-            </Button>
-            <Button
               variant="default"
               onClick={() => {
                 if (rejectionData?.reviewId) {
@@ -793,6 +784,15 @@ export default function CreateListingPage() {
               className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
             >
               📋 Presentar Apelación
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => setShowRejectionDialog(false)}
+              data-testid="button-accept-rejection"
+              size="lg"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+            >
+              ✓ Akzeptieren
             </Button>
           </DialogFooter>
         </DialogContent>
