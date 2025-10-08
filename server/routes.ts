@@ -287,6 +287,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (moderationResult.decision === "rejected") {
         // Create draft listing (not published) so user can appeal
         const listing = await storage.createListing(listingData);
+        
+        // CRITICAL FIX: Set status to draft so rejected listings don't appear as active
+        await storage.setListingStatus(listing.id, req.user!.id, "draft");
 
         // Create moderation review for the rejected listing
         const review = await storage.createModerationReview({
