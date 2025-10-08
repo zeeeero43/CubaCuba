@@ -24,6 +24,19 @@ type Report = {
   resolvedAt: string | null;
   resolvedBy: string | null;
   resolution: string | null;
+  listing?: {
+    id: string;
+    title: string;
+    description: string;
+    price: string;
+    images: string[];
+    sellerId: string;
+  } | null;
+  reportedUser?: {
+    id: string;
+    name: string;
+    phone: string;
+  } | null;
 };
 
 export default function AdminReportsPage() {
@@ -88,7 +101,7 @@ export default function AdminReportsPage() {
               {report.type === "listing" ? "Anzeigenmeldung" : "Benutzermeldung"}
             </CardTitle>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              ID: {report.targetId?.slice(0, 8) || 'N/A'} | Gemeldet: {new Date(report.createdAt).toLocaleDateString("de-DE")}
+              Gemeldet: {new Date(report.createdAt).toLocaleDateString("de-DE")}
             </p>
           </div>
           <Badge className={getReasonBadge(report.reason)}>
@@ -97,6 +110,49 @@ export default function AdminReportsPage() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Show reported listing details */}
+        {report.listing && (
+          <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Gemeldete Anzeige:</p>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                {report.listing.title}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                {report.listing.description}
+              </p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                Preis: ${report.listing.price}
+              </p>
+              {report.listing.images && report.listing.images.length > 0 && (
+                <div className="flex gap-2">
+                  {report.listing.images.slice(0, 3).map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={img}
+                      alt={`Bild ${idx + 1}`}
+                      className="h-16 w-16 object-cover rounded"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Show reported user details */}
+        {report.reportedUser && (
+          <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Gemeldeter Benutzer:</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              {report.reportedUser.name}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {report.reportedUser.phone}
+            </p>
+          </div>
+        )}
+
         {report.description && (
           <div>
             <p className="text-sm font-medium mb-1">Beschreibung:</p>

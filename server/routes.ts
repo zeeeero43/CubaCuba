@@ -261,8 +261,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserById(req.user!.id);
       if (user?.isBanned === "true") {
         return res.status(403).json({ 
-          message: "Tu cuenta ha sido suspendida por violar las normas de moderación",
-          reason: user.banReason || "Múltiples violaciones de las normas"
+          message: "Tu cuenta ha sido suspendida permanentemente por violaciones graves de nuestras normas de contenido",
+          warning: "Las actividades que violan las leyes cubanas pueden ser reportadas a las autoridades competentes",
+          reason: user.banReason || "Múltiples violaciones de las normas de contenido"
         });
       }
 
@@ -323,8 +324,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const translatedReasons = moderationResult.reasons.map(r => reasonsInSpanish[r] || r);
         
         return res.status(400).json({ 
-          message: "Tu anuncio no cumple con nuestras normas de contenido y no puede ser publicado",
-          reasons: translatedReasons
+          message: "Tu anuncio ha sido rechazado por violar nuestras normas de contenido",
+          reasons: translatedReasons,
+          warning: "Contenido ilegal o inapropiado puede ser reportado a las autoridades. Evita publicar contenido que viole las leyes cubanas."
         });
       }
 
@@ -1304,7 +1306,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offset = (page - 1) * limit;
 
       const reports = await storage.getReportsByStatus(status, { limit, offset });
-      res.json(reports);
+      
+      // Enrich reports with listing/user details
+      const enrichedReports = await Promise.all(reports.map(async (report) => {
+        let listing = null;
+        let reportedUser = null;
+        
+        if (report.listingId) {
+          listing = await storage.getListing(report.listingId);
+        }
+        
+        if (report.reportedUserId) {
+          reportedUser = await storage.getUserById(report.reportedUserId);
+        }
+        
+        return {
+          ...report,
+          listing,
+          reportedUser
+        };
+      }));
+      
+      res.json(enrichedReports);
     } catch (error) {
       console.error("Error fetching reports:", error);
       res.status(500).json({ message: "Error interno del servidor" });
@@ -1338,6 +1361,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(resolved);
     } catch (error) {
       console.error("Error resolving report:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get rejection logs (Live-Sperrungs-Log)
+  app.get("/api/admin/rejections", requireAdmin, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = (page - 1) * limit;
+
+      const { items: logs, total } = await storage.getModerationLogs({ 
+        action: "auto_rejected", 
+        limit, 
+        offset 
+      });
+      
+      // Parse the details JSON for each log
+      const parsedLogs = logs.map((log: any) => {
+        let details = {};
+        try {
+          details = JSON.parse(log.details || '{}');
+        } catch (e) {
+          console.error('Error parsing log details:', e);
+        }
+        return {
+          ...log,
+          parsedDetails: details
+        };
+      });
+
+      res.json({ items: parsedLogs, total });
+    } catch (error) {
+      console.error("Error fetching rejection logs:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });

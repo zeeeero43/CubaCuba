@@ -89,6 +89,7 @@ export default function CreateListingPage() {
       // Try to parse error message
       let errorMessage = "Hubo un problema al crear tu anuncio";
       let errorReasons: string[] = [];
+      let warningMessage = "";
       
       if (error.message) {
         try {
@@ -98,6 +99,7 @@ export default function CreateListingPage() {
             const errorData = JSON.parse(jsonMatch[0]);
             errorMessage = errorData.message || errorMessage;
             errorReasons = errorData.reasons || [];
+            warningMessage = errorData.warning || "";
           } else {
             errorMessage = error.message;
           }
@@ -106,14 +108,21 @@ export default function CreateListingPage() {
         }
       }
       
+      // Build description with reasons and warning
+      let description = errorMessage;
+      if (errorReasons.length > 0) {
+        description += `\n\nMotivos:\n${errorReasons.map(r => `• ${r}`).join('\n')}`;
+      }
+      if (warningMessage) {
+        description += `\n\n⚠️ ${warningMessage}`;
+      }
+      
       // Show toast with moderation rejection
       toast({
-        title: "Anuncio rechazado",
-        description: errorReasons.length > 0 
-          ? `${errorMessage}\n\nMotivo: ${errorReasons.join(', ')}`
-          : errorMessage,
+        title: "⛔ Anuncio Rechazado",
+        description: description,
         variant: "destructive",
-        duration: 8000,
+        duration: 12000,
       });
     },
   });
