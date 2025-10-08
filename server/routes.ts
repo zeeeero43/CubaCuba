@@ -264,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const listing = await storage.createListing(listingData);
       
-      const moderationResult: ModerationResult = await moderateContent({
+      const moderationResult: ModerationResult = await moderateContent(storage, {
         title: listing.title,
         description: listing.description,
         images: listing.images || [],

@@ -1,4 +1,5 @@
 import type { InsertListing } from "@shared/schema";
+import type { IStorage } from "./storage";
 
 interface CubaContentRules {
   prohibitedKeywords: string[];
@@ -31,6 +32,14 @@ const cubaContentRules: CubaContentRules = {
   ]
 };
 
+// Funktion zur Normalisierung von Akzenten
+function normalizeAccents(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 export interface ModerationResult {
   decision: "approved" | "rejected";
   confidence: number;
@@ -62,9 +71,11 @@ export interface ModerationResult {
 export class ModerationService {
   private apiKey: string;
   private apiUrl = "https://api.deepseek.com/v1/chat/completions";
+  private storage: IStorage;
 
-  constructor() {
+  constructor(storage: IStorage) {
     this.apiKey = process.env.DEEPSEEK_API_KEY || "";
+    this.storage = storage;
     if (!this.apiKey) {
       console.warn("DEEPSEEK_API_KEY not set. AI moderation will be disabled.");
     }
@@ -111,7 +122,7 @@ export class ModerationService {
       const duplicateCheck = await this.checkDuplicates(listing);
       const spamCheck = this.detectSpam(listing);
 
-      const cubaViolations = this.checkCubaRules(listing);
+      const cubaViolations = await this.checkCubaRules(listing);
       const requiresManualReview = this.shouldRequireManualReview(listing, cubaViolations);
 
       const score = this.calculateOverallScore(textAnalysis, imageAnalysis, spamCheck);
@@ -158,23 +169,32 @@ export class ModerationService {
   private async analyzeText(listing: InsertListing & { sellerId: string }): Promise<{ score: number; issues: string[] }> {
     const text = `${listing.title}\n${listing.description}`;
     
-    const systemPrompt = `Eres un moderador de contenido para una plataforma de clasificados en Cuba. Debes analizar el texto y determinar si es apropiado.
+    const systemPrompt = `You are a content moderator for a Cuban marketplace platform. Analyze the text in ANY LANGUAGE and determine if it is appropriate.
 
-Criterios de rechazo:
-1. Contenido político anti-gobierno o pro-disidencia
-2. Propaganda contra el orden constitucional
-3. Contenido ofensivo, difamatorio o que incita al odio
-4. Spam o contenido engañoso
-5. Venta de productos ilegales (armas, drogas)
-6. Contenido sexual explícito o pornográfico
-7. Contenido que promueva cultos satánicos o actividades ilegales
-8. Contenido que viole las leyes cubanas de comunicación social
+CRITICAL: This text can be in ANY language (Spanish, English, German, French, Russian, Chinese, etc.). You MUST detect and analyze content in ALL languages.
 
-Responde SOLO con un JSON en este formato:
+Rejection criteria (applies to ALL languages):
+1. Anti-government political content or pro-dissident content
+2. Propaganda against the constitutional order
+3. Offensive, defamatory, or hate-inciting content
+4. Spam or deceptive content
+5. Sale of illegal products (weapons, drugs, human trafficking)
+6. Explicit sexual or pornographic content
+7. Content promoting satanic cults or illegal activities
+8. Content violating Cuban social communication laws
+
+Examples of prohibited content in ANY language:
+- "contra revolución", "counter revolution", "Gegenrevolution", "contre-révolution"
+- "dissidente", "dissident", "Dissident"
+- "libertad de prensa", "freedom of press", "Pressefreiheit"
+- Political criticism in ANY language
+
+Respond ONLY with JSON in this format:
 {
-  "score": <número 0-100, donde 100 es completamente apropiado>,
-  "issues": [<array de problemas encontrados, vacío si no hay problemas>],
-  "explanation": "<breve explicación>"
+  "score": <number 0-100, where 100 is completely appropriate>,
+  "issues": [<array of issues found, empty if no issues>],
+  "explanation": "<brief explanation>",
+  "detected_language": "<detected language>"
 }`;
 
     try {
@@ -328,20 +348,37 @@ Responde SOLO con un JSON:
     };
   }
 
-  private checkCubaRules(listing: InsertListing & { sellerId: string }): string[] {
+  private async checkCubaRules(listing: InsertListing & { sellerId: string }): Promise<string[]> {
     const violations: string[] = [];
-    const text = `${listing.title} ${listing.description}`.toLowerCase();
+    const rawText = `${listing.title} ${listing.description}`;
+    const normalizedText = normalizeAccents(rawText);
 
+    // Hardcoded Rules prüfen
     for (const keyword of cubaContentRules.prohibitedKeywords) {
-      if (text.includes(keyword.toLowerCase())) {
+      const normalizedKeyword = normalizeAccents(keyword);
+      if (normalizedText.includes(normalizedKeyword)) {
         violations.push(`prohibited_keyword:${keyword}`);
       }
     }
 
     for (const pattern of cubaContentRules.suspiciousPatterns) {
-      if (text.includes(pattern.toLowerCase())) {
+      const normalizedPattern = normalizeAccents(pattern);
+      if (normalizedText.includes(normalizedPattern)) {
         violations.push(`suspicious_pattern:${pattern}`);
       }
+    }
+
+    // Datenbank-Blacklist prüfen
+    try {
+      const blacklistWords = await this.storage.getBlacklist("prohibited_word");
+      for (const entry of blacklistWords) {
+        const normalizedBlacklistValue = normalizeAccents(entry.value);
+        if (normalizedText.includes(normalizedBlacklistValue)) {
+          violations.push(`blacklist_word:${entry.value}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking blacklist:", error);
     }
 
     return violations;
@@ -350,10 +387,12 @@ Responde SOLO con un JSON:
   private shouldRequireManualReview(listing: InsertListing & { sellerId: string }, cubaViolations: string[]): boolean {
     if (cubaViolations.length > 0) return true;
 
-    const text = `${listing.title} ${listing.description}`.toLowerCase();
+    const rawText = `${listing.title} ${listing.description}`;
+    const normalizedText = normalizeAccents(rawText);
     
     for (const keyword of cubaContentRules.requiresManualReview) {
-      if (text.includes(keyword.toLowerCase())) {
+      const normalizedKeyword = normalizeAccents(keyword);
+      if (normalizedText.includes(normalizedKeyword)) {
         return true;
       }
     }
@@ -415,15 +454,21 @@ Responde SOLO con un JSON:
   }
 }
 
-export const moderationService = new ModerationService();
+export function createModerationService(storage: IStorage): ModerationService {
+  return new ModerationService(storage);
+}
 
-export async function moderateContent(content: {
-  title: string;
-  description: string;
-  images: string[];
-  contactPhone: string;
-  userId: string;
-  listingId: string;
-}): Promise<ModerationResult> {
+export async function moderateContent(
+  storage: IStorage,
+  content: {
+    title: string;
+    description: string;
+    images: string[];
+    contactPhone: string;
+    userId: string;
+    listingId: string;
+  }
+): Promise<ModerationResult> {
+  const moderationService = new ModerationService(storage);
   return moderationService.moderate(content);
 }
