@@ -1383,7 +1383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/reports/:reportId/resolve", requireAdmin, async (req, res) => {
     try {
       const { reportId } = req.params;
-      const { resolution } = req.body;
+      const { resolution, action } = req.body; // action: "dismiss" | "confirm"
 
       if (!resolution) {
         return res.status(400).json({ message: "La resolución es requerida" });
@@ -1395,12 +1395,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Reporte no encontrado" });
       }
 
+      // If action is "confirm" and it's a listing report, delete the listing
+      if (action === "confirm" && resolved.listingId) {
+        const deleted = await storage.deleteListingAsAdmin(resolved.listingId);
+        
+        if (!deleted) {
+          return res.status(400).json({ message: "No se pudo eliminar el anuncio" });
+        }
+        
+        await storage.createModerationLog({
+          action: "listing_deleted",
+          targetType: "listing",
+          targetId: resolved.listingId,
+          performedBy: req.user!.id,
+          details: JSON.stringify({ reason: "Report confirmed by admin", reportId })
+        });
+      }
+
       await storage.createModerationLog({
         action: "report_resolved",
         targetType: "report",
         targetId: reportId,
         performedBy: req.user!.id,
-        details: JSON.stringify({ resolution })
+        details: JSON.stringify({ resolution, action })
       });
 
       res.json(resolved);
@@ -1416,11 +1433,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = (page - 1) * limit;
+      const timeFilter = req.query.timeFilter as string;
+
+      // Calculate time threshold based on filter
+      let createdAfter: Date | undefined;
+      if (timeFilter === "24h") {
+        createdAfter = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      } else if (timeFilter === "7d") {
+        createdAfter = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      } else if (timeFilter === "30d") {
+        createdAfter = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      }
 
       const { items: logs, total } = await storage.getModerationLogs({ 
         action: "auto_rejected", 
         limit, 
-        offset 
+        offset,
+        createdAfter
       });
       
       // Parse the details JSON for each log

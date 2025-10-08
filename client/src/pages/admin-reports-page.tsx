@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, CheckCircle, XCircle, Eye } from "lucide-react";
+import { AlertTriangle, CheckCircle, XCircle, Eye, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -46,19 +46,30 @@ export default function AdminReportsPage() {
   const [activeTab, setActiveTab] = useState("pending");
 
   const { data: pendingData, isLoading: isPendingLoading } = useQuery<Report[]>({
-    queryKey: ["/api/admin/reports?status=pending"],
+    queryKey: ["/api/admin/reports", { status: "pending" }],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/reports?status=pending");
+      if (!res.ok) throw new Error("Failed to fetch pending reports");
+      return res.json();
+    },
     enabled: activeTab === "pending",
   });
 
   const { data: resolvedData, isLoading: isResolvedLoading } = useQuery<Report[]>({
-    queryKey: ["/api/admin/reports?status=resolved"],
+    queryKey: ["/api/admin/reports", { status: "resolved" }],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/reports?status=resolved");
+      if (!res.ok) throw new Error("Failed to fetch resolved reports");
+      return res.json();
+    },
     enabled: activeTab === "resolved",
   });
 
   const resolveMutation = useMutation({
-    mutationFn: async ({ reportId, resolution }: { reportId: string; resolution: string }) => {
+    mutationFn: async ({ reportId, resolution, action }: { reportId: string; resolution: string; action?: "dismiss" | "confirm" }) => {
       const res = await apiRequest("POST", `/api/admin/reports/${reportId}/resolve`, {
         resolution,
+        action,
       });
       return await res.json();
     },
@@ -113,7 +124,19 @@ export default function AdminReportsPage() {
         {/* Show reported listing details */}
         {report.listing && (
           <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Gemeldete Anzeige:</p>
+            <div className="flex items-start justify-between mb-2">
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Gemeldete Anzeige:</p>
+              <a
+                href={`/listing/${report.listing.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1"
+                data-testid={`link-listing-${report.listing.id}`}
+              >
+                Anzeige ansehen
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {report.listing.title}
@@ -324,7 +347,7 @@ export default function AdminReportsPage() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
               onClick={() => {
@@ -333,23 +356,50 @@ export default function AdminReportsPage() {
               }}
               disabled={resolveMutation.isPending}
               data-testid="button-cancel"
+              className="w-full sm:w-auto"
             >
               Abbrechen
             </Button>
-            <Button
-              onClick={() => {
-                if (selectedReport) {
-                  resolveMutation.mutate({
-                    reportId: selectedReport.id,
-                    resolution,
-                  });
-                }
-              }}
-              disabled={resolveMutation.isPending || !resolution.trim()}
-              data-testid="button-confirm-resolve"
-            >
-              {resolveMutation.isPending ? "Bearbeite..." : "Bearbeiten"}
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                className="flex-1 sm:flex-none"
+                onClick={() => {
+                  if (selectedReport) {
+                    resolveMutation.mutate({
+                      reportId: selectedReport.id,
+                      resolution: resolution || "Meldung abgelehnt - kein Verstoß festgestellt",
+                      action: "dismiss",
+                    });
+                  }
+                }}
+                disabled={resolveMutation.isPending}
+                data-testid="button-reject-report"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Meldung ablehnen
+              </Button>
+              {selectedReport?.listing && (
+                <Button
+                  variant="destructive"
+                  className="flex-1 sm:flex-none"
+                  onClick={() => {
+                    if (selectedReport) {
+                      resolveMutation.mutate({
+                        reportId: selectedReport.id,
+                        resolution: resolution || "Meldung akzeptiert - Anzeige wurde entfernt",
+                        action: "confirm",
+                      });
+                    }
+                  }}
+                  disabled={resolveMutation.isPending}
+                  data-testid="button-accept-report"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Akzeptieren & Anzeige entfernen
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

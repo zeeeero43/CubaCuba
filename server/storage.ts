@@ -74,6 +74,7 @@ export interface IStorage {
   createListing(listing: InsertListing & { sellerId: string }): Promise<Listing>;
   updateListing(id: string, userId: string, updates: Partial<InsertListing>): Promise<Listing | undefined>;
   deleteListing(id: string, userId: string): Promise<boolean>;
+  deleteListingAsAdmin(id: string): Promise<boolean>;
   setListingStatus(id: string, userId: string, status: string): Promise<boolean>;
   markListingSold(id: string, userId: string): Promise<boolean>;
   incrementViews(id: string): Promise<void>;
@@ -195,6 +196,7 @@ export interface IStorage {
     action?: string;
     limit?: number;
     offset?: number;
+    createdAfter?: Date;
   }): Promise<{ items: ModerationLog[]; total: number }>;
   
   // Listing Moderation
@@ -501,6 +503,13 @@ export class DatabaseStorage implements IStorage {
         eq(listings.id, id),
         eq(listings.sellerId, userId)
       ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async deleteListingAsAdmin(id: string): Promise<boolean> {
+    const result = await db
+      .delete(listings)
+      .where(eq(listings.id, id));
     return (result.rowCount || 0) > 0;
   }
 
@@ -1148,10 +1157,34 @@ export class DatabaseStorage implements IStorage {
     return { items, total };
   }
 
-  async getAppealedReviews(options: { limit?: number; offset?: number } = {}): Promise<{ items: ModerationReview[]; total: number }> {
+  async getAppealedReviews(options: { limit?: number; offset?: number } = {}): Promise<{ items: any[]; total: number }> {
     const { limit = 20, offset = 0 } = options;
     const [{ count: total }] = await db.select({ count: count() }).from(moderationReviews).where(eq(moderationReviews.status, "appealed"));
-    const items = await db.select().from(moderationReviews).where(eq(moderationReviews.status, "appealed")).orderBy(desc(moderationReviews.appealedAt)).limit(limit).offset(offset);
+    
+    const items = await db
+      .select({
+        id: moderationReviews.id,
+        listingId: moderationReviews.listingId,
+        decision: moderationReviews.aiDecision,
+        status: moderationReviews.status,
+        aiConfidence: moderationReviews.aiConfidence,
+        reasons: moderationReviews.aiReasons,
+        appealReason: moderationReviews.appealReason,
+        appealedAt: moderationReviews.appealedAt,
+        createdAt: moderationReviews.createdAt,
+        listing: {
+          id: listings.id,
+          title: listings.title,
+          description: listings.description,
+        }
+      })
+      .from(moderationReviews)
+      .leftJoin(listings, eq(moderationReviews.listingId, listings.id))
+      .where(eq(moderationReviews.status, "appealed"))
+      .orderBy(desc(moderationReviews.appealedAt))
+      .limit(limit)
+      .offset(offset);
+    
     return { items, total };
   }
 
@@ -1298,13 +1331,14 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getModerationLogs(options: { targetType?: string; targetId?: string; performedBy?: string; action?: string; limit?: number; offset?: number } = {}): Promise<{ items: ModerationLog[]; total: number }> {
-    const { targetType, targetId, performedBy, action, limit = 50, offset = 0 } = options;
+  async getModerationLogs(options: { targetType?: string; targetId?: string; performedBy?: string; action?: string; limit?: number; offset?: number; createdAfter?: Date } = {}): Promise<{ items: ModerationLog[]; total: number }> {
+    const { targetType, targetId, performedBy, action, limit = 50, offset = 0, createdAfter } = options;
     const conditions = [];
     if (targetType) conditions.push(eq(moderationLogs.targetType, targetType));
     if (targetId) conditions.push(eq(moderationLogs.targetId, targetId));
     if (performedBy) conditions.push(eq(moderationLogs.performedBy, performedBy));
     if (action) conditions.push(eq(moderationLogs.action, action));
+    if (createdAfter) conditions.push(gte(moderationLogs.createdAt, createdAfter));
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const [{ count: total }] = await db.select({ count: count() }).from(moderationLogs).where(whereClause);
     const items = await db.select().from(moderationLogs).where(whereClause).orderBy(desc(moderationLogs.createdAt)).limit(limit).offset(offset);

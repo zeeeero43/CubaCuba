@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Ban, AlertTriangle, Clock, CheckCircle, XCircle, MessageSquare } from "lucide-react";
+import { Ban, AlertTriangle, Clock, CheckCircle, XCircle, MessageSquare, Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 
 type RejectionLog = {
   id: string;
@@ -45,9 +47,19 @@ type AppealReview = {
 
 export default function AdminQueuePage() {
   const { toast } = useToast();
+  const [timeFilter, setTimeFilter] = useState<string>("all");
   
   const { data, isLoading } = useQuery<{ items: RejectionLog[]; total: number }>({
-    queryKey: ["/api/admin/rejections"],
+    queryKey: ["/api/admin/rejections", { timeFilter }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (timeFilter && timeFilter !== "all") {
+        params.append("timeFilter", timeFilter);
+      }
+      const response = await fetch(`/api/admin/rejections?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch rejections");
+      return response.json();
+    },
     refetchInterval: 5000, // Auto-refresh every 5 seconds for real-time updates
   });
 
@@ -172,6 +184,25 @@ export default function AdminQueuePage() {
 
           {/* Rejections Tab */}
           <TabsContent value="rejections" className="space-y-4">
+            {/* Time Filter */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Zeitraum:</span>
+              </div>
+              <Select value={timeFilter} onValueChange={setTimeFilter}>
+                <SelectTrigger className="w-[180px]" data-testid="select-time-filter">
+                  <SelectValue placeholder="Zeitraum wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="24h">Letzte 24 Stunden</SelectItem>
+                  <SelectItem value="7d">Letzte 7 Tage</SelectItem>
+                  <SelectItem value="30d">Letzte 30 Tage</SelectItem>
+                  <SelectItem value="all">Alle</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {isLoading ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {[...Array(6)].map((_, i) => (
@@ -187,7 +218,7 @@ export default function AdminQueuePage() {
                       Keine Ablehnungen
                     </h3>
                     <p className="text-gray-500 dark:text-gray-400 mt-2">
-                      Derzeit keine Anzeigen von DeepSeek AI abgelehnt
+                      Keine Ablehnungen in diesem Zeitraum
                     </p>
                   </div>
                 </CardContent>
@@ -241,7 +272,7 @@ export default function AdminQueuePage() {
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <CardTitle className="text-lg">{appeal.listing.title}</CardTitle>
+                            <CardTitle className="text-lg">{appeal.listing?.title || "Anzeige wurde gelöscht"}</CardTitle>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                               Einspruch: {new Date(appeal.appealedAt!).toLocaleString("de-DE")}
                             </p>
