@@ -36,7 +36,7 @@ export function ModerationStatusBadge({
     appealed: {
       label: "En revisión",
       variant: "secondary" as const,
-      className: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+      className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
       icon: Clock,
     },
     flagged: {
