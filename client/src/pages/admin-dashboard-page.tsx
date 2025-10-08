@@ -104,16 +104,19 @@ export default function AdminDashboardPage() {
     },
   ];
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "approved":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "rejected":
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-orange-600" />;
-      default:
-        return <AlertTriangle className="h-4 w-4 text-gray-600" />;
+  const getActionIcon = (action: string) => {
+    if (action.includes("genehmigt") || action.includes("Genehmigt")) {
+      return <CheckCircle className="h-5 w-5 text-green-600" />;
+    } else if (action.includes("abgelehnt") || action.includes("Abgelehnt")) {
+      return <XCircle className="h-5 w-5 text-red-600" />;
+    } else if (action.includes("Einspruch")) {
+      return <Flag className="h-5 w-5 text-orange-600" />;
+    } else if (action.includes("Meldung")) {
+      return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
+    } else if (action.includes("gelöscht") || action.includes("Gelöscht")) {
+      return <Ban className="h-5 w-5 text-red-600" />;
+    } else {
+      return <Clock className="h-5 w-5 text-blue-600" />;
     }
   };
 
@@ -188,30 +191,38 @@ export default function AdminDashboardPage() {
                 Keine aktuellen Aktivitäten
               </p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {data.recentLogs.map((log) => (
                   <div
                     key={log.id}
                     data-testid={`activity-${log.id}`}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800"
+                    className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <div className="mt-1">
-                      <AlertTriangle className="h-4 w-4 text-gray-600" />
+                    <div className="flex-shrink-0">
+                      {getActionIcon(log.action)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         {log.action}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                         {log.details}
                       </p>
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                      {new Date(log.performedAt).toLocaleTimeString("es-CU", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+                    <div className="flex-shrink-0 text-right">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap block">
+                        {new Date(log.performedAt).toLocaleDateString("de-DE", {
+                          day: "2-digit",
+                          month: "2-digit",
+                        })}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap block mt-0.5">
+                        {new Date(log.performedAt).toLocaleTimeString("de-DE", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

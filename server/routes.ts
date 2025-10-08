@@ -1263,7 +1263,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { items: pendingReviews } = await storage.getPendingReviews({ limit: 5 });
       const { items: appealedReviews } = await storage.getAppealedReviews({ limit: 5 });
       const { items: pendingReports } = await storage.getPendingReports({ limit: 5 });
-      const { items: recentLogs } = await storage.getModerationLogs({ limit: 10 });
+      const { items: rawLogs } = await storage.getModerationLogs({ limit: 10 });
+
+      // Format logs with better information
+      const recentLogs = rawLogs.map((log: any) => {
+        let actionLabel = log.action;
+        let details = log.details;
+        
+        // Parse details if it's JSON
+        try {
+          const parsedDetails = JSON.parse(log.details || '{}');
+          
+          // Create human-readable action descriptions
+          switch (log.action) {
+            case 'auto_approved':
+              actionLabel = 'Automatisch genehmigt';
+              const approveConfidence = parsedDetails.confidence || parsedDetails.aiConfidence || 'N/A';
+              details = `Anzeige automatisch genehmigt (Konfidenz: ${approveConfidence}%)`;
+              break;
+            case 'auto_rejected':
+              actionLabel = 'Automatisch abgelehnt';
+              const rejectConfidence = parsedDetails.confidence || parsedDetails.aiConfidence || 'N/A';
+              details = `Anzeige automatisch abgelehnt (Konfidenz: ${rejectConfidence}%)`;
+              break;
+            case 'manual_review':
+              actionLabel = 'Manuelle Prüfung';
+              if (parsedDetails.decision) {
+                details = `Anzeige ${parsedDetails.decision === 'approved' ? 'genehmigt' : 'abgelehnt'}`;
+              } else {
+                details = 'Manuelle Überprüfung durchgeführt';
+              }
+              break;
+            case 'appeal_submitted':
+              actionLabel = 'Einspruch eingereicht';
+              details = 'Benutzer hat Einspruch eingereicht';
+              break;
+            case 'report_created':
+              actionLabel = 'Meldung erstellt';
+              details = 'Neue Meldung wurde eingereicht';
+              break;
+            case 'listing_deleted':
+              actionLabel = 'Anzeige gelöscht';
+              details = 'Anzeige wurde vom Admin gelöscht';
+              break;
+            default:
+              actionLabel = log.action;
+          }
+        } catch (e) {
+          // Keep original details if parsing fails
+        }
+
+        return {
+          id: log.id,
+          action: actionLabel,
+          details: details,
+          performedAt: log.createdAt, // Map createdAt to performedAt for frontend
+          targetType: log.targetType,
+          targetId: log.targetId
+        };
+      });
 
       res.json({
         stats: moderationStats,
