@@ -113,9 +113,16 @@ export default function AdminQueuePage() {
                 <Ban className="h-5 w-5 text-red-600" />
                 {log.parsedDetails?.title || "Unbekannter Titel"}
               </CardTitle>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Abgelehnt: {new Date(log.createdAt).toLocaleString("de-DE")}
-              </p>
+              <div className="mt-1 space-y-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Abgelehnt: {new Date(log.createdAt).toLocaleString("de-DE")}
+                </p>
+                {(log as any).user && (
+                  <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                    Benutzer: {(log as any).user.username || (log as any).user.phone}
+                  </p>
+                )}
+              </div>
             </div>
             <Badge variant="destructive">
               Strike {strikes}

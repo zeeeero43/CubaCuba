@@ -1519,19 +1519,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAfter
       });
       
-      // Parse the details JSON for each log
-      const parsedLogs = logs.map((log: any) => {
+      // Parse the details JSON and load user info for each log
+      const parsedLogs = await Promise.all(logs.map(async (log: any) => {
         let details = {};
+        let user = null;
+        
         try {
           details = JSON.parse(log.details || '{}');
+          
+          // Load user info if userId is in details
+          if ((details as any).userId) {
+            user = await storage.getUser((details as any).userId);
+          }
         } catch (e) {
           console.error('Error parsing log details:', e);
         }
+        
         return {
           ...log,
-          parsedDetails: details
+          parsedDetails: details,
+          user: user ? {
+            id: user.id,
+            username: user.username,
+            phone: user.phone,
+            email: user.email
+          } : null
         };
-      });
+      }));
 
       res.json({ items: parsedLogs, total });
     } catch (error) {
