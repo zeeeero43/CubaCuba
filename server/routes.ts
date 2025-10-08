@@ -295,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action: "auto_approved",
           targetType: "listing",
           targetId: listing.id,
-          performedBy: "system",
+          performedBy: null,
           details: JSON.stringify({ confidence: moderationResult.confidence, reasons: moderationResult.reasons })
         });
       } else {
@@ -303,7 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           action: "auto_rejected",
           targetType: "listing",
           targetId: listing.id,
-          performedBy: "system",
+          performedBy: null,
           details: JSON.stringify({ confidence: moderationResult.confidence, reasons: moderationResult.reasons })
         });
       }

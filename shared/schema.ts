@@ -278,7 +278,7 @@ export const moderationLogs = pgTable("moderation_logs", {
   action: text("action").notNull(), // "approve" | "reject" | "appeal" | "blacklist_add" | "report_create" | etc
   targetType: text("target_type").notNull(), // "listing" | "user" | "blacklist" | "report"
   targetId: varchar("target_id").notNull(),
-  performedBy: varchar("performed_by").references(() => users.id).notNull(),
+  performedBy: varchar("performed_by").references(() => users.id), // nullable for system actions
   details: text("details"), // JSON string with additional details
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 }, (table) => ({
