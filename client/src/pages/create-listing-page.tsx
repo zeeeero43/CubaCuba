@@ -688,12 +688,12 @@ export default function CreateListingPage() {
       {/* Rejection Dialog - PROMINENT WARNING */}
       <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto border-4 border-red-600 dark:border-red-500" data-testid="dialog-rejection">
-          <DialogHeader className="bg-red-600 dark:bg-red-700 text-white -mx-6 -mt-6 px-6 py-6 mb-6">
-            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 animate-pulse" />
-              ⚠️ ANUNCIO RECHAZADO - VIOLACIÓN DE NORMAS ⚠️
+          <DialogHeader className="bg-red-600 dark:bg-red-700 text-white -mx-6 -mt-6 px-6 py-4 sm:py-6 mb-6">
+            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2 sm:gap-3 leading-tight">
+              <AlertTriangle className="h-6 w-6 sm:h-7 sm:w-7 animate-pulse flex-shrink-0" />
+              <span className="break-words">⚠️ ANUNCIO RECHAZADO - VIOLACIÓN DE NORMAS ⚠️</span>
             </DialogTitle>
-            <DialogDescription className="text-red-50 text-base font-medium mt-2">
+            <DialogDescription className="text-red-50 text-sm sm:text-base font-medium mt-2">
               {rejectionData?.message}
             </DialogDescription>
           </DialogHeader>
