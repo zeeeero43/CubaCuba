@@ -1013,12 +1013,6 @@ export default function ListingDetailPage() {
                 </ul>
               </CardContent>
             </Card>
-
-            {/* Report */}
-            <Button variant="ghost" size="sm" className="w-full text-muted-foreground">
-              <Flag className="w-4 h-4 mr-2" />
-              Reportar anuncio
-            </Button>
           </div>
         </div>
       </div>
