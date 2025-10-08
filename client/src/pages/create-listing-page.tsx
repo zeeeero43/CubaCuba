@@ -13,8 +13,21 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera } from "lucide-react";
+import { ArrowLeft, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText } from "lucide-react";
 import type { Category } from "@shared/schema";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 
 const provinces = [
   { value: "havana", label: "La Habana" },
@@ -35,6 +48,17 @@ const provinces = [
   { value: "guantanamo", label: "Guantánamo" },
 ];
 
+type RejectionData = {
+  message: string;
+  reasons: string[];
+  specificIssues: string[];
+  aiExplanation: string;
+  confidence: number;
+  warning: string;
+  reviewId?: string;
+  listingId?: string;
+};
+
 export default function CreateListingPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -42,6 +66,10 @@ export default function CreateListingPage() {
   const [images, setImages] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
+  const [rejectionData, setRejectionData] = useState<RejectionData | null>(null);
+  const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [showAppealDialog, setShowAppealDialog] = useState(false);
+  const [appealReason, setAppealReason] = useState("");
 
   // Fetch hierarchical categories
   const { data: categoriesTree } = useQuery<{
@@ -87,42 +115,63 @@ export default function CreateListingPage() {
       console.log('Mutation error:', error);
       
       // Try to parse error message
-      let errorMessage = "Hubo un problema al crear tu anuncio";
-      let errorReasons: string[] = [];
-      let warningMessage = "";
+      let errorData: RejectionData = {
+        message: "Hubo un problema al crear tu anuncio",
+        reasons: [],
+        specificIssues: [],
+        aiExplanation: "",
+        confidence: 0,
+        warning: ""
+      };
       
       if (error.message) {
         try {
           // Try to extract JSON from error message
           const jsonMatch = error.message.match(/\{.*\}/);
           if (jsonMatch) {
-            const errorData = JSON.parse(jsonMatch[0]);
-            errorMessage = errorData.message || errorMessage;
-            errorReasons = errorData.reasons || [];
-            warningMessage = errorData.warning || "";
-          } else {
-            errorMessage = error.message;
+            const parsed = JSON.parse(jsonMatch[0]);
+            errorData = {
+              message: parsed.message || errorData.message,
+              reasons: parsed.reasons || [],
+              specificIssues: parsed.specificIssues || [],
+              aiExplanation: parsed.aiExplanation || "",
+              confidence: parsed.confidence || 0,
+              warning: parsed.warning || "",
+              reviewId: parsed.reviewId,
+              listingId: parsed.listingId
+            };
           }
         } catch (e) {
-          errorMessage = error.message;
+          console.error('Error parsing rejection data:', e);
         }
       }
       
-      // Build description with reasons and warning
-      let description = errorMessage;
-      if (errorReasons.length > 0) {
-        description += `\n\nMotivos:\n${errorReasons.map(r => `• ${r}`).join('\n')}`;
-      }
-      if (warningMessage) {
-        description += `\n\n⚠️ ${warningMessage}`;
-      }
-      
-      // Show toast with moderation rejection
+      // Show rejection dialog instead of toast
+      setRejectionData(errorData);
+      setShowRejectionDialog(true);
+    },
+  });
+
+  const appealMutation = useMutation({
+    mutationFn: async ({ reviewId, appealReason }: { reviewId: string; appealReason: string }) => {
+      const response = await apiRequest('POST', `/api/moderation/appeal/${reviewId}`, { appealReason });
+      return response.json();
+    },
+    onSuccess: () => {
       toast({
-        title: "⛔ Anuncio Rechazado",
-        description: description,
+        title: "Apelación enviada",
+        description: "Tu apelación ha sido enviada exitosamente. Un moderador la revisará pronto.",
+      });
+      setShowAppealDialog(false);
+      setShowRejectionDialog(false);
+      setAppealReason("");
+      navigate('/');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al enviar apelación",
+        description: error.message || "Hubo un problema al enviar tu apelación",
         variant: "destructive",
-        duration: 12000,
       });
     },
   });
@@ -633,6 +682,183 @@ export default function CreateListingPage() {
           </div>
         </form>
       </div>
+
+      {/* Rejection Dialog */}
+      <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
+        <DialogContent className="sm:max-w-[600px]" data-testid="dialog-rejection">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Ban className="h-5 w-5" />
+              Anuncio Rechazado
+            </DialogTitle>
+            <DialogDescription>
+              {rejectionData?.message}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-4">
+            {/* AI Confidence Score */}
+            {rejectionData && rejectionData.confidence > 0 && (
+              <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <span className="text-sm font-medium">Confianza de IA:</span>
+                <Badge variant="outline" className="font-mono">
+                  {rejectionData.confidence}%
+                </Badge>
+              </div>
+            )}
+
+            {/* General Reasons */}
+            {rejectionData && rejectionData.reasons.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Motivos Generales:
+                </h4>
+                <div className="space-y-1">
+                  {rejectionData.reasons.map((reason, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-sm">
+                      <span className="text-red-500">•</span>
+                      <span>{reason}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Specific AI Issues */}
+            {rejectionData && rejectionData.specificIssues.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Problemas Específicos Detectados:
+                </h4>
+                <div className="space-y-1">
+                  {rejectionData.specificIssues.map((issue, idx) => (
+                    <Badge key={idx} variant="destructive" className="mr-1 mb-1">
+                      {issue}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* AI Explanation */}
+            {rejectionData && rejectionData.aiExplanation && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Explicación de la IA:</AlertTitle>
+                <AlertDescription>
+                  {rejectionData.aiExplanation}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Warning */}
+            {rejectionData && rejectionData.warning && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Advertencia Legal:</AlertTitle>
+                <AlertDescription className="text-sm">
+                  {rejectionData.warning}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowRejectionDialog(false)}
+              data-testid="button-close-rejection"
+            >
+              Cerrar
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => {
+                if (rejectionData?.reviewId) {
+                  setShowRejectionDialog(false);
+                  setShowAppealDialog(true);
+                } else {
+                  toast({
+                    title: "Error",
+                    description: "No se puede apelar esta decisión en este momento",
+                    variant: "destructive"
+                  });
+                }
+              }}
+              data-testid="button-appeal"
+              disabled={!rejectionData?.reviewId}
+            >
+              Presentar Apelación
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Appeal Dialog */}
+      <Dialog open={showAppealDialog} onOpenChange={setShowAppealDialog}>
+        <DialogContent className="sm:max-w-[500px]" data-testid="dialog-appeal">
+          <DialogHeader>
+            <DialogTitle>Presentar Apelación</DialogTitle>
+            <DialogDescription>
+              Explica por qué crees que tu anuncio no debería haber sido rechazado. Un moderador revisará tu caso.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-4">
+            <div className="space-y-2">
+              <Label htmlFor="appeal-reason">
+                Motivo de la apelación (mínimo 10 caracteres) *
+              </Label>
+              <Textarea
+                id="appeal-reason"
+                placeholder="Explica detalladamente por qué tu anuncio cumple con las normas..."
+                value={appealReason}
+                onChange={(e) => setAppealReason(e.target.value)}
+                rows={6}
+                data-testid="textarea-appeal-reason"
+              />
+              <p className="text-xs text-muted-foreground">
+                {appealReason.length}/10 caracteres mínimos
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAppealDialog(false);
+                setAppealReason("");
+              }}
+              data-testid="button-cancel-appeal"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (rejectionData?.reviewId && appealReason.trim().length >= 10) {
+                  appealMutation.mutate({
+                    reviewId: rejectionData.reviewId,
+                    appealReason: appealReason.trim()
+                  });
+                } else {
+                  toast({
+                    title: "Error",
+                    description: "La razón debe tener al menos 10 caracteres",
+                    variant: "destructive"
+                  });
+                }
+              }}
+              disabled={appealMutation.isPending || appealReason.trim().length < 10}
+              data-testid="button-submit-appeal"
+            >
+              {appealMutation.isPending ? "Enviando..." : "Enviar Apelación"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

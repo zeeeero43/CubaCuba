@@ -283,8 +283,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       console.log("✅ Moderation complete. Decision:", moderationResult.decision);
 
-      // If REJECTED: Don't create listing, return error, add strike
+      // If REJECTED: Create draft listing + review for appeal, add strike
       if (moderationResult.decision === "rejected") {
+        // Create draft listing (not published) so user can appeal
+        const listing = await storage.createListing(listingData);
+
+        // Create moderation review for the rejected listing
+        const review = await storage.createModerationReview({
+          listingId: listing.id,
+          aiDecision: moderationResult.decision,
+          aiConfidence: moderationResult.confidence,
+          aiReasons: moderationResult.reasons,
+          aiAnalysis: JSON.stringify(moderationResult.details),
+          textScore: moderationResult.textScore,
+          imageScores: moderationResult.imageScores ? moderationResult.imageScores.map((s: number) => s.toString()) : []
+        });
+
+        await storage.updateModerationReview(review.id, {
+          status: "rejected"
+        });
+
+        await storage.updateListingModeration(listing.id, "rejected", review.id);
+
         // Add strike to user
         const currentStrikes = (user?.moderationStrikes || 0) + 1;
         await storage.updateUserStrikes(req.user!.id, currentStrikes);
@@ -301,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createModerationLog({
           action: "auto_rejected",
           targetType: "listing",
-          targetId: "draft",
+          targetId: listing.id,
           performedBy: null,
           details: JSON.stringify({ 
             userId: req.user!.id,
@@ -312,7 +332,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
         });
 
-        // Return error with clear reasons
+        // Extract specific AI analysis
+        const specificIssues = moderationResult.details.textAnalysis?.issues || [];
+        
+        // Extract explanation from raw AI analysis if available
+        let aiExplanation = "";
+        try {
+          const aiAnalysis = JSON.stringify(moderationResult.details);
+          const parsedAnalysis = JSON.parse(aiAnalysis);
+          aiExplanation = parsedAnalysis?.textAnalysis?.explanation || 
+                          parsedAnalysis?.explanation || 
+                          "Contenido detectado que viola nuestras normas";
+        } catch (e) {
+          aiExplanation = "Contenido detectado que viola nuestras normas";
+        }
+        
+        // Return error with specific AI reasons + review ID for appeal
         const reasonsInSpanish: Record<string, string> = {
           "inappropriate_text": "Contenido inapropiado detectado en el texto",
           "cuba_policy_violation": "Violación de las políticas de contenido cubanas",
@@ -326,7 +361,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ 
           message: "Tu anuncio ha sido rechazado por violar nuestras normas de contenido",
           reasons: translatedReasons,
-          warning: "Contenido ilegal o inapropiado puede ser reportado a las autoridades. Evita publicar contenido que viole las leyes cubanas."
+          specificIssues: specificIssues,
+          aiExplanation: aiExplanation,
+          confidence: moderationResult.confidence,
+          warning: "⚠️ ADVERTENCIA: Bei wiederholten Verstößen können wir gezwungen sein, dies den Behörden zu melden.",
+          reviewId: review.id, // Include review ID for appeals
+          listingId: listing.id
         });
       }
 
