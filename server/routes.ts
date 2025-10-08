@@ -1038,46 +1038,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ MODERATION ROUTES ============
   
-  // Submit appeal for rejected listing
-  app.post("/api/moderation/appeal/:reviewId", async (req, res) => {
+  // Submit appeal for rejected listing (accepts listingId)
+  app.post("/api/moderation/appeal", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Debes iniciar sesión" });
     }
 
     try {
-      const { reviewId } = req.params;
-      const { appealReason } = req.body;
+      const { listingId, reason } = req.body;
 
-      if (!appealReason || appealReason.trim().length < 10) {
-        return res.status(400).json({ message: "La razón del apelación debe tener al menos 10 caracteres" });
+      if (!reason || reason.trim().length < 20) {
+        return res.status(400).json({ message: "La razón del apelación debe tener al menos 20 caracteres" });
       }
 
-      const review = await storage.getModerationReview(reviewId);
-      if (!review) {
-        return res.status(404).json({ message: "Revisión no encontrada" });
-      }
-
-      const listing = await storage.getListing(review.listingId);
+      const listing = await storage.getListing(listingId);
       if (!listing || listing.sellerId !== req.user!.id) {
-        return res.status(403).json({ message: "No tienes permiso para apelar esta revisión" });
+        return res.status(403).json({ message: "No tienes permiso para apelar esta anuncio" });
       }
 
-      if (review.status !== "rejected") {
+      if (listing.moderationStatus !== "rejected") {
         return res.status(400).json({ message: "Solo se pueden apelar anuncios rechazados" });
       }
 
-      const updated = await storage.updateModerationReview(reviewId, {
+      // Get the moderation review for this listing
+      const review = await storage.getModerationReviewByListing(listingId);
+      if (!review) {
+        return res.status(404).json({ message: "Revisión de moderación no encontrada" });
+      }
+
+      // Check if already appealed
+      if (review.status === "appealed") {
+        return res.status(400).json({ message: "Ya has apelado este anuncio. Espera la revisión del administrador." });
+      }
+
+      // Update review status to appealed
+      const updated = await storage.updateModerationReview(review.id, {
         status: "appealed",
-        appealReason,
+        appealReason: reason,
         appealedAt: new Date()
       });
+
+      // Update listing moderation status to appealed
+      await storage.updateListingModeration(listingId, "appealed", review.id);
 
       await storage.createModerationLog({
         action: "appeal_submitted",
         targetType: "listing",
-        targetId: review.listingId,
+        targetId: listingId,
         performedBy: req.user!.id,
-        details: JSON.stringify({ reviewId, appealReason })
+        details: JSON.stringify({ reviewId: review.id, reason })
       });
 
       res.json(updated);

@@ -33,10 +33,10 @@ export function AppealDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/my-listings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/me/listings"] });
       toast({
         title: "Apelación enviada",
-        description: "Tu apelación ha sido enviada para revisión manual",
+        description: "Tu apelación ha sido enviada para revisión manual. El estado de tu anuncio aparecerá como 'En revisión' hasta que un administrador lo revise.",
       });
       onOpenChange(false);
       setReason("");
