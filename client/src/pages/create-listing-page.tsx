@@ -85,10 +85,35 @@ export default function CreateListingPage() {
     },
     onError: (error: any) => {
       console.log('Mutation error:', error);
+      
+      // Try to parse error message
+      let errorMessage = "Hubo un problema al crear tu anuncio";
+      let errorReasons: string[] = [];
+      
+      if (error.message) {
+        try {
+          // Try to extract JSON from error message
+          const jsonMatch = error.message.match(/\{.*\}/);
+          if (jsonMatch) {
+            const errorData = JSON.parse(jsonMatch[0]);
+            errorMessage = errorData.message || errorMessage;
+            errorReasons = errorData.reasons || [];
+          } else {
+            errorMessage = error.message;
+          }
+        } catch (e) {
+          errorMessage = error.message;
+        }
+      }
+      
+      // Show toast with moderation rejection
       toast({
-        title: "Error al crear el anuncio",
-        description: error.message || "Hubo un problema al crear tu anuncio",
+        title: "Anuncio rechazado",
+        description: errorReasons.length > 0 
+          ? `${errorMessage}\n\nMotivo: ${errorReasons.join(', ')}`
+          : errorMessage,
         variant: "destructive",
+        duration: 8000,
       });
     },
   });

@@ -323,11 +323,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const translatedReasons = moderationResult.reasons.map(r => reasonsInSpanish[r] || r);
         
         return res.status(400).json({ 
-          message: "Tu anuncio ha sido rechazado por no cumplir con las normas de moderación",
-          reasons: translatedReasons,
-          strikes: currentStrikes,
-          maxStrikes: maxStrikes,
-          warning: currentStrikes >= maxStrikes - 1 ? "¡Advertencia! Estás cerca del límite de strikes." : undefined
+          message: "Tu anuncio no cumple con nuestras normas de contenido y no puede ser publicado",
+          reasons: translatedReasons
         });
       }
 
