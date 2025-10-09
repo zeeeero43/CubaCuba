@@ -427,7 +427,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const validatedData = insertListingSchema.partial().parse(req.body);
+      // Convert empty strings to null for foreign keys
+      const cleanedBody = {
+        ...req.body,
+        categoryId: req.body.categoryId === "" ? null : req.body.categoryId,
+      };
+      
+      const validatedData = insertListingSchema.partial().parse(cleanedBody);
       
       // Validate that categoryId refers to a subcategory (not a main category)
       if (validatedData.categoryId) {
