@@ -14,7 +14,7 @@ import { z } from "zod";
 type Screen = "login" | "register";
 
 const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
+  identifier: z.string().min(1, "Email o teléfono es requerido"),
   password: z.string().min(1, "La contraseña es requerida"),
 });
 
@@ -41,7 +41,7 @@ export default function AuthPage() {
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      identifier: "",
       password: "",
     },
   });
@@ -123,20 +123,20 @@ export default function AuthPage() {
                 <div className="flex-1 h-px bg-border"></div>
               </div>
 
-              {/* Email/Password Login Form */}
+              {/* Email/Phone + Password Login Form */}
               <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-identifier">Email o Teléfono</Label>
                   <Input
-                    id="login-email"
-                    type="email"
+                    id="login-identifier"
+                    type="text"
                     className="py-4 md:py-3 text-lg md:text-base"
-                    placeholder="tu@email.com"
-                    {...loginForm.register("email")}
-                    data-testid="input-login-email"
+                    placeholder="tu@email.com o +53XXXXXXXX"
+                    {...loginForm.register("identifier")}
+                    data-testid="input-login-identifier"
                   />
-                  {loginForm.formState.errors.email && (
-                    <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>
+                  {loginForm.formState.errors.identifier && (
+                    <p className="text-sm text-destructive">{loginForm.formState.errors.identifier.message}</p>
                   )}
                 </div>
                 

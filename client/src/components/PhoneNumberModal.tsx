@@ -71,7 +71,7 @@ export function PhoneNumberModal({ open, onClose }: PhoneNumberModalProps) {
         title: "Teléfono agregado",
         description: "Tu número de teléfono ha sido guardado exitosamente",
       });
-      onClose?.();
+      // Modal closes automatically when user data is refreshed and hasPhone becomes true
     },
     onError: (error: any) => {
       toast({
@@ -96,8 +96,12 @@ export function PhoneNumberModal({ open, onClose }: PhoneNumberModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose ? () => {} : undefined}>
-      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+    <Dialog open={open} modal={true}>
+      <DialogContent 
+        className="sm:max-w-md [&>button]:hidden" 
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
             <Phone className="w-8 h-8 text-primary" />

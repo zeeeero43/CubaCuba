@@ -22,7 +22,7 @@ type AuthContextType = {
 };
 
 type LoginData = {
-  email: string;
+  identifier: string;
   password: string;
 };
 
@@ -48,6 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user && !hasPhone && !showPhoneModal) {
       setShowPhoneModal(true);
+    } else if (user && hasPhone && showPhoneModal) {
+      // Close modal when user adds phone number
+      setShowPhoneModal(false);
     }
   }, [user, hasPhone, showPhoneModal]);
 
@@ -130,10 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      {/* Show phone modal if user needs to add phone */}
+      {/* Show phone modal if user needs to add phone - NOT CLOSABLE */}
       <PhoneNumberModal 
-        open={showPhoneModal} 
-        onClose={() => setShowPhoneModal(false)}
+        open={showPhoneModal}
       />
     </AuthContext.Provider>
   );

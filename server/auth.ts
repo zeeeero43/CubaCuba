@@ -93,15 +93,24 @@ export function setupAuth(app: Express) {
   // Apply CSRF protection to state-changing auth endpoints
   app.use(['/api/logout'], csrfProtection);
 
-  // Local Strategy (Email/Password)
+  // Local Strategy (Email/Phone + Password)
   passport.use(
     new LocalStrategy(
-      { usernameField: "email", passwordField: "password" },
-      async (email, password, done) => {
+      { usernameField: "identifier", passwordField: "password" },
+      async (identifier, password, done) => {
         try {
-          const user = await storage.getUserByEmail(email);
+          // Check if identifier is email or phone
+          const isEmail = identifier.includes('@');
+          
+          let user;
+          if (isEmail) {
+            user = await storage.getUserByEmail(identifier);
+          } else {
+            user = await storage.getUserByPhone(identifier);
+          }
+          
           if (!user || !user.password || !(await comparePasswords(password, user.password))) {
-            return done(null, false, { message: "Email o contraseña incorrectos" });
+            return done(null, false, { message: "Email/Teléfono o contraseña incorrectos" });
           }
           return done(null, user);
         } catch (error) {
