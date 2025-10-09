@@ -43,7 +43,7 @@ export const categories = pgTable("categories", {
   icon: text("icon").notNull(),
   color: text("color").notNull().default("#10b981"),
   order: integer("order").notNull().default(0),
-  parentId: varchar("parent_id").references((): any => categories.id),
+  parentId: varchar("parent_id").references((): any => categories.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 }, (table) => ({
   parentIdx: index("parent_idx").on(table.parentId),
@@ -57,8 +57,8 @@ export const products = pgTable("products", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   currency: text("currency").notNull().default("CUP"),
   imageUrl: text("image_url"),
-  categoryId: varchar("category_id").references(() => categories.id),
-  sellerId: varchar("seller_id").references(() => users.id),
+  categoryId: varchar("category_id").references(() => categories.id, { onDelete: "set null" }),
+  sellerId: varchar("seller_id").references(() => users.id, { onDelete: "cascade" }),
   province: text("province").notNull(),
   featured: text("featured").notNull().default("false"),
   status: text("status").notNull().default("active"),
@@ -99,8 +99,8 @@ export const listings = pgTable("listings", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   currency: text("currency").notNull().default("CUP"),
   priceType: text("price_type").notNull().default("fixed"), // "fixed" | "negotiable"
-  categoryId: varchar("category_id").references(() => categories.id),
-  sellerId: varchar("seller_id").references(() => users.id).notNull(),
+  categoryId: varchar("category_id").references(() => categories.id, { onDelete: "set null" }),
+  sellerId: varchar("seller_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   locationCity: text("location_city").notNull(),
   locationRegion: text("location_region").notNull(), // province
   latitude: decimal("latitude", { precision: 10, scale: 8 }),  // Geographical coordinates
@@ -138,8 +138,8 @@ export const premiumOptions = pgTable("premium_options", {
 // Purchased premium features
 export const listingPremium = pgTable("listing_premium", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  listingId: varchar("listing_id").references(() => listings.id).notNull(),
-  premiumOptionId: varchar("premium_option_id").references(() => premiumOptions.id).notNull(),
+  listingId: varchar("listing_id").references(() => listings.id, { onDelete: "cascade" }).notNull(),
+  premiumOptionId: varchar("premium_option_id").references(() => premiumOptions.id, { onDelete: "cascade" }).notNull(),
   expiryDate: timestamp("expiry_date").notNull(),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 });
@@ -157,16 +157,16 @@ export const settings = pgTable("settings", {
 // User favorites
 export const favorites = pgTable("favorites", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  listingId: varchar("listing_id").references(() => listings.id).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  listingId: varchar("listing_id").references(() => listings.id, { onDelete: "cascade" }).notNull(),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 });
 
 // User follows
 export const follows = pgTable("follows", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  followerId: varchar("follower_id").references(() => users.id).notNull(),
-  followeeId: varchar("followee_id").references(() => users.id).notNull(),
+  followerId: varchar("follower_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  followeeId: varchar("followee_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 }, (table) => ({
   uniqueFollow: uniqueIndex("unique_follow").on(table.followerId, table.followeeId),
@@ -177,9 +177,9 @@ export const follows = pgTable("follows", {
 // User ratings/reviews
 export const ratings = pgTable("ratings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  raterId: varchar("rater_id").references(() => users.id).notNull(),
-  rateeId: varchar("ratee_id").references(() => users.id).notNull(),
-  listingId: varchar("listing_id").references(() => listings.id),
+  raterId: varchar("rater_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  rateeId: varchar("ratee_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  listingId: varchar("listing_id").references(() => listings.id, { onDelete: "set null" }),
   score: integer("score").notNull(), // 1-5
   comment: text("comment"),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
@@ -192,7 +192,7 @@ export const ratings = pgTable("ratings", {
 // Saved searches
 export const savedSearches = pgTable("saved_searches", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(),
   searchParams: text("search_params").notNull(), // JSON string
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
@@ -203,7 +203,7 @@ export const savedSearches = pgTable("saved_searches", {
 // Moderation Reviews - AI moderation results
 export const moderationReviews = pgTable("moderation_reviews", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  listingId: varchar("listing_id").references(() => listings.id).notNull(),
+  listingId: varchar("listing_id").references(() => listings.id, { onDelete: "cascade" }).notNull(),
   status: text("status").notNull().default("pending"), // "pending" | "approved" | "rejected" | "appealed"
   aiDecision: text("ai_decision").notNull(), // "approved" | "rejected"
   aiConfidence: integer("ai_confidence").notNull(), // 0-100
@@ -211,7 +211,7 @@ export const moderationReviews = pgTable("moderation_reviews", {
   aiAnalysis: text("ai_analysis"), // JSON string with full AI response
   textScore: integer("text_score"), // 0-100
   imageScores: text("image_scores").array().default(sql`ARRAY[]::text[]`), // array of scores
-  reviewedBy: varchar("reviewed_by").references(() => users.id), // admin ID if manual review
+  reviewedBy: varchar("reviewed_by").references(() => users.id, { onDelete: "set null" }), // admin ID if manual review
   reviewedAt: timestamp("reviewed_at"),
   appealReason: text("appeal_reason"),
   appealedAt: timestamp("appealed_at"),
@@ -228,7 +228,7 @@ export const moderationBlacklist = pgTable("moderation_blacklist", {
   value: text("value").notNull(),
   reason: text("reason").notNull(),
   isActive: text("is_active").notNull().default("true"), // "true" | "false"
-  addedBy: varchar("added_by").references(() => users.id), // Nullable for system entries
+  addedBy: varchar("added_by").references(() => users.id, { onDelete: "set null" }), // Nullable for system entries
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 }, (table) => ({
   typeIdx: index("moderation_blacklist_type_idx").on(table.type),
@@ -238,13 +238,13 @@ export const moderationBlacklist = pgTable("moderation_blacklist", {
 // Moderation Reports - User reports
 export const moderationReports = pgTable("moderation_reports", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  reporterId: varchar("reporter_id").references(() => users.id).notNull(),
-  listingId: varchar("listing_id").references(() => listings.id),
-  reportedUserId: varchar("reported_user_id").references(() => users.id),
+  reporterId: varchar("reporter_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  listingId: varchar("listing_id").references(() => listings.id, { onDelete: "set null" }),
+  reportedUserId: varchar("reported_user_id").references(() => users.id, { onDelete: "set null" }),
   reason: text("reason").notNull(), // "spam" | "scam" | "inappropriate" | "duplicate" | "other"
   description: text("description"),
   status: text("status").notNull().default("pending"), // "pending" | "resolved" | "dismissed"
-  resolvedBy: varchar("resolved_by").references(() => users.id),
+  resolvedBy: varchar("resolved_by").references(() => users.id, { onDelete: "set null" }),
   resolvedAt: timestamp("resolved_at"),
   resolution: text("resolution"),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
@@ -267,10 +267,10 @@ export const moderationSettings = pgTable("moderation_settings", {
 // Admin Users - Admin permissions
 export const adminUsers = pgTable("admin_users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull().unique(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull().unique(),
   role: text("role").notNull().default("moderator"), // "moderator" | "admin" | "super_admin"
   permissions: text("permissions").array().default(sql`ARRAY[]::text[]`), // array of permission codes
-  createdBy: varchar("created_by").references(() => users.id),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 }, (table) => ({
   userIdx: index("admin_users_user_idx").on(table.userId),
@@ -282,7 +282,7 @@ export const moderationLogs = pgTable("moderation_logs", {
   action: text("action").notNull(), // "approve" | "reject" | "appeal" | "blacklist_add" | "report_create" | etc
   targetType: text("target_type").notNull(), // "listing" | "user" | "blacklist" | "report"
   targetId: varchar("target_id").notNull(),
-  performedBy: varchar("performed_by").references(() => users.id), // nullable for system actions
+  performedBy: varchar("performed_by").references(() => users.id, { onDelete: "set null" }), // nullable for system actions
   details: text("details"), // JSON string with additional details
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 }, (table) => ({
