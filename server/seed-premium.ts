@@ -5,8 +5,8 @@ import { eq } from "drizzle-orm";
 const premiumFeatures = [
   {
     code: "bump",
-    name: "Hochschieben",
-    description: "Ihre Anzeige wird nach oben geschoben und erscheint ganz oben in der Liste",
+    name: "Impulsar",
+    description: "Tu anuncio se impulsará hacia arriba y aparecerá en la parte superior de la lista",
     price: "5.00",
     currency: "CUP",
     durationDays: 7,
@@ -15,8 +15,8 @@ const premiumFeatures = [
   },
   {
     code: "highlight",
-    name: "Hervorhebung",
-    description: "Ihre Anzeige wird farblich hervorgehoben und sticht besser hervor",
+    name: "Destacar",
+    description: "Tu anuncio será destacado con color y resaltará mejor",
     price: "3.00",
     currency: "CUP",
     durationDays: 7,
@@ -25,8 +25,8 @@ const premiumFeatures = [
   },
   {
     code: "top_placement",
-    name: "Top-Platzierung",
-    description: "Ihre Anzeige wird ganz oben in der Kategorie fixiert",
+    name: "Ubicación Superior",
+    description: "Tu anuncio se fijará en la parte superior de la categoría",
     price: "10.00",
     currency: "CUP",
     durationDays: 7,
@@ -35,8 +35,8 @@ const premiumFeatures = [
   },
   {
     code: "more_images",
-    name: "Mehr Bilder",
-    description: "Laden Sie bis zu 15 Bilder hoch (statt Standard 8)",
+    name: "Más Imágenes",
+    description: "Sube hasta 15 imágenes (en lugar de 8 estándar)",
     price: "2.00",
     currency: "CUP",
     durationDays: 30,
@@ -45,8 +45,8 @@ const premiumFeatures = [
   },
   {
     code: "featured",
-    name: "Featured-Status",
-    description: "Premium-Badge und besondere Kennzeichnung als Top-Anzeige",
+    name: "Estado Destacado",
+    description: "Insignia premium y destacado especial como anuncio destacado",
     price: "8.00",
     currency: "CUP",
     durationDays: 7,
@@ -55,8 +55,8 @@ const premiumFeatures = [
   },
   {
     code: "extended_duration",
-    name: "Längere Laufzeit",
-    description: "Ihre Anzeige bleibt 60 Tage aktiv (statt 30)",
+    name: "Mayor Duración",
+    description: "Tu anuncio permanecerá activo 60 días (en lugar de 30)",
     price: "4.00",
     currency: "CUP",
     durationDays: 60,
@@ -65,8 +65,8 @@ const premiumFeatures = [
   },
   {
     code: "statistics_plus",
-    name: "Statistik-Plus",
-    description: "Detaillierte Aufruf-Statistiken und Besucheranalyse",
+    name: "Estadísticas Plus",
+    description: "Estadísticas detalladas de visitas y análisis de visitantes",
     price: "3.00",
     currency: "CUP",
     durationDays: 30,
@@ -91,7 +91,15 @@ export async function seedPremiumFeatures() {
         await db.insert(premiumOptions).values(feature);
         console.log(`  ✓ Created premium feature: ${feature.name}`);
       } else {
-        console.log(`  ⊙ Feature already exists: ${feature.name}`);
+        // Update existing feature to latest values (for translations)
+        await db
+          .update(premiumOptions)
+          .set({
+            name: feature.name,
+            description: feature.description,
+          })
+          .where(eq(premiumOptions.code, feature.code));
+        console.log(`  ↻ Updated premium feature: ${feature.name}`);
       }
     } catch (error) {
       console.error(`  ✗ Error creating feature ${feature.name}:`, error);
