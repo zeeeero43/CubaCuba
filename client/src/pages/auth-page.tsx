@@ -22,11 +22,6 @@ export default function AuthPage() {
   const { user, registerMutation, loginMutation } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
 
-  // Redirect if already logged in
-  if (user) {
-    return <Redirect to="/" />;
-  }
-
   // Registration form
   const registerForm = useForm({
     resolver: zodResolver(insertUserSchema),
@@ -45,6 +40,11 @@ export default function AuthPage() {
       password: "",
     },
   });
+
+  // Redirect if already logged in (after hooks)
+  if (user) {
+    return <Redirect to="/" />;
+  }
 
   // Submit registration
   const onRegisterSubmit = async (data: any) => {
