@@ -1,5 +1,7 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as FacebookStrategy } from "passport-facebook";
 import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -7,7 +9,6 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
-import crypto from "crypto";
 
 declare global {
   namespace Express {
@@ -15,58 +16,22 @@ declare global {
   }
 }
 
-// Safe user serializer - NEVER expose sensitive fields
-function sanitizeUser(user: SelectUser) {
-  return {
-    id: user.id,
-    phone: user.phone,
-    name: user.name,
-    province: user.province,
-    isVerified: user.isVerified,
-    createdAt: user.createdAt
-    // NEVER include: password, verificationCode, verificationCodeExpiry
-  };
-}
-
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string) {
+export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
 }
 
-async function comparePasswords(supplied: string, stored: string) {
+export async function comparePasswords(supplied: string, stored: string) {
   const [hashed, salt] = stored.split(".");
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Secure verification code generation and hashing
-function generateVerificationCode(): string {
-  return crypto.randomInt(100000, 999999).toString();
-}
-
-async function hashVerificationCode(code: string): Promise<string> {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(code, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
-}
-
-async function verifyCode(supplied: string, stored: string): Promise<boolean> {
-  if (!supplied || !stored) return false;
-  try {
-    const [hashed, salt] = stored.split(".");
-    const hashedBuf = Buffer.from(hashed, "hex");
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
-  } catch (error) {
-    return false;
-  }
-}
-
-// Simple CSRF protection without deprecated csurf
+// CSRF protection
 function generateCSRFToken(): string {
   return randomBytes(32).toString('hex');
 }
@@ -83,7 +48,6 @@ function verifyCSRFToken(sessionToken: string, bodyToken: string): boolean {
   }
 }
 
-// CSRF middleware
 function csrfProtection(req: any, res: any, next: any) {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
     return next();
@@ -101,7 +65,7 @@ function csrfProtection(req: any, res: any, next: any) {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    name: 'rico.sid', // Custom session name
+    name: 'rico.sid',
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
@@ -109,8 +73,8 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      sameSite: 'lax', // CSRF protection
-      maxAge: 4 * 60 * 60 * 1000, // Reduced to 4 hours for security
+      sameSite: 'lax',
+      maxAge: 4 * 60 * 60 * 1000, // 4 hours
     },
   };
 
@@ -127,18 +91,119 @@ export function setupAuth(app: Express) {
   });
 
   // Apply CSRF protection to state-changing auth endpoints
-  app.use(['/api/login', '/api/register', '/api/verify-sms', '/api/resend-verification', 
-           '/api/reset-password', '/api/confirm-reset', '/api/logout'], csrfProtection);
+  app.use(['/api/logout'], csrfProtection);
 
+  // Local Strategy (Email/Password)
   passport.use(
     new LocalStrategy(
-      { usernameField: "phone", passwordField: "password" },
-      async (phone, password, done) => {
+      { usernameField: "email", passwordField: "password" },
+      async (email, password, done) => {
         try {
-          const user = await storage.getUserByPhone(phone);
-          if (!user || !(await comparePasswords(password, user.password))) {
-            return done(null, false, { message: "Teléfono o contraseña incorrectos" });
+          const user = await storage.getUserByEmail(email);
+          if (!user || !user.password || !(await comparePasswords(password, user.password))) {
+            return done(null, false, { message: "Email o contraseña incorrectos" });
           }
+          return done(null, user);
+        } catch (error) {
+          return done(error);
+        }
+      }
+    )
+  );
+
+  // Google OAuth Strategy
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID || 'placeholder',
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'placeholder',
+        callbackURL: process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback',
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const email = profile.emails?.[0]?.value;
+          const providerId = profile.id;
+
+          if (!email) {
+            return done(new Error('No email from Google'));
+          }
+
+          // Check if user exists with this provider ID
+          let user = await storage.getUserByProviderId('google', providerId);
+          
+          if (!user) {
+            // Check if email already exists
+            const existingUser = await storage.getUserByEmail(email);
+            if (existingUser) {
+              // Link OAuth provider to existing account
+              user = await storage.updateUserOAuth(existingUser.id, {
+                provider: 'google',
+                providerId,
+                providerEmail: email,
+              });
+            } else {
+              // Create new user
+              user = await storage.createOAuthUser({
+                email,
+                name: profile.displayName || email.split('@')[0],
+                provider: 'google',
+                providerId,
+                providerEmail: email,
+              });
+            }
+          }
+
+          return done(null, user);
+        } catch (error) {
+          return done(error);
+        }
+      }
+    )
+  );
+
+  // Facebook OAuth Strategy
+  passport.use(
+    new FacebookStrategy(
+      {
+        clientID: process.env.FACEBOOK_APP_ID || 'placeholder',
+        clientSecret: process.env.FACEBOOK_APP_SECRET || 'placeholder',
+        callbackURL: process.env.FACEBOOK_CALLBACK_URL || '/auth/facebook/callback',
+        profileFields: ['id', 'emails', 'name'],
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const email = profile.emails?.[0]?.value;
+          const providerId = profile.id;
+
+          if (!email) {
+            return done(new Error('No email from Facebook'));
+          }
+
+          // Check if user exists with this provider ID
+          let user = await storage.getUserByProviderId('facebook', providerId);
+          
+          if (!user) {
+            // Check if email already exists
+            const existingUser = await storage.getUserByEmail(email);
+            if (existingUser) {
+              // Link OAuth provider to existing account
+              user = await storage.updateUserOAuth(existingUser.id, {
+                provider: 'facebook',
+                providerId,
+                providerEmail: email,
+              });
+            } else {
+              // Create new user
+              user = await storage.createOAuthUser({
+                email,
+                name: `${profile.name?.givenName || ''} ${profile.name?.familyName || ''}`.trim() || email.split('@')[0],
+                provider: 'facebook',
+                providerId,
+                providerEmail: email,
+              });
+            }
+          }
+
           return done(null, user);
         } catch (error) {
           return done(error);
@@ -157,31 +222,19 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Add CSRF token endpoint
+  // CSRF token endpoint
   app.get("/api/csrf-token", (req: any, res) => {
     res.json({ csrfToken: req.session.csrfToken });
   });
 
-  // Registration endpoint
+  // Local Email/Password Registration
   app.post("/api/register", async (req, res, next) => {
     try {
-      // Normalize international phone number (keep + and allow up to 15 digits)
-      let phoneNormalized = req.body.phone?.replace(/[^+\d]/g, '') || '';
-      if (phoneNormalized.startsWith('+')) {
-        phoneNormalized = phoneNormalized.substring(0, 16); // +15 digits max (international standard)
-      } else {
-        phoneNormalized = phoneNormalized.substring(0, 15); // 15 digits max without +
-      }
-      const validatedData = insertUserSchema.parse({
-        ...req.body,
-        phone: phoneNormalized,
-        name: req.body.name?.trim(),
-      });
+      const validatedData = insertUserSchema.parse(req.body);
       
-      const existingUser = await storage.getUserByPhone(validatedData.phone);
+      const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
-        // Generic response to prevent user enumeration
-        return res.status(400).json({ message: "Error en el registro. Verifica los datos e intenta de nuevo." });
+        return res.status(400).json({ message: "Este email ya está registrado" });
       }
 
       const hashedPassword = await hashPassword(validatedData.password);
@@ -190,196 +243,82 @@ export function setupAuth(app: Express) {
         password: hashedPassword,
       });
 
-      // Generate verification code (simulated SMS)
-      const verificationCode = generateVerificationCode();
-      const hashedCode = await hashVerificationCode(verificationCode);
-      const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-      await storage.setVerificationCode(user.id, hashedCode, expiry);
-
-      // In production, send real SMS. NEVER log in production for security
-      if (process.env.NODE_ENV === "development") {
-        console.log(`SMS Verification Code for ${user.phone.startsWith('+') ? user.phone : '+' + user.phone}: ${verificationCode}`);
-      }
-
-      // Regenerate session on login for security
       req.session.regenerate((err: any) => {
         if (err) return next(err);
         req.login(user, (loginErr) => {
           if (loginErr) return next(loginErr);
-          res.status(201).json({ 
-            ...sanitizeUser(user), 
-            needsVerification: true,
-            message: "Código de verificación enviado por SMS" 
+          res.status(201).json({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            phone: user.phone,
+            province: user.province,
+            role: user.role,
+            provider: user.provider,
           });
         });
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
-          message: "Datos de registro inválidos" // Generic message for security
+          message: "Datos de registro inválidos" 
         });
       }
       next(error);
     }
   });
 
-  // SMS verification endpoint
-  app.post("/api/verify-sms", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "No autorizado" });
-    }
-
-    const { code } = req.body;
-    const user = await storage.getUser(req.user!.id);
-    
-    if (!user || !user.verificationCode || !user.verificationCodeExpiry) {
-      return res.status(400).json({ message: "Código de verificación no encontrado" });
-    }
-
-    if (new Date() > user.verificationCodeExpiry) {
-      // Clear expired code
-      await storage.clearVerificationCode(user.id);
-      return res.status(400).json({ message: "Código de verificación expirado" });
-    }
-
-    // Verify hashed code with constant-time comparison
-    const isValidCode = await verifyCode(code, user.verificationCode);
-    if (!isValidCode) {
-      return res.status(400).json({ message: "Código de verificación incorrecto" });
-    }
-
-    // Update verification status and clear code (single-use)
-    await storage.updateUserVerification(user.id, true);
-    await storage.clearVerificationCode(user.id);
-    
-    res.json({ message: "Teléfono verificado exitosamente" });
-  });
-
-  // Resend verification code
-  app.post("/api/resend-verification", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "No autorizado" });
-    }
-
-    const verificationCode = generateVerificationCode();
-    const hashedCode = await hashVerificationCode(verificationCode);
-    const expiry = new Date(Date.now() + 10 * 60 * 1000);
-    await storage.setVerificationCode(req.user!.id, hashedCode, expiry);
-
-    // NEVER log in production for security
-    if (process.env.NODE_ENV === "development") {
-      console.log(`SMS Verification Code for ${req.user!.phone.startsWith('+') ? req.user!.phone : '+' + req.user!.phone}: ${verificationCode}`);
-    }
-    
-    res.json({ message: "Código de verificación reenviado" });
-  });
-
-  // Login endpoint
+  // Local Email/Password Login
   app.post("/api/login", (req, res, next) => {
-    // Normalize international phone number (keep + and allow up to 15 digits)
-    let phoneNormalized = req.body.phone?.replace(/[^+\d]/g, '') || '';
-    if (phoneNormalized.startsWith('+')) {
-      phoneNormalized = phoneNormalized.substring(0, 16); // +15 digits max
-    } else {
-      phoneNormalized = phoneNormalized.substring(0, 15); // 15 digits max without +
-    }
-    req.body.phone = phoneNormalized;
-
     passport.authenticate("local", (err: any, user: SelectUser, info: any) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ 
-          message: "Credenciales inválidas" // Generic message
+          message: "Email o contraseña incorrectos" 
         });
       }
 
-      // Regenerate session on successful login for security
       req.session.regenerate((sessionErr: any) => {
         if (sessionErr) return next(sessionErr);
         req.login(user, (loginErr) => {
           if (loginErr) return next(loginErr);
-          res.json(sanitizeUser(user));
+          res.json({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            phone: user.phone,
+            province: user.province,
+            role: user.role,
+            provider: user.provider,
+          });
         });
       });
     })(req, res, next);
   });
 
-  // Password reset request
-  app.post("/api/reset-password", async (req, res) => {
-    try {
-      // Normalize international phone number
-      let phoneNormalized = req.body.phone?.replace(/[^+\d]/g, '') || '';
-      if (phoneNormalized.startsWith('+')) {
-        phoneNormalized = phoneNormalized.substring(0, 16);
-      } else {
-        phoneNormalized = phoneNormalized.substring(0, 15);
-      }
-      const user = await storage.getUserByPhone(phoneNormalized);
-      
-      // Always return success to prevent user enumeration
-      if (user) {
-        const resetCode = generateVerificationCode();
-        const hashedCode = await hashVerificationCode(resetCode);
-        const expiry = new Date(Date.now() + 10 * 60 * 1000);
-        await storage.setVerificationCode(user.id, hashedCode, expiry);
+  // Google OAuth Routes
+  app.get('/auth/google', 
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+  );
 
-        // NEVER log in production for security
-        if (process.env.NODE_ENV === "development") {
-          console.log(`SMS Reset Code for ${user.phone.startsWith('+') ? user.phone : '+' + user.phone}: ${resetCode}`);
-        }
-      }
+  app.get('/auth/google/callback',
+    passport.authenticate('google', { 
+      failureRedirect: '/auth?error=google_failed',
+      successRedirect: '/',
+    })
+  );
 
-      // Always return the same response regardless of user existence
-      res.json({ message: "Si el número existe, recibirás un código de restablecimiento por SMS" });
-    } catch (error) {
-      res.status(500).json({ message: "Error interno del servidor" });
-    }
-  });
+  // Facebook OAuth Routes
+  app.get('/auth/facebook',
+    passport.authenticate('facebook', { scope: ['email'] })
+  );
 
-  // Confirm password reset
-  app.post("/api/confirm-reset", async (req, res) => {
-    try {
-      const { phone, code, newPassword } = req.body;
-      // Normalize international phone number
-      let phoneNormalized = phone?.replace(/[^+\d]/g, '') || '';
-      if (phoneNormalized.startsWith('+')) {
-        phoneNormalized = phoneNormalized.substring(0, 16);
-      } else {
-        phoneNormalized = phoneNormalized.substring(0, 15);
-      }
-      const user = await storage.getUserByPhone(phoneNormalized);
-      
-      if (!user || !user.verificationCode || !user.verificationCodeExpiry) {
-        return res.status(400).json({ message: "Código de restablecimiento no válido" });
-      }
-
-      if (new Date() > user.verificationCodeExpiry) {
-        // Clear expired code
-        await storage.clearVerificationCode(user.id);
-        return res.status(400).json({ message: "Código de restablecimiento expirado" });
-      }
-
-      // Verify hashed code with constant-time comparison
-      const isValidCode = await verifyCode(code, user.verificationCode);
-      if (!isValidCode) {
-        return res.status(400).json({ message: "Código de restablecimiento incorrecto" });
-      }
-
-      if (newPassword.length < 8) {
-        return res.status(400).json({ message: "La contraseña debe tener al menos 8 caracteres" });
-      }
-
-      const hashedPassword = await hashPassword(newPassword);
-      await storage.updateUserPassword(user.id, hashedPassword);
-      
-      // Clear code after successful use (single-use)
-      await storage.clearVerificationCode(user.id);
-      
-      res.json({ message: "Contraseña restablecida exitosamente" });
-    } catch (error) {
-      res.status(500).json({ message: "Error interno del servidor" });
-    }
-  });
+  app.get('/auth/facebook/callback',
+    passport.authenticate('facebook', { 
+      failureRedirect: '/auth?error=facebook_failed',
+      successRedirect: '/',
+    })
+  );
 
   // Logout endpoint
   app.post("/api/logout", (req, res, next) => {
@@ -396,6 +335,15 @@ export function setupAuth(app: Express) {
   // Get current user
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    res.json({
+      id: req.user!.id,
+      email: req.user!.email,
+      name: req.user!.name,
+      phone: req.user!.phone,
+      province: req.user!.province,
+      role: req.user!.role,
+      provider: req.user!.provider,
+      hasPhone: !!req.user!.phone, // Flag for frontend
+    });
   });
 }

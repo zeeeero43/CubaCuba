@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertCategorySchema, insertProductSchema, insertListingSchema, insertRatingSchema } from "@shared/schema";
+import { insertCategorySchema, insertProductSchema, insertListingSchema, insertRatingSchema, updatePhoneSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageClient } from "./objectStorage";
 import { setObjectAclPolicy } from "./objectAcl";
@@ -880,6 +880,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST /api/user/phone - Update user phone and province (requires auth)
+  app.post("/api/user/phone", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const validatedData = updatePhoneSchema.parse(req.body);
+      
+      // Check if phone is already used by another user
+      if (validatedData.phone) {
+        const existingUser = await storage.getUserByPhone(validatedData.phone);
+        if (existingUser && existingUser.id !== req.user!.id) {
+          return res.status(400).json({ message: "Este número de teléfono ya está registrado" });
+        }
+      }
+
+      const updatedUser = await storage.updateUserPhone(
+        req.user!.id,
+        validatedData.phone,
+        validatedData.province
+      );
+
+      res.json({
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        province: updatedUser.province,
+        role: updatedUser.role,
+        provider: updatedUser.provider,
+        hasPhone: !!updatedUser.phone,
+      });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error updating phone:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Premium Features endpoints
   // GET /api/premium-options - Get available premium options
   app.get("/api/premium-options", async (req, res) => {
@@ -1546,7 +1589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           parsedDetails: details,
           user: user ? {
             id: user.id,
-            username: user.username,
+            name: user.name,
             phone: user.phone,
             email: user.email
           } : null

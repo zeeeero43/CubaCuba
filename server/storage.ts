@@ -31,12 +31,14 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
   getUserByPhone(phone: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByProviderId(provider: string, providerId: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
-  updateUserVerification(id: string, isVerified: boolean): Promise<void>;
+  createOAuthUser(user: { email: string; name: string; provider: string; providerId: string; providerEmail: string }): Promise<User>;
+  updateUserOAuth(id: string, oauth: { provider: string; providerId: string; providerEmail: string }): Promise<User>;
+  updateUserPhone(id: string, phone: string, province: string): Promise<User>;
   updateUserPassword(id: string, password: string): Promise<void>;
-  setVerificationCode(id: string, code: string, expiry: Date): Promise<void>;
-  clearVerificationCode(id: string): Promise<void>;
   updateUserStrikes(id: string, strikes: number): Promise<void>;
   banUser(id: string, reason: string): Promise<void>;
   unbanUser(id: string): Promise<void>;
@@ -239,37 +241,10 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserVerification(id: string, isVerified: boolean): Promise<void> {
-    await db
-      .update(users)
-      .set({ isVerified: isVerified.toString() })
-      .where(eq(users.id, id));
-  }
-
   async updateUserPassword(id: string, password: string): Promise<void> {
     await db
       .update(users)
       .set({ password })
-      .where(eq(users.id, id));
-  }
-
-  async setVerificationCode(id: string, code: string, expiry: Date): Promise<void> {
-    await db
-      .update(users)
-      .set({ 
-        verificationCode: code,
-        verificationCodeExpiry: expiry 
-      })
-      .where(eq(users.id, id));
-  }
-
-  async clearVerificationCode(id: string): Promise<void> {
-    await db
-      .update(users)
-      .set({ 
-        verificationCode: null,
-        verificationCodeExpiry: null 
-      })
       .where(eq(users.id, id));
   }
 
@@ -304,6 +279,66 @@ export class DatabaseStorage implements IStorage {
         banReason: null
       })
       .where(eq(users.id, id));
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserByProviderId(provider: string, providerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users)
+      .where(and(
+        eq(users.provider, provider),
+        eq(users.providerId, providerId)
+      ));
+    return user || undefined;
+  }
+
+  async createOAuthUser(user: { 
+    email: string; 
+    name: string; 
+    provider: string; 
+    providerId: string; 
+    providerEmail: string 
+  }): Promise<User> {
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email: user.email,
+        name: user.name,
+        provider: user.provider,
+        providerId: user.providerId,
+        providerEmail: user.providerEmail,
+      })
+      .returning();
+    return newUser;
+  }
+
+  async updateUserOAuth(id: string, oauth: { 
+    provider: string; 
+    providerId: string; 
+    providerEmail: string 
+  }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        provider: oauth.provider,
+        providerId: oauth.providerId,
+        providerEmail: oauth.providerEmail,
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserPhone(id: string, phone: string, province: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ phone, province })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
   }
 
   // Categories implementation

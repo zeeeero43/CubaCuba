@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -7,22 +7,22 @@ import {
 import { User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient, invalidateCSRFTokenCache } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { PhoneNumberModal } from "@/components/PhoneNumberModal";
 
 type AuthContextType = {
-  user: SelectUser | null;
+  user: (SelectUser & { hasPhone?: boolean }) | null;
   isLoading: boolean;
   error: Error | null;
+  hasPhone: boolean;
+  showPhoneModal: boolean;
+  setShowPhoneModal: (show: boolean) => void;
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<any, Error, InsertUser>;
-  verifySMSMutation: UseMutationResult<any, Error, { code: string }>;
-  resendVerificationMutation: UseMutationResult<any, Error, void>;
-  resetPasswordMutation: UseMutationResult<any, Error, { phone: string }>;
-  confirmResetMutation: UseMutationResult<any, Error, { phone: string; code: string; newPassword: string }>;
 };
 
 type LoginData = {
-  phone: string;
+  email: string;
   password: string;
 };
 
@@ -30,15 +30,26 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
   
   const {
     data: user,
     error,
     isLoading,
-  } = useQuery<SelectUser | undefined, Error>({
+  } = useQuery<(SelectUser & { hasPhone?: boolean }) | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
+
+  // Check if user needs to provide phone number
+  const hasPhone = user?.hasPhone ?? !!user?.phone;
+
+  // Show phone modal if user is logged in but has no phone
+  useEffect(() => {
+    if (user && !hasPhone && !showPhoneModal) {
+      setShowPhoneModal(true);
+    }
+  }, [user, hasPhone, showPhoneModal]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -46,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
-      invalidateCSRFTokenCache(); // Invalidate CSRF cache after login
+      invalidateCSRFTokenCache();
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "¡Bienvenido!",
@@ -68,99 +79,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (response: any) => {
-      invalidateCSRFTokenCache(); // Invalidate CSRF cache after register
+      invalidateCSRFTokenCache();
       queryClient.setQueryData(["/api/user"], response);
-      if (response.needsVerification) {
-        toast({
-          title: "Registro exitoso",
-          description: "Revisa tu teléfono para el código de verificación",
-        });
-      }
+      toast({
+        title: "Registro exitoso",
+        description: "Tu cuenta ha sido creada exitosamente",
+      });
     },
     onError: (error: Error) => {
       toast({
         title: "Error de registro",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const verifySMSMutation = useMutation({
-    mutationFn: async ({ code }: { code: string }) => {
-      const res = await apiRequest("POST", "/api/verify-sms", { code });
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      toast({
-        title: "¡Verificación exitosa!",
-        description: "Tu teléfono ha sido verificado",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error de verificación",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const resendVerificationMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/resend-verification");
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Código reenviado",
-        description: "Revisa tu teléfono para el nuevo código",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const resetPasswordMutation = useMutation({
-    mutationFn: async ({ phone }: { phone: string }) => {
-      const res = await apiRequest("POST", "/api/reset-password", { phone });
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Código enviado",
-        description: "Revisa tu teléfono para el código de restablecimiento",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const confirmResetMutation = useMutation({
-    mutationFn: async ({ phone, code, newPassword }: { phone: string; code: string; newPassword: string }) => {
-      const res = await apiRequest("POST", "/api/confirm-reset", { phone, code, newPassword });
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "¡Contraseña restablecida!",
-        description: "Ya puedes iniciar sesión con tu nueva contraseña",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -193,16 +121,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: user ?? null,
         isLoading,
         error,
+        hasPhone,
+        showPhoneModal,
+        setShowPhoneModal,
         loginMutation,
         logoutMutation,
         registerMutation,
-        verifySMSMutation,
-        resendVerificationMutation,
-        resetPasswordMutation,
-        confirmResetMutation,
       }}
     >
       {children}
+      {/* Show phone modal if user needs to add phone */}
+      <PhoneNumberModal 
+        open={showPhoneModal} 
+        onClose={() => setShowPhoneModal(false)}
+      />
     </AuthContext.Provider>
   );
 }
