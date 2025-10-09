@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText } from "lucide-react";
+import { ArrowLeft, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText, Sparkles } from "lucide-react";
 import type { Category } from "@shared/schema";
 import {
   Dialog,
@@ -28,6 +28,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import { PremiumFeaturesSelector } from "@/components/PremiumFeaturesSelector";
 
 const provinces = [
   { value: "havana", label: "La Habana" },
@@ -71,6 +72,8 @@ export default function CreateListingPage() {
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
   const [showAppealDialog, setShowAppealDialog] = useState(false);
   const [appealReason, setAppealReason] = useState("");
+  const [selectedPremiumFeatures, setSelectedPremiumFeatures] = useState<string[]>([]);
+  const [createdListingId, setCreatedListingId] = useState<string | null>(null);
 
   // Fetch hierarchical categories
   const { data: categoriesTree } = useQuery<{
@@ -101,16 +104,54 @@ export default function CreateListingPage() {
     },
   });
 
-  const createListingMutation = useMutation({
-    mutationFn: (data: InsertListing) => apiRequest('POST', '/api/listings', data),
+  const purchasePremiumMutation = useMutation({
+    mutationFn: async ({ listingId, featureIds }: { listingId: string; featureIds: string[] }) => {
+      const response = await apiRequest('POST', `/api/listings/${listingId}/premium`, { featureIds });
+      return response.json();
+    },
     onSuccess: () => {
       toast({
-        title: "¡Anuncio creado exitosamente!",
-        description: "Tu anuncio ha sido publicado y está disponible para otros usuarios.",
+        title: "¡Funciones premium activadas!",
+        description: "Tu anuncio ahora tiene funciones premium activas.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/listings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
       navigate('/');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al activar funciones premium",
+        description: error.message || "Hubo un problema al activar las funciones premium. Tu anuncio fue creado exitosamente, pero las funciones premium no pudieron ser activadas.",
+        variant: "destructive"
+      });
+      // Don't navigate away - keep user on page to retry or view their listing
+    },
+  });
+
+  const createListingMutation = useMutation({
+    mutationFn: async (data: InsertListing) => {
+      const response = await apiRequest('POST', '/api/listings', data);
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      // Store listing ID for premium features
+      setCreatedListingId(data.id);
+      
+      // If premium features selected, purchase them
+      if (selectedPremiumFeatures.length > 0) {
+        purchasePremiumMutation.mutate({
+          listingId: data.id,
+          featureIds: selectedPremiumFeatures
+        });
+      } else {
+        toast({
+          title: "¡Anuncio creado exitosamente!",
+          description: "Tu anuncio ha sido publicado y está disponible para otros usuarios.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/listings'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
+        navigate('/');
+      }
     },
     onError: (error: any) => {
       console.log('Mutation error:', error);
@@ -666,16 +707,40 @@ export default function CreateListingPage() {
             </CardContent>
           </Card>
 
+          {/* Premium Features (Optional) */}
+          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Funciones Premium (Opcional)
+              </CardTitle>
+              <CardDescription>
+                Destaca tu anuncio y llega a más personas con nuestras funciones premium
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PremiumFeaturesSelector
+                selectedFeatures={selectedPremiumFeatures}
+                onSelectionChange={setSelectedPremiumFeatures}
+              />
+            </CardContent>
+          </Card>
+
           {/* Submit Button */}
           <div className="space-y-4">
             <Button 
               type="submit" 
               className="w-full" 
               size="lg"
-              disabled={createListingMutation.isPending}
+              disabled={createListingMutation.isPending || purchasePremiumMutation.isPending}
               data-testid="button-submit"
             >
-              {createListingMutation.isPending ? "Creando anuncio..." : "Publicar Anuncio"}
+              {(createListingMutation.isPending || purchasePremiumMutation.isPending) 
+                ? "Creando anuncio..." 
+                : selectedPremiumFeatures.length > 0 
+                  ? "Publicar con Premium" 
+                  : "Publicar Anuncio"
+              }
             </Button>
             
             <p className="text-sm text-muted-foreground text-center">

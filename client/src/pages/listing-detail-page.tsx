@@ -25,11 +25,13 @@ import {
   Flag,
   UserPlus,
   UserMinus,
-  Edit
+  Edit,
+  Sparkles
 } from "lucide-react";
 import { useLocation } from "wouter";
 import type { Listing, Category } from "@shared/schema";
 import { ReportDialog } from "@/components/ReportDialog";
+import { PremiumFeaturesSelector } from "@/components/PremiumFeaturesSelector";
 
 // Types for seller profile
 interface SellerProfile {
@@ -556,6 +558,8 @@ export default function ListingDetailPage() {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [premiumDialogOpen, setPremiumDialogOpen] = useState(false);
+  const [selectedPremiumFeatures, setSelectedPremiumFeatures] = useState<string[]>([]);
 
   const listingId = params?.id;
 
@@ -608,6 +612,35 @@ export default function ListingDetailPage() {
         title: "Error",
         description: "Debes iniciar sesión para guardar favoritos",
         variant: "destructive",
+      });
+    },
+  });
+
+  // Purchase premium features
+  const purchasePremiumMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', `/api/listings/${listingId}/premium`, { 
+        featureIds: selectedPremiumFeatures 
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "¡Funciones premium activadas!",
+        description: "Tu anuncio ahora tiene funciones premium activas.",
+      });
+      // Invalidate all relevant queries to update UI
+      queryClient.invalidateQueries({ queryKey: ['/api/listings', listingId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/listings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
+      setPremiumDialogOpen(false);
+      setSelectedPremiumFeatures([]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al activar funciones premium",
+        description: error.message || "Hubo un problema al activar las funciones premium",
+        variant: "destructive"
       });
     },
   });
@@ -798,14 +831,25 @@ export default function ListingDetailPage() {
           
           <div className="flex items-center gap-2">
             {user?.id === listing.sellerId && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => navigate(`/edit-listing/${listing.id}`)}
-                data-testid="button-edit-listing"
-              >
-                <Edit className="w-5 h-5" />
-              </Button>
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => navigate(`/edit-listing/${listing.id}`)}
+                  data-testid="button-edit-listing"
+                >
+                  <Edit className="w-5 h-5" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setPremiumDialogOpen(true)}
+                  data-testid="button-promote-listing"
+                  className="text-primary hover:text-primary"
+                >
+                  <Sparkles className="w-5 h-5" />
+                </Button>
+              </>
             )}
             <Button 
               variant="ghost" 
@@ -1087,6 +1131,43 @@ export default function ListingDetailPage() {
                 </Button>
               </>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Premium Features Dialog */}
+      <Dialog open={premiumDialogOpen} onOpenChange={setPremiumDialogOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Promocionar Anuncio
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto py-4 -mx-6 px-6">
+            <PremiumFeaturesSelector
+              selectedFeatures={selectedPremiumFeatures}
+              onSelectionChange={setSelectedPremiumFeatures}
+            />
+          </div>
+          <div className="flex gap-2 justify-end flex-shrink-0 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setPremiumDialogOpen(false);
+                setSelectedPremiumFeatures([]);
+              }}
+              data-testid="button-cancel-premium"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => purchasePremiumMutation.mutate()}
+              disabled={selectedPremiumFeatures.length === 0 || purchasePremiumMutation.isPending}
+              data-testid="button-confirm-premium"
+            >
+              {purchasePremiumMutation.isPending ? "Activando..." : "Activar Premium"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

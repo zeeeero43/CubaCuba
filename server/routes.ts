@@ -1968,6 +1968,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =============================================
+  // PREMIUM FEATURES USER ROUTES
+  // =============================================
+
+  // Get active premium features (for users)
+  app.get("/api/premium-features", async (req, res) => {
+    try {
+      const features = await storage.getPremiumOptions();
+      res.json(features);
+    } catch (error) {
+      console.error("Error fetching premium features:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Purchase premium features for a listing
+  app.post("/api/listings/:id/premium", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión para activar funciones premium" });
+    }
+
+    try {
+      const { id: listingId } = req.params;
+      const { featureIds } = req.body;
+
+      if (!Array.isArray(featureIds) || featureIds.length === 0) {
+        return res.status(400).json({ message: "Debe seleccionar al menos una función premium" });
+      }
+
+      // Verify listing belongs to user
+      const listing = await storage.getListing(listingId);
+      if (!listing) {
+        return res.status(404).json({ message: "Anuncio no encontrado" });
+      }
+      if (listing.userId !== req.user!.id) {
+        return res.status(403).json({ message: "No tienes permiso para modificar este anuncio" });
+      }
+
+      // Validate feature IDs against active options
+      const activeFeatures = await storage.getPremiumOptions();
+      const activeFeatureIds = activeFeatures.map(f => f.id);
+      const invalidIds = featureIds.filter(id => !activeFeatureIds.includes(id));
+      
+      if (invalidIds.length > 0) {
+        return res.status(400).json({ 
+          message: "Una o más funciones seleccionadas no están disponibles" 
+        });
+      }
+
+      // Purchase each feature
+      const purchases = [];
+      for (const featureId of featureIds) {
+        const purchase = await storage.purchasePremium(listingId, featureId);
+        purchases.push(purchase);
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Funciones premium activadas exitosamente",
+        purchases 
+      });
+    } catch (error: any) {
+      console.error("Error purchasing premium features:", error);
+      res.status(500).json({ message: error.message || "Error al activar funciones premium" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
