@@ -5,6 +5,7 @@ import slowDown from "express-slow-down";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedModerationSystem } from "./seed-moderation";
+import { seedPremiumFeatures } from "./seed-premium";
 
 const app = express();
 
@@ -117,6 +118,10 @@ app.use((req, res, next) => {
 (async () => {
   await seedModerationSystem().catch(err => {
     console.error("❌ Error seeding moderation system:", err);
+  });
+
+  await seedPremiumFeatures().catch(err => {
+    console.error("❌ Error seeding premium features:", err);
   });
 
   const server = await registerRoutes(app);

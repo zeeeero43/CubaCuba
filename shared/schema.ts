@@ -150,6 +150,22 @@ export const listingPremium = pgTable("listing_premium", {
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 });
 
+// Premium transactions (payment history)
+export const premiumTransactions = pgTable("premium_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  listingId: varchar("listing_id").references(() => listings.id, { onDelete: "cascade" }).notNull(),
+  premiumOptionId: varchar("premium_option_id").references(() => premiumOptions.id, { onDelete: "cascade" }).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("CUP"),
+  paymentMethod: text("payment_method").notNull().default("pending"), // "stripe" | "paypal" | "pending"
+  paymentStatus: text("payment_status").notNull().default("pending"), // "pending" | "completed" | "failed" | "refunded"
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  paypalOrderId: text("paypal_order_id"),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
 // System settings
 export const settings = pgTable("settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -333,6 +349,16 @@ export const insertPremiumOptionSchema = createInsertSchema(premiumOptions).pick
   order: true,
 });
 
+export const insertPremiumTransactionSchema = createInsertSchema(premiumTransactions).pick({
+  userId: true,
+  listingId: true,
+  premiumOptionId: true,
+  amount: true,
+  currency: true,
+  paymentMethod: true,
+  paymentStatus: true,
+});
+
 export const insertSettingSchema = createInsertSchema(settings).pick({
   key: true,
   value: true,
@@ -427,6 +453,8 @@ export type Listing = typeof listings.$inferSelect;
 export type InsertPremiumOption = z.infer<typeof insertPremiumOptionSchema>;
 export type PremiumOption = typeof premiumOptions.$inferSelect;
 export type ListingPremium = typeof listingPremium.$inferSelect;
+export type InsertPremiumTransaction = z.infer<typeof insertPremiumTransactionSchema>;
+export type PremiumTransaction = typeof premiumTransactions.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type Setting = typeof settings.$inferSelect;
 export type Favorite = typeof favorites.$inferSelect;
