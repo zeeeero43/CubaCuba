@@ -5,15 +5,15 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  phone: text("phone").notNull().unique(),
   email: text("email").unique(),
+  phone: text("phone").unique(),
   name: text("name").notNull(),
-  province: text("province").notNull(),
+  province: text("province"),
   role: text("role").notNull().default("user"), // "user" | "admin"
-  password: text("password").notNull(),
-  isVerified: text("is_verified").notNull().default("false"),
-  verificationCode: text("verification_code"),
-  verificationCodeExpiry: timestamp("verification_code_expiry"),
+  password: text("password"),
+  provider: text("provider").notNull().default("local"), // "google" | "facebook" | "local"
+  providerId: text("provider_id"),
+  providerEmail: text("provider_email"),
   moderationStrikes: integer("moderation_strikes").notNull().default(0),
   isBanned: text("is_banned").notNull().default("false"), // "true" | "false"
   bannedAt: timestamp("banned_at"),
@@ -21,19 +21,25 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 });
 
+// Schema for local (email/password) registration
 export const insertUserSchema = createInsertSchema(users, {
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+1 305123456) o local"),
+  email: z.string().email("Email inválido"),
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  province: z.string().min(1, "Debe seleccionar una provincia"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
 }).pick({
-  phone: true,
+  email: true,
   name: true, 
-  province: true,
   password: true,
 });
 
+// Schema for adding phone after OAuth login
+export const updatePhoneSchema = z.object({
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido. Use formato internacional (+53 5xxxxxxx) o local"),
+  province: z.string().min(1, "Debe seleccionar una provincia"),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdatePhone = z.infer<typeof updatePhoneSchema>;
 export type User = typeof users.$inferSelect;
 
 // Categories table
