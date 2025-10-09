@@ -1902,6 +1902,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =============================================
+  // PREMIUM FEATURES ADMIN ROUTES
+  // =============================================
+
+  // Get all premium features (including disabled)
+  app.get("/api/admin/premium-features", requireAdmin, async (req, res) => {
+    try {
+      const features = await storage.getAllPremiumOptions();
+      res.json(features);
+    } catch (error) {
+      console.error("Error fetching premium features:", error);
+      res.status(500).json({ message: "Fehler beim Laden der Premium-Features" });
+    }
+  });
+
+  // Update premium feature (enable/disable, change price, etc.)
+  app.put("/api/admin/premium-features/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const updated = await storage.updatePremiumOption(id, updates);
+
+      if (!updated) {
+        return res.status(404).json({ message: "Premium-Feature nicht gefunden" });
+      }
+
+      await storage.createModerationLog({
+        action: "premium_feature_updated",
+        targetType: "premium_feature",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: JSON.stringify(updates)
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating premium feature:", error);
+      res.status(500).json({ message: "Fehler beim Aktualisieren des Premium-Features" });
+    }
+  });
+
   // Get moderation logs
   app.get("/api/admin/logs", requireAdmin, async (req, res) => {
     try {

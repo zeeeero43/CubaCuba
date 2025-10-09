@@ -84,6 +84,7 @@ export interface IStorage {
   
   // Premium Features
   getPremiumOptions(): Promise<PremiumOption[]>;
+  getAllPremiumOptions(): Promise<PremiumOption[]>; // Admin: get all including disabled
   createPremiumOption(option: InsertPremiumOption): Promise<PremiumOption>;
   updatePremiumOption(id: string, updates: Partial<InsertPremiumOption>): Promise<PremiumOption | undefined>;
   purchasePremium(listingId: string, premiumOptionId: string): Promise<ListingPremium>;
@@ -588,6 +589,11 @@ export class DatabaseStorage implements IStorage {
   async getPremiumOptions(): Promise<PremiumOption[]> {
     return await db.select().from(premiumOptions)
       .where(eq(premiumOptions.active, "true"))
+      .orderBy(premiumOptions.order, premiumOptions.name);
+  }
+
+  async getAllPremiumOptions(): Promise<PremiumOption[]> {
+    return await db.select().from(premiumOptions)
       .orderBy(premiumOptions.order, premiumOptions.name);
   }
 

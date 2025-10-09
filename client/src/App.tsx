@@ -25,6 +25,7 @@ import AdminQueuePage from "@/pages/admin-queue-page";
 import AdminReportsPage from "@/pages/admin-reports-page";
 import AdminSettingsPage from "@/pages/admin-settings-page";
 import AdminUsersPage from "@/pages/admin-users-page";
+import AdminPremiumPage from "@/pages/admin-premium-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -62,6 +63,7 @@ function Router() {
         <ProtectedRoute path="/admin/reports" component={AdminReportsPage} />
         <ProtectedRoute path="/admin/settings" component={AdminSettingsPage} />
         <ProtectedRoute path="/admin/users" component={AdminUsersPage} />
+        <ProtectedRoute path="/admin/premium" component={AdminPremiumPage} />
         <Route component={NotFound} />
       </Switch>
     </>
