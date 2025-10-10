@@ -243,7 +243,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       console.log('Received request body:', JSON.stringify(req.body, null, 2));
-      const validatedData = insertListingSchema.parse(req.body);
+      
+      // Convert empty strings to null for numeric fields
+      const cleanedBody = {
+        ...req.body,
+        price: req.body.price === "" ? null : req.body.price,
+      };
+      
+      const validatedData = insertListingSchema.parse(cleanedBody);
       console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       
       // Validate that categoryId refers to a subcategory (not a main category)
@@ -427,10 +434,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      // Convert empty strings to null for foreign keys
+      // Convert empty strings to null for foreign keys and numeric fields
       const cleanedBody = {
         ...req.body,
         categoryId: req.body.categoryId === "" ? null : req.body.categoryId,
+        price: req.body.price === "" ? null : req.body.price,
       };
       
       const validatedData = insertListingSchema.partial().parse(cleanedBody);
