@@ -10,6 +10,8 @@ Rico-Cuba is a full-stack e-commerce platform designed for the Cuban market, fea
 - **Automated Review System**: All listings automatically analyzed before publication with confidence-based auto-approval/rejection
 - **Appeal System**: Users can appeal moderation decisions with configurable limits
 - **Blacklist Management**: Dynamic content filtering with prohibited words, users, emails, and phone numbers
+- **Flexible Pricing System**: CUP/USD currency selection, optional pricing ("Precio a consultar"), and increased image limit to 10 per listing
+- **Enhanced User Profiles**: Profile editing with name/email/province updates, password change, and always-visible statistics
 
 ## User Preferences
 
