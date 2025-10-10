@@ -264,6 +264,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Check description minimum length from moderation settings
+      const minLengthSetting = await storage.getModerationSetting("description_min_length");
+      const minLength = parseInt(minLengthSetting?.value || "50");
+      if (validatedData.description && validatedData.description.length < minLength) {
+        return res.status(400).json({ 
+          message: `La descripción debe tener al menos ${minLength} caracteres. Actualmente tiene ${validatedData.description.length} caracteres.` 
+        });
+      }
+      
       // Check if user is banned
       const user = await storage.getUserById(req.user!.id);
       if (user?.isBanned === "true") {
@@ -2126,6 +2135,336 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error purchasing premium features:", error);
       res.status(500).json({ message: error.message || "Error al activar funciones premium" });
+    }
+  });
+
+  // =============================================
+  // PUBLIC BANNER & SPONSORED ROUTES
+  // =============================================
+
+  // Get active banners (public)
+  app.get("/api/banners/active", async (req, res) => {
+    try {
+      const { position } = req.query;
+      const banners = await storage.getActiveBanners(position as string);
+      res.json(banners);
+    } catch (error) {
+      console.error("Error fetching active banners:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Get active sponsored listings (public)
+  app.get("/api/sponsored-listings/active", async (req, res) => {
+    try {
+      const { categoryId } = req.query;
+      const sponsored = await storage.getActiveSponsoredListings(categoryId as string);
+      res.json(sponsored);
+    } catch (error) {
+      console.error("Error fetching active sponsored listings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // =============================================
+  // BANNER MANAGEMENT ADMIN ROUTES
+  // =============================================
+
+  // Get all banners
+  app.get("/api/admin/banners", requireAdmin, async (req, res) => {
+    try {
+      const { position } = req.query;
+      const banners = await storage.getBanners(position as string);
+      res.json(banners);
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+      res.status(500).json({ message: "Fehler beim Laden der Banner" });
+    }
+  });
+
+  // Create banner
+  app.post("/api/admin/banners", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = req.body;
+      const banner = await storage.createBanner(validatedData);
+      
+      await storage.createModerationLog({
+        action: "banner_created",
+        targetType: "banner",
+        targetId: banner.id,
+        performedBy: req.user!.id,
+        details: JSON.stringify(validatedData)
+      });
+      
+      res.status(201).json(banner);
+    } catch (error) {
+      console.error("Error creating banner:", error);
+      res.status(500).json({ message: "Fehler beim Erstellen des Banners" });
+    }
+  });
+
+  // Update banner
+  app.put("/api/admin/banners/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const banner = await storage.updateBanner(id, updates);
+      
+      if (!banner) {
+        return res.status(404).json({ message: "Banner nicht gefunden" });
+      }
+      
+      await storage.createModerationLog({
+        action: "banner_updated",
+        targetType: "banner",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: JSON.stringify(updates)
+      });
+      
+      res.json(banner);
+    } catch (error) {
+      console.error("Error updating banner:", error);
+      res.status(500).json({ message: "Fehler beim Aktualisieren des Banners" });
+    }
+  });
+
+  // Delete banner
+  app.delete("/api/admin/banners/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteBanner(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Banner nicht gefunden" });
+      }
+      
+      await storage.createModerationLog({
+        action: "banner_deleted",
+        targetType: "banner",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: null
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting banner:", error);
+      res.status(500).json({ message: "Fehler beim Löschen des Banners" });
+    }
+  });
+
+  // Toggle banner active status
+  app.post("/api/admin/banners/:id/toggle", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const banner = await storage.toggleBannerActive(id);
+      
+      if (!banner) {
+        return res.status(404).json({ message: "Banner nicht gefunden" });
+      }
+      
+      await storage.createModerationLog({
+        action: banner.isActive === "true" ? "banner_activated" : "banner_deactivated",
+        targetType: "banner",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: null
+      });
+      
+      res.json(banner);
+    } catch (error) {
+      console.error("Error toggling banner:", error);
+      res.status(500).json({ message: "Fehler beim Umschalten des Banners" });
+    }
+  });
+
+  // =============================================
+  // SPONSORED LISTINGS ADMIN ROUTES
+  // =============================================
+
+  // Get all sponsored listings
+  app.get("/api/admin/sponsored-listings", requireAdmin, async (req, res) => {
+    try {
+      const listings = await storage.getSponsoredListings();
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching sponsored listings:", error);
+      res.status(500).json({ message: "Fehler beim Laden der gesponserten Anzeigen" });
+    }
+  });
+
+  // Create sponsored listing
+  app.post("/api/admin/sponsored-listings", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = req.body;
+      const sponsored = await storage.createSponsoredListing(validatedData);
+      
+      await storage.createModerationLog({
+        action: "sponsored_listing_created",
+        targetType: "sponsored_listing",
+        targetId: sponsored.id,
+        performedBy: req.user!.id,
+        details: JSON.stringify(validatedData)
+      });
+      
+      res.status(201).json(sponsored);
+    } catch (error) {
+      console.error("Error creating sponsored listing:", error);
+      res.status(500).json({ message: "Fehler beim Erstellen der gesponserten Anzeige" });
+    }
+  });
+
+  // Update sponsored listing
+  app.put("/api/admin/sponsored-listings/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const sponsored = await storage.updateSponsoredListing(id, updates);
+      
+      if (!sponsored) {
+        return res.status(404).json({ message: "Gesponserte Anzeige nicht gefunden" });
+      }
+      
+      await storage.createModerationLog({
+        action: "sponsored_listing_updated",
+        targetType: "sponsored_listing",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: JSON.stringify(updates)
+      });
+      
+      res.json(sponsored);
+    } catch (error) {
+      console.error("Error updating sponsored listing:", error);
+      res.status(500).json({ message: "Fehler beim Aktualisieren der gesponserten Anzeige" });
+    }
+  });
+
+  // Delete sponsored listing
+  app.delete("/api/admin/sponsored-listings/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteSponsoredListing(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Gesponserte Anzeige nicht gefunden" });
+      }
+      
+      await storage.createModerationLog({
+        action: "sponsored_listing_deleted",
+        targetType: "sponsored_listing",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: null
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting sponsored listing:", error);
+      res.status(500).json({ message: "Fehler beim Löschen der gesponserten Anzeige" });
+    }
+  });
+
+  // =============================================
+  // CATEGORY MANAGEMENT ADMIN ROUTES
+  // =============================================
+
+  // Create category
+  app.post("/api/admin/categories", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = req.body;
+      const category = await storage.createCategory(validatedData);
+      
+      await storage.createModerationLog({
+        action: "category_created",
+        targetType: "category",
+        targetId: category.id,
+        performedBy: req.user!.id,
+        details: JSON.stringify(validatedData)
+      });
+      
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Fehler beim Erstellen der Kategorie" });
+    }
+  });
+
+  // Update category
+  app.put("/api/admin/categories/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const category = await storage.updateCategory(id, updates);
+      
+      if (!category) {
+        return res.status(404).json({ message: "Kategorie nicht gefunden" });
+      }
+      
+      await storage.createModerationLog({
+        action: "category_updated",
+        targetType: "category",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: JSON.stringify(updates)
+      });
+      
+      res.json(category);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Fehler beim Aktualisieren der Kategorie" });
+    }
+  });
+
+  // Delete category
+  app.delete("/api/admin/categories/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteCategory(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Kategorie nicht gefunden" });
+      }
+      
+      await storage.createModerationLog({
+        action: "category_deleted",
+        targetType: "category",
+        targetId: id,
+        performedBy: req.user!.id,
+        details: null
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ message: "Fehler beim Löschen der Kategorie" });
+    }
+  });
+
+  // Reorder categories
+  app.post("/api/admin/categories/reorder", requireAdmin, async (req, res) => {
+    try {
+      const { categoryOrders } = req.body;
+      
+      if (!Array.isArray(categoryOrders)) {
+        return res.status(400).json({ message: "Ungültiges Format" });
+      }
+      
+      await storage.reorderCategories(categoryOrders);
+      
+      await storage.createModerationLog({
+        action: "categories_reordered",
+        targetType: "category",
+        targetId: null,
+        performedBy: req.user!.id,
+        details: JSON.stringify(categoryOrders)
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering categories:", error);
+      res.status(500).json({ message: "Fehler beim Sortieren der Kategorien" });
     }
   });
 
