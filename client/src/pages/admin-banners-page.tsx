@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { AdminLayout } from "@/components/AdminLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -261,16 +262,17 @@ export default function AdminBannersPage() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-6xl py-8">
+      <AdminLayout>
         <div className="flex items-center justify-center h-64">
           <p className="text-gray-500">Lade Banner...</p>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="container max-w-6xl py-8">
+    <AdminLayout>
+      <div className="space-y-6">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -652,6 +654,7 @@ export default function AdminBannersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

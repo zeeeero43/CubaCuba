@@ -17,6 +17,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { AdminLayout } from "@/components/AdminLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -197,7 +198,8 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div className="container max-w-6xl py-8">
+    <AdminLayout>
+      <div className="space-y-6">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -347,6 +349,7 @@ export default function AdminCategoriesPage() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
