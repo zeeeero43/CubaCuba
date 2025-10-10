@@ -444,7 +444,6 @@ export class DatabaseStorage implements IStorage {
   } = {}): Promise<{ listings: Listing[]; total: number; }> {
     const { q, categoryId, region, priceMin, priceMax, condition, sellerId, status = 'active', page = 1, pageSize = 20 } = filters;
     
-    let query = db.select().from(listings);
     let conditions = [eq(listings.status, status)];
 
     // Search filters
@@ -481,21 +480,21 @@ export class DatabaseStorage implements IStorage {
       conditions.push(lte(sql`CAST(${listings.price} AS DECIMAL)`, priceMax));
     }
 
-    // Apply conditions
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+    // Build query with conditions
+    const whereClause = and(...conditions);
 
     // Get total count
-    const totalQuery = db.select({ count: count() }).from(listings);
-    if (conditions.length > 0) {
-      totalQuery.where(and(...conditions));
-    }
-    const [{ count: total }] = await totalQuery;
+    const [{ count: total }] = await db
+      .select({ count: count() })
+      .from(listings)
+      .where(whereClause);
 
     // Apply pagination and ordering
     const offset = (page - 1) * pageSize;
-    const result = await query
+    const result = await db
+      .select()
+      .from(listings)
+      .where(whereClause)
       .orderBy(desc(listings.featured), desc(listings.createdAt))
       .limit(pageSize)
       .offset(offset);
