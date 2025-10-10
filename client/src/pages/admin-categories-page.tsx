@@ -117,12 +117,12 @@ export default function AdminCategoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/categories/tree"] });
-      toast({ title: "Kategorie erstellt" });
+      toast({ title: "Categoría creada" });
       setIsCreateOpen(false);
       resetForm();
     },
     onError: () => {
-      toast({ title: "Fehler beim Erstellen", variant: "destructive" });
+      toast({ title: "Error al crear", variant: "destructive" });
     }
   });
 
@@ -133,12 +133,12 @@ export default function AdminCategoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/categories/tree"] });
-      toast({ title: "Kategorie aktualisiert" });
+      toast({ title: "Categoría actualizada" });
       setEditingCategory(null);
       resetForm();
     },
     onError: () => {
-      toast({ title: "Fehler beim Aktualisieren", variant: "destructive" });
+      toast({ title: "Error al actualizar", variant: "destructive" });
     }
   });
 
@@ -149,10 +149,10 @@ export default function AdminCategoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/categories/tree"] });
-      toast({ title: "Kategorie gelöscht" });
+      toast({ title: "Categoría eliminada" });
     },
     onError: () => {
-      toast({ title: "Fehler beim Löschen", variant: "destructive" });
+      toast({ title: "Error al eliminar", variant: "destructive" });
     }
   });
 
@@ -163,7 +163,7 @@ export default function AdminCategoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/categories/tree"] });
-      toast({ title: "Reihenfolge gespeichert" });
+      toast({ title: "Orden guardado" });
     },
   });
 
@@ -224,35 +224,35 @@ export default function AdminCategoriesPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Package className="w-8 h-8 text-primary" />
-              Kategorien-Verwaltung
+              Gestión de Categorías
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Unterkategorien per Drag & Drop innerhalb ihrer Oberkategorie sortieren
+              Ordenar subcategorías con arrastrar y soltar dentro de su categoría superior
             </p>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-create-category">
                 <Plus className="w-4 h-4 mr-2" />
-                Neue Kategorie
+                Nueva categoría
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Neue Kategorie erstellen</DialogTitle>
+                <DialogTitle>Crear nueva categoría</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div>
-                  <Label>Name</Label>
+                  <Label>Nombre</Label>
                   <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Kategorie-Name"
+                    placeholder="Nombre de categoría"
                     data-testid="input-category-name"
                   />
                 </div>
                 <div>
-                  <Label>Icon (Emoji)</Label>
+                  <Label>Icono (Emoji)</Label>
                   <Input
                     value={formData.icon}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
@@ -261,7 +261,7 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div>
-                  <Label>Farbe</Label>
+                  <Label>Color</Label>
                   <Input
                     type="color"
                     value={formData.color}
@@ -270,13 +270,13 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div>
-                  <Label>Übergeordnete Kategorie (optional)</Label>
-                  <Select value={formData.parentId} onValueChange={(value) => setFormData({ ...formData, parentId: value })}>
+                  <Label>Categoría superior (opcional)</Label>
+                  <Select value={formData.parentId || "none"} onValueChange={(value) => setFormData({ ...formData, parentId: value === "none" ? "" : value })}>
                     <SelectTrigger data-testid="select-parent-category">
-                      <SelectValue placeholder="Keine (Hauptkategorie)" />
+                      <SelectValue placeholder="Ninguna (Categoría principal)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Keine (Hauptkategorie)</SelectItem>
+                      <SelectItem value="none">Ninguna (Categoría principal)</SelectItem>
                       {categoriesData?.mainCategories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
                           {cat.icon} {cat.name}
@@ -286,7 +286,7 @@ export default function AdminCategoriesPage() {
                   </Select>
                 </div>
                 <Button onClick={handleSubmit} className="w-full" data-testid="button-submit-category">
-                  {createMutation.isPending ? "Erstelle..." : "Kategorie erstellen"}
+                  {createMutation.isPending ? "Creando..." : "Crear categoría"}
                 </Button>
               </div>
             </DialogContent>
@@ -295,7 +295,7 @@ export default function AdminCategoriesPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Hierarchische Kategorien</CardTitle>
+            <CardTitle>Categorías Jerárquicas</CardTitle>
           </CardHeader>
           <CardContent>
             <Accordion type="multiple" className="w-full">
@@ -315,7 +315,7 @@ export default function AdminCategoriesPage() {
                           <span className="text-2xl">{mainCategory.icon}</span>
                           <span className="font-semibold text-lg">{mainCategory.name}</span>
                           <span className="text-xs text-gray-500 ml-2">
-                            ({subcategories.length} Unterkategorien)
+                            ({subcategories.length} subcategorías)
                           </span>
                         </div>
                       </AccordionTrigger>
@@ -363,7 +363,7 @@ export default function AdminCategoriesPage() {
                         </DndContext>
                       ) : (
                         <p className="text-sm text-gray-500 dark:text-gray-400 ml-8 py-2">
-                          Keine Unterkategorien vorhanden
+                          No hay subcategorías disponibles
                         </p>
                       )}
                     </AccordionContent>
@@ -374,7 +374,7 @@ export default function AdminCategoriesPage() {
 
             {(!categoriesData?.mainCategories || categoriesData.mainCategories.length === 0) && (
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-                Noch keine Kategorien vorhanden. Erstellen Sie Ihre erste Kategorie.
+                No hay categorías disponibles. Crea tu primera categoría.
               </p>
             )}
           </CardContent>
@@ -384,11 +384,11 @@ export default function AdminCategoriesPage() {
           <Dialog open={!!editingCategory} onOpenChange={() => setEditingCategory(null)}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Kategorie bearbeiten</DialogTitle>
+                <DialogTitle>Editar categoría</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div>
-                  <Label>Name</Label>
+                  <Label>Nombre</Label>
                   <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -396,7 +396,7 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div>
-                  <Label>Icon (Emoji)</Label>
+                  <Label>Icono (Emoji)</Label>
                   <Input
                     value={formData.icon}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
@@ -404,7 +404,7 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div>
-                  <Label>Farbe</Label>
+                  <Label>Color</Label>
                   <Input
                     type="color"
                     value={formData.color}
@@ -413,13 +413,13 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div>
-                  <Label>Übergeordnete Kategorie (optional)</Label>
-                  <Select value={formData.parentId} onValueChange={(value) => setFormData({ ...formData, parentId: value })}>
+                  <Label>Categoría superior (opcional)</Label>
+                  <Select value={formData.parentId || "none"} onValueChange={(value) => setFormData({ ...formData, parentId: value === "none" ? "" : value })}>
                     <SelectTrigger data-testid="select-edit-parent-category">
-                      <SelectValue placeholder="Keine (Hauptkategorie)" />
+                      <SelectValue placeholder="Ninguna (Categoría principal)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Keine (Hauptkategorie)</SelectItem>
+                      <SelectItem value="none">Ninguna (Categoría principal)</SelectItem>
                       {categoriesData?.mainCategories
                         .filter(cat => cat.id !== editingCategory.id)
                         .map((cat) => (
@@ -431,7 +431,7 @@ export default function AdminCategoriesPage() {
                   </Select>
                 </div>
                 <Button onClick={handleSubmit} className="w-full" data-testid="button-update-category">
-                  {updateMutation.isPending ? "Aktualisiere..." : "Änderungen speichern"}
+                  {updateMutation.isPending ? "Actualizando..." : "Guardar cambios"}
                 </Button>
               </div>
             </DialogContent>
