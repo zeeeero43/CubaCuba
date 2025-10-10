@@ -2046,7 +2046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!listing) {
         return res.status(404).json({ message: "Anuncio no encontrado" });
       }
-      if (listing.userId !== req.user!.id) {
+      if (listing.sellerId !== req.user!.id) {
         return res.status(403).json({ message: "No tienes permiso para modificar este anuncio" });
       }
 
