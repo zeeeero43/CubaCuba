@@ -28,7 +28,6 @@ import AdminUsersPage from "@/pages/admin-users-page";
 import AdminPremiumPage from "@/pages/admin-premium-page";
 import AdminCategoriesPage from "@/pages/admin-categories-page";
 import AdminBannersPage from "@/pages/admin-banners-page";
-import AdminSponsoredPage from "@/pages/admin-sponsored-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -69,7 +68,6 @@ function Router() {
         <ProtectedRoute path="/admin/premium" component={AdminPremiumPage} />
         <ProtectedRoute path="/admin/categories" component={AdminCategoriesPage} />
         <ProtectedRoute path="/admin/banners" component={AdminBannersPage} />
-        <ProtectedRoute path="/admin/sponsored" component={AdminSponsoredPage} />
         <Route component={NotFound} />
       </Switch>
     </>

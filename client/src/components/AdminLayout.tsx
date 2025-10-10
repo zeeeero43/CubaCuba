@@ -55,7 +55,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { name: "Premium-Features", href: "/admin/premium", icon: DollarSign },
     { name: "Kategorien", href: "/admin/categories", icon: Package },
     { name: "Banner", href: "/admin/banners", icon: Image },
-    { name: "Gesponserte Anzeigen", href: "/admin/sponsored", icon: Star },
     { name: "Einstellungen", href: "/admin/settings", icon: Settings },
     { name: "Benutzer", href: "/admin/users", icon: Users },
   ];
