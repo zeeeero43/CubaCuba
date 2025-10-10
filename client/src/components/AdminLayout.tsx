@@ -11,6 +11,9 @@ import {
   LogOut,
   Shield,
   DollarSign,
+  Image,
+  Package,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -50,6 +53,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { name: "Live-Sperrungs-Log", href: "/admin/queue", icon: ListChecks },
     { name: "Meldungen", href: "/admin/reports", icon: Flag },
     { name: "Premium-Features", href: "/admin/premium", icon: DollarSign },
+    { name: "Kategorien", href: "/admin/categories", icon: Package },
+    { name: "Banner", href: "/admin/banners", icon: Image },
+    { name: "Gesponserte Anzeigen", href: "/admin/sponsored", icon: Star },
     { name: "Einstellungen", href: "/admin/settings", icon: Settings },
     { name: "Benutzer", href: "/admin/users", icon: Users },
   ];

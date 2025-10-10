@@ -339,6 +339,32 @@ export default function AdminSettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Description Minimum Length */}
+          <Card data-testid="card-description-min-length">
+            <CardHeader>
+              <CardTitle>Beschreibungs-Mindestlänge</CardTitle>
+              <CardDescription>
+                Lege die minimale Anzahl an Zeichen fest, die eine Anzeigen-Beschreibung haben muss
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="min-length">Mindestanzahl Zeichen</Label>
+                <Input
+                  id="min-length"
+                  type="number"
+                  min="0"
+                  value={settings.description_min_length || "50"}
+                  onChange={(e) => updateSetting("description_min_length", e.target.value)}
+                  data-testid="input-min-length"
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Standard: 50 Zeichen. Anzeigen mit kürzeren Beschreibungen werden abgelehnt.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AdminLayout>

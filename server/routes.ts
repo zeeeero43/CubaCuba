@@ -2139,6 +2139,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // =============================================
+  // PUBLIC SETTINGS ROUTES
+  // =============================================
+
+  // Get description minimum length (public)
+  app.get("/api/settings/description-min-length", async (req, res) => {
+    try {
+      const setting = await storage.getModerationSetting("description_min_length");
+      res.json({ minLength: parseInt(setting?.value || "50") });
+    } catch (error) {
+      console.error("Error fetching description min length:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // =============================================
   // PUBLIC BANNER & SPONSORED ROUTES
   // =============================================
 

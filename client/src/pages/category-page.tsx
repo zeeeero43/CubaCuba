@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Banner } from "@/components/Banner";
 import { ArrowLeft, MapPin, Heart, Eye } from "lucide-react";
 import { useState } from "react";
 
@@ -91,6 +92,11 @@ export default function CategoryPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Category Banner */}
+      <div className="max-w-md lg:max-w-6xl mx-auto px-4 pt-4">
+        <Banner position="category" />
       </div>
 
       <div className="max-w-md lg:max-w-6xl mx-auto px-4 py-6">

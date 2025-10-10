@@ -49,6 +49,18 @@ export default function EditListingPage() {
   const urlParts = window.location.pathname.split('/');
   const id = urlParts[urlParts.length - 1];
 
+  // Fetch description min length setting
+  const { data: descriptionMinLengthSetting } = useQuery<{ minLength: number }>({
+    queryKey: ['/api/settings/description-min-length'],
+    queryFn: async () => {
+      const response = await fetch('/api/settings/description-min-length');
+      if (!response.ok) return { minLength: 50 };
+      return response.json();
+    },
+  });
+
+  const descriptionMinLength = descriptionMinLengthSetting?.minLength || 50;
+
   // Fetch hierarchical categories
   const { data: categoriesTree } = useQuery<{
     mainCategories: Category[];
@@ -74,7 +86,12 @@ export default function EditListingPage() {
   });
 
   const form = useForm<InsertListing>({
-    resolver: zodResolver(insertListingSchema),
+    resolver: zodResolver(insertListingSchema.extend({
+      description: insertListingSchema.shape.description.min(
+        descriptionMinLength,
+        `La descripción debe tener al menos ${descriptionMinLength} caracteres`
+      ),
+    })),
     defaultValues: {
       title: "",
       description: "",
@@ -346,6 +363,15 @@ export default function EditListingPage() {
                   {...form.register("description")}
                   data-testid="textarea-description"
                 />
+                <div className="flex items-center justify-between text-sm">
+                  <p className={`${
+                    (form.watch("description")?.length || 0) < descriptionMinLength 
+                      ? 'text-destructive' 
+                      : 'text-muted-foreground'
+                  }`} data-testid="text-description-counter">
+                    {form.watch("description")?.length || 0} / {descriptionMinLength} caracteres mínimos
+                  </p>
+                </div>
                 {form.formState.errors.description && (
                   <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
                 )}

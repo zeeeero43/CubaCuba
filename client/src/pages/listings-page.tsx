@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Banner } from "@/components/Banner";
 import {
   Search,
   Filter,
@@ -116,6 +117,11 @@ export default function ListingsPage() {
     },
   });
 
+  // Fetch active sponsored listings
+  const { data: sponsoredListingsData = [] } = useQuery<any[]>({
+    queryKey: ['/api/sponsored-listings/active'],
+  });
+
   const updateFilter = (key: keyof ListingFilters, value: string | number) => {
     // Convert 'all' back to empty string for API
     const apiValue = value === 'all' ? '' : value;
@@ -145,6 +151,16 @@ export default function ListingsPage() {
   const totalPages = listingsResponse?.totalPages || 0;
   const currentPage = listingsResponse?.currentPage || 1;
   const totalCount = listingsResponse?.totalCount || 0;
+
+  // Get sponsored listing IDs for quick lookup
+  const sponsoredListingIds = new Set(sponsoredListingsData.map((sl: any) => sl.listingId));
+
+  // Separate sponsored and regular listings
+  const sponsoredListings = listings.filter(listing => sponsoredListingIds.has(listing.id));
+  const regularListings = listings.filter(listing => !sponsoredListingIds.has(listing.id));
+
+  // Combine: sponsored first, then regular
+  const displayListings = [...sponsoredListings, ...regularListings];
 
   const FilterContent = () => (
     <div className="space-y-4">
@@ -313,6 +329,9 @@ export default function ListingsPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-9">
         {/* Active Filters */}
         <div className="mb-6">
           <div className="flex flex-wrap gap-2">
@@ -409,21 +428,25 @@ export default function ListingsPage() {
         )}
 
         {/* Listings Grid/List */}
-        {!isLoading && listings.length > 0 && (
+        {!isLoading && displayListings.length > 0 && (
           <div className={viewMode === 'grid' 
             ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"
             : "space-y-4 mb-8"
           }>
-            {listings.map((listing) => (
+            {displayListings.map((listing) => {
+              const isSponsored = sponsoredListingIds.has(listing.id);
+              return (
               <Card
                 key={listing.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className={`cursor-pointer hover:shadow-lg transition-shadow ${
+                  isSponsored ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600' : ''
+                }`}
                 onClick={() => navigate(`/listing/${listing.id}`)}
                 data-testid={`card-listing-${listing.id}`}
               >
                 {viewMode === 'grid' ? (
                   <>
-                    <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
+                    <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden relative">
                       {listing.images && listing.images.length > 0 ? (
                         <img
                           src={listing.images[0]}
@@ -440,6 +463,12 @@ export default function ListingsPage() {
                             <p className="text-sm">Sin imagen</p>
                           </div>
                         </div>
+                      )}
+                      {isSponsored && (
+                        <Badge className="absolute top-2 right-2 bg-yellow-500 text-white flex items-center gap-1" data-testid={`badge-sponsored-${listing.id}`}>
+                          <Star className="w-3 h-3 fill-white" />
+                          Gesponsert
+                        </Badge>
                       )}
                     </div>
                     <CardContent className="p-4">
@@ -468,7 +497,7 @@ export default function ListingsPage() {
                 ) : (
                   <CardContent className="p-4">
                     <div className="flex gap-4">
-                      <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden flex-shrink-0">
+                      <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden flex-shrink-0 relative">
                         {listing.images && listing.images.length > 0 ? (
                           <img
                             src={listing.images[0]}
@@ -480,11 +509,23 @@ export default function ListingsPage() {
                             📷
                           </div>
                         )}
+                        {isSponsored && (
+                          <Badge className="absolute top-1 right-1 bg-yellow-500 text-white text-xs p-1" data-testid={`badge-sponsored-${listing.id}`}>
+                            <Star className="w-2 h-2 fill-white" />
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
-                          {listing.title}
-                        </h3>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
+                            {listing.title}
+                          </h3>
+                          {isSponsored && (
+                            <Badge className="bg-yellow-500 text-white text-xs whitespace-nowrap" data-testid={`badge-sponsored-list-${listing.id}`}>
+                              Gesponsert
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-lg font-bold text-primary mb-2">
                           {formatPrice(listing)}
                         </p>
@@ -503,7 +544,8 @@ export default function ListingsPage() {
                   </CardContent>
                 )}
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -551,6 +593,15 @@ export default function ListingsPage() {
             </Button>
           </div>
         )}
+          </div>
+
+          {/* Desktop Sidebar - Right */}
+          <aside className="hidden lg:block lg:col-span-3">
+            <div className="sticky top-24">
+              <Banner position="sidebar" />
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );

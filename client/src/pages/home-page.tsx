@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { SearchBar } from "@/components/SearchBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Banner } from "@/components/Banner";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Listing } from "@shared/schema";
 import { 
@@ -107,6 +108,11 @@ export default function HomePage() {
             placeholder="Buscar productos, servicios..."
             className="w-full"
           />
+        </div>
+
+        {/* Header Banner */}
+        <div className="px-4 mb-4">
+          <Banner position="header" />
         </div>
 
         {/* Main Categories - Carousel */}
@@ -347,6 +353,10 @@ export default function HomePage() {
           )}
         </div>
 
+        {/* Footer Banner */}
+        <div className="px-4 mb-6">
+          <Banner position="footer" />
+        </div>
 
       </div>
 
