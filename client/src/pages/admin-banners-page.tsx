@@ -18,16 +18,14 @@ const POSITION_LABELS: Record<string, string> = {
   header: "Header-Banner",
   sidebar: "Sidebar-Banner",
   footer: "Footer-Banner",
-  mobile: "Mobile-Banner",
   category: "Kategorie-Banner",
 };
 
 const POSITION_OPTIONS = [
-  { value: "header", label: "Header" },
-  { value: "sidebar", label: "Sidebar" },
-  { value: "footer", label: "Footer" },
-  { value: "mobile", label: "Mobile" },
-  { value: "category", label: "Kategorie" },
+  { value: "header", label: "Header (1920x200px empfohlen)" },
+  { value: "sidebar", label: "Sidebar (300x600px empfohlen)" },
+  { value: "footer", label: "Footer (1920x150px empfohlen)" },
+  { value: "category", label: "Kategorie (728x90px empfohlen)" },
 ];
 
 export default function AdminBannersPage() {
@@ -207,11 +205,11 @@ export default function AdminBannersPage() {
       return;
     }
     
-    // Validate file size (10MB)
-    if (file.size > 10485760) {
+    // Validate file size (2MB)
+    if (file.size > 2097152) {
       toast({
         title: "Datei zu groß",
-        description: "Die Datei darf nicht größer als 10MB sein",
+        description: "Die Datei darf nicht größer als 2MB sein",
         variant: "destructive",
       });
       return;

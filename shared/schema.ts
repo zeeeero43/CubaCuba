@@ -495,7 +495,7 @@ export const banners = pgTable("banners", {
 }));
 
 export const insertBannerSchema = createInsertSchema(banners, {
-  position: z.enum(["header", "sidebar", "footer", "mobile", "category"], { message: "Position inválida" }),
+  position: z.enum(["header", "sidebar", "footer", "category"], { message: "Position inválida" }),
   imageUrl: z.string().url("URL de imagen inválida"),
   linkUrl: z.string().url("URL de enlace inválida").optional(),
   isActive: z.enum(["true", "false"]).default("true"),
