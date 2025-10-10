@@ -74,6 +74,7 @@ export default function CreateListingPage() {
   const [appealReason, setAppealReason] = useState("");
   const [selectedPremiumFeatures, setSelectedPremiumFeatures] = useState<string[]>([]);
   const [createdListingId, setCreatedListingId] = useState<string | null>(null);
+  const [noPriceSelected, setNoPriceSelected] = useState(false);
 
   // Fetch hierarchical categories
   const { data: categoriesTree } = useQuery<{
@@ -93,6 +94,7 @@ export default function CreateListingPage() {
       title: "",
       description: "",
       price: "",
+      currency: "CUP",
       priceType: "fixed",
       categoryId: "",
       locationCity: "",
@@ -260,10 +262,10 @@ export default function CreateListingPage() {
     }
     
     // Check if we've reached the image limit
-    if (images.length >= 8) {
+    if (images.length >= 10) {
       toast({
         title: "Límite de imágenes alcanzado",
-        description: "Solo puedes subir un máximo de 8 imágenes",
+        description: "Solo puedes subir un máximo de 10 imágenes",
         variant: "destructive",
       });
       return;
@@ -427,24 +429,63 @@ export default function CreateListingPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="price">Precio (CUP) *</Label>
-                  <div className="relative">
-                    <Euro className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      className="pl-10"
-                      {...form.register("price")}
-                      data-testid="input-price"
-                    />
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="noPrice"
+                    checked={noPriceSelected}
+                    onChange={(e) => {
+                      setNoPriceSelected(e.target.checked);
+                      if (e.target.checked) {
+                        form.setValue("price", "");
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-gray-300"
+                    data-testid="checkbox-no-price"
+                  />
+                  <Label htmlFor="noPrice" className="text-sm font-normal cursor-pointer">
+                    Sin precio (Precio a consultar)
+                  </Label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Precio {!noPriceSelected && "*"}</Label>
+                    <div className="relative">
+                      <Euro className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="pl-10"
+                        disabled={noPriceSelected}
+                        {...form.register("price")}
+                        data-testid="input-price"
+                      />
+                    </div>
+                    {form.formState.errors.price && (
+                      <p className="text-sm text-destructive">{form.formState.errors.price.message}</p>
+                    )}
                   </div>
-                  {form.formState.errors.price && (
-                    <p className="text-sm text-destructive">{form.formState.errors.price.message}</p>
-                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Moneda *</Label>
+                    <Select 
+                      onValueChange={(value) => form.setValue("currency", value as "CUP" | "USD")}
+                      value={form.watch("currency") || "CUP"}
+                      disabled={noPriceSelected}
+                    >
+                      <SelectTrigger data-testid="select-currency">
+                        <SelectValue placeholder="Selecciona moneda" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CUP">Peso Cubano (CUP)</SelectItem>
+                        <SelectItem value="USD">Dólar (USD)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -581,13 +622,13 @@ export default function CreateListingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Camera className="w-5 h-5 text-primary" />
-                Imágenes (máximo 8)
+                Imágenes (máximo 10)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 px-4">
-                  Sube hasta 8 imágenes para tu anuncio
+                  Sube hasta 10 imágenes para tu anuncio
                 </p>
                 
                 {/* Simple file upload input */}
