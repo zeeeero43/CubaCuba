@@ -44,7 +44,7 @@ export default function AdminUsersPage() {
 
   const blockMutation = useMutation({
     mutationFn: async ({ userId, action }: { userId: string; action: "block" | "unblock" }) => {
-      const res = await apiRequest("POST", `/api/admin/users/${userId}/${action}`, { reason: "Bloqueado por administrador" });
+      const res = await apiRequest("POST", `/api/admin/users/${userId}/${action}`, { reason: "Vom Administrator gesperrt" });
       return await res.json();
     },
     onSuccess: () => {

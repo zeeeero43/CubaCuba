@@ -15,17 +15,17 @@ import type { Banner, InsertBanner } from "@shared/schema";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const POSITION_LABELS: Record<string, string> = {
-  header: "Banner de Encabezado",
-  sidebar: "Banner Lateral",
-  footer: "Banner de Pie de Página",
-  category: "Banner de Categoría",
+  header: "Header-Banner",
+  sidebar: "Sidebar-Banner",
+  footer: "Footer-Banner",
+  category: "Kategorie-Banner",
 };
 
 const POSITION_OPTIONS = [
-  { value: "header", label: "Encabezado (1920x200px recomendado)" },
-  { value: "sidebar", label: "Lateral (300x600px recomendado)" },
-  { value: "footer", label: "Pie de página (1920x150px recomendado)" },
-  { value: "category", label: "Categoría (728x90px recomendado)" },
+  { value: "header", label: "Header (1920x200px empfohlen)" },
+  { value: "sidebar", label: "Sidebar (300x600px empfohlen)" },
+  { value: "footer", label: "Footer (1920x150px empfohlen)" },
+  { value: "category", label: "Kategorie (728x90px empfohlen)" },
 ];
 
 export default function AdminBannersPage() {
@@ -64,13 +64,13 @@ export default function AdminBannersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/banners"] });
-      toast({ title: "Banner creado exitosamente" });
+      toast({ title: "Banner erfolgreich erstellt" });
       setIsCreateOpen(false);
       resetForm();
     },
     onError: (error: any) => {
       toast({ 
-        title: "Error al crear el banner", 
+        title: "Fehler beim Erstellen des Banners", 
         description: error.message,
         variant: "destructive" 
       });
@@ -85,13 +85,13 @@ export default function AdminBannersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/banners"] });
-      toast({ title: "Banner actualizado exitosamente" });
+      toast({ title: "Banner erfolgreich aktualisiert" });
       setEditingBanner(null);
       resetForm();
     },
     onError: (error: any) => {
       toast({ 
-        title: "Error al actualizar el banner", 
+        title: "Fehler beim Aktualisieren des Banners", 
         description: error.message,
         variant: "destructive" 
       });
@@ -106,12 +106,12 @@ export default function AdminBannersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/banners"] });
-      toast({ title: "Banner eliminado exitosamente" });
+      toast({ title: "Banner erfolgreich gelöscht" });
       setDeletingBanner(null);
     },
     onError: (error: any) => {
       toast({ 
-        title: "Error al eliminar el banner", 
+        title: "Fehler beim Löschen des Banners", 
         description: error.message,
         variant: "destructive" 
       });
@@ -126,11 +126,11 @@ export default function AdminBannersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/banners"] });
-      toast({ title: "Estado del banner actualizado" });
+      toast({ title: "Banner-Status aktualisiert" });
     },
     onError: (error: any) => {
       toast({ 
-        title: "Error al actualizar el estado", 
+        title: "Fehler beim Aktualisieren des Status", 
         description: error.message,
         variant: "destructive" 
       });
@@ -150,8 +150,8 @@ export default function AdminBannersPage() {
   const handleSubmit = () => {
     if (!formData.imageUrl) {
       toast({
-        title: "Imagen requerida",
-        description: "Por favor, cargue una imagen",
+        title: "Bild erforderlich",
+        description: "Bitte laden Sie ein Bild hoch",
         variant: "destructive",
       });
       return;
@@ -198,8 +198,8 @@ export default function AdminBannersPage() {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Tipo de archivo inválido",
-        description: "Solo se permiten archivos de imagen",
+        title: "Ungültiger Dateityp",
+        description: "Nur Bilddateien sind erlaubt",
         variant: "destructive",
       });
       return;
@@ -208,8 +208,8 @@ export default function AdminBannersPage() {
     // Validate file size (2MB)
     if (file.size > 2097152) {
       toast({
-        title: "Archivo demasiado grande",
-        description: "El archivo no debe superar los 2MB",
+        title: "Datei zu groß",
+        description: "Die Datei darf nicht größer als 2MB sein",
         variant: "destructive",
       });
       return;
@@ -232,7 +232,7 @@ export default function AdminBannersPage() {
       });
       
       if (!uploadFileResponse.ok) {
-        throw new Error('Error al cargar el archivo');
+        throw new Error('Fehler beim Hochladen der Datei');
       }
       
       // Step 3: Finalize upload and get object path
@@ -243,14 +243,14 @@ export default function AdminBannersPage() {
       setFormData(prev => ({ ...prev, imageUrl: objectPath }));
       
       toast({
-        title: "Imagen cargada exitosamente",
-        description: "La imagen se ha añadido al banner",
+        title: "Bild erfolgreich hochgeladen",
+        description: "Das Bild wurde zum Banner hinzugefügt",
       });
     } catch (error) {
-      console.error('Error al cargar la imagen:', error);
+      console.error('Fehler beim Hochladen des Bildes:', error);
       toast({
-        title: "Error al cargar la imagen",
-        description: "Por favor, inténtelo de nuevo",
+        title: "Fehler beim Hochladen des Bildes",
+        description: "Bitte versuchen Sie es erneut",
         variant: "destructive",
       });
     } finally {
@@ -262,7 +262,7 @@ export default function AdminBannersPage() {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">Cargando banners...</p>
+          <p className="text-gray-500">Lade Banner...</p>
         </div>
       </AdminLayout>
     );
@@ -275,10 +275,10 @@ export default function AdminBannersPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <ImageIcon className="w-8 h-8 text-primary" />
-            Gestión de Banners
+            Banner-Verwaltung
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Gestionar banners publicitarios para diferentes posiciones
+            Banner für verschiedene Positionen verwalten
           </p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={(open) => {
@@ -288,19 +288,19 @@ export default function AdminBannersPage() {
           <DialogTrigger asChild>
             <Button data-testid="button-create-banner">
               <Plus className="w-4 h-4 mr-2" />
-              Nuevo Banner
+              Neues Banner
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Crear nuevo banner</DialogTitle>
+              <DialogTitle>Neues Banner erstellen</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
-                <Label>Posición</Label>
+                <Label>Position</Label>
                 <Select value={formData.position} onValueChange={(value) => setFormData({ ...formData, position: value })}>
                   <SelectTrigger data-testid="select-banner-position">
-                    <SelectValue placeholder="Seleccionar posición" />
+                    <SelectValue placeholder="Position wählen" />
                   </SelectTrigger>
                   <SelectContent>
                     {POSITION_OPTIONS.map((option) => (
@@ -313,13 +313,13 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <Label>Imagen del Banner</Label>
+                <Label>Banner-Bild</Label>
                 <div className="mt-2 space-y-3">
                   {formData.imageUrl ? (
                     <div className="relative">
                       <img 
                         src={formData.imageUrl} 
-                        alt="Vista previa del banner" 
+                        alt="Banner Vorschau" 
                         className="w-full h-48 object-cover rounded-lg"
                         data-testid="img-banner-preview"
                       />
@@ -340,7 +340,7 @@ export default function AdminBannersPage() {
                         htmlFor="banner-upload" 
                         className="cursor-pointer text-primary hover:underline"
                       >
-                        Haga clic aquí para cargar una imagen
+                        Klicken Sie hier, um ein Bild hochzuladen
                       </Label>
                       <input
                         id="banner-upload"
@@ -352,7 +352,7 @@ export default function AdminBannersPage() {
                         data-testid="input-banner-image"
                       />
                       {uploadingImage && (
-                        <p className="text-sm text-gray-500 mt-2">Cargando...</p>
+                        <p className="text-sm text-gray-500 mt-2">Lädt hoch...</p>
                       )}
                     </div>
                   )}
@@ -360,7 +360,7 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <Label>URL del enlace (opcional)</Label>
+                <Label>Link-URL (optional)</Label>
                 <Input
                   value={formData.linkUrl}
                   onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
@@ -370,7 +370,7 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <Label>Orden de visualización</Label>
+                <Label>Anzeigereihenfolge</Label>
                 <Input
                   type="number"
                   value={formData.displayOrder}
@@ -387,7 +387,7 @@ export default function AdminBannersPage() {
                   onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked ? "true" : "false" })}
                   data-testid="switch-banner-active"
                 />
-                <Label>Banner activo</Label>
+                <Label>Banner aktiv</Label>
               </div>
 
               <Button 
@@ -396,7 +396,7 @@ export default function AdminBannersPage() {
                 disabled={createMutation.isPending || !formData.imageUrl}
                 data-testid="button-submit-banner"
               >
-                {createMutation.isPending ? "Creando..." : "Crear banner"}
+                {createMutation.isPending ? "Erstelle..." : "Banner erstellen"}
               </Button>
             </div>
           </DialogContent>
@@ -414,14 +414,14 @@ export default function AdminBannersPage() {
                 <CardTitle className="flex items-center justify-between">
                   <span>{POSITION_LABELS[position.value]}</span>
                   <span className="text-sm font-normal text-gray-500">
-                    {positionBanners.length} {positionBanners.length === 1 ? "banner" : "banners"}
+                    {positionBanners.length} Banner
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {positionBanners.length === 0 ? (
                   <p className="text-gray-500 text-center py-8" data-testid={`text-no-banners-${position.value}`}>
-                    No hay banners para esta posición
+                    Keine Banner für diese Position
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -434,7 +434,7 @@ export default function AdminBannersPage() {
                         {/* Thumbnail */}
                         <img
                           src={banner.imageUrl}
-                          alt="Banner publicitario"
+                          alt="Banner"
                           className="w-32 h-20 object-cover rounded"
                           data-testid={`img-banner-${banner.id}`}
                         />
@@ -443,7 +443,7 @@ export default function AdminBannersPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-medium" data-testid={`text-banner-order-${banner.id}`}>
-                              Orden: {banner.displayOrder}
+                              Reihenfolge: {banner.displayOrder}
                             </span>
                             <span 
                               className={`text-xs px-2 py-1 rounded ${
@@ -453,7 +453,7 @@ export default function AdminBannersPage() {
                               }`}
                               data-testid={`text-banner-status-${banner.id}`}
                             >
-                              {banner.isActive === "true" ? "Activo" : "Inactivo"}
+                              {banner.isActive === "true" ? "Aktiv" : "Inaktiv"}
                             </span>
                           </div>
                           {banner.linkUrl && (
@@ -521,11 +521,11 @@ export default function AdminBannersPage() {
         }}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Editar banner</DialogTitle>
+              <DialogTitle>Banner bearbeiten</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
-                <Label>Posición</Label>
+                <Label>Position</Label>
                 <Select value={formData.position} onValueChange={(value) => setFormData({ ...formData, position: value })}>
                   <SelectTrigger data-testid="select-edit-banner-position">
                     <SelectValue />
@@ -541,13 +541,13 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <Label>Imagen del Banner</Label>
+                <Label>Banner-Bild</Label>
                 <div className="mt-2 space-y-3">
                   {formData.imageUrl ? (
                     <div className="relative">
                       <img 
                         src={formData.imageUrl} 
-                        alt="Vista previa del banner" 
+                        alt="Banner Vorschau" 
                         className="w-full h-48 object-cover rounded-lg"
                         data-testid="img-edit-banner-preview"
                       />
@@ -568,7 +568,7 @@ export default function AdminBannersPage() {
                         htmlFor="edit-banner-upload" 
                         className="cursor-pointer text-primary hover:underline"
                       >
-                        Haga clic aquí para cargar una imagen
+                        Klicken Sie hier, um ein Bild hochzuladen
                       </Label>
                       <input
                         id="edit-banner-upload"
@@ -580,7 +580,7 @@ export default function AdminBannersPage() {
                         data-testid="input-edit-banner-image"
                       />
                       {uploadingImage && (
-                        <p className="text-sm text-gray-500 mt-2">Cargando...</p>
+                        <p className="text-sm text-gray-500 mt-2">Lädt hoch...</p>
                       )}
                     </div>
                   )}
@@ -588,7 +588,7 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <Label>URL del enlace (opcional)</Label>
+                <Label>Link-URL (optional)</Label>
                 <Input
                   value={formData.linkUrl}
                   onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
@@ -598,7 +598,7 @@ export default function AdminBannersPage() {
               </div>
 
               <div>
-                <Label>Orden de visualización</Label>
+                <Label>Anzeigereihenfolge</Label>
                 <Input
                   type="number"
                   value={formData.displayOrder}
@@ -615,7 +615,7 @@ export default function AdminBannersPage() {
                   onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked ? "true" : "false" })}
                   data-testid="switch-edit-banner-active"
                 />
-                <Label>Banner activo</Label>
+                <Label>Banner aktiv</Label>
               </div>
 
               <Button 
@@ -624,7 +624,7 @@ export default function AdminBannersPage() {
                 disabled={updateMutation.isPending || !formData.imageUrl}
                 data-testid="button-update-banner"
               >
-                {updateMutation.isPending ? "Actualizando..." : "Actualizar banner"}
+                {updateMutation.isPending ? "Aktualisiere..." : "Banner aktualisieren"}
               </Button>
             </div>
           </DialogContent>
@@ -635,19 +635,19 @@ export default function AdminBannersPage() {
       <AlertDialog open={!!deletingBanner} onOpenChange={(open) => !open && setDeletingBanner(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar banner?</AlertDialogTitle>
+            <AlertDialogTitle>Banner löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Está seguro de que desea eliminar este banner? Esta acción no se puede deshacer.
+              Sind Sie sicher, dass Sie dieses Banner löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">Abbrechen</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deletingBanner && deleteMutation.mutate(deletingBanner.id)}
               className="bg-red-600 hover:bg-red-700"
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+              {deleteMutation.isPending ? "Lösche..." : "Löschen"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -85,7 +85,7 @@ export default function AdminReportsPage() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: "Fehler",
         description: error.message,
         variant: "destructive",
       });
