@@ -1,0 +1,165 @@
+3. **BENUTZER-SYSTEM**  
+
+**3.1 Registrierung & Login**  
+- Per Apple  
+- E-Mail  
+- Facebook  
+- Google  
+
+**3.2 Profil-Verwaltung**  
+- Persönliche Daten bearbeiten  
+- Eigene Anzeigen verwalten  
+- Verkaufsstatistiken einsehen  
+- Bewertungen von anderen Nutzern  
+- Favoriten-Liste für interessante Anzeigen  
+
+---
+
+4. **ANZEIGEN-SYSTEM**  
+
+**4.1 Anzeige erstellen**  
+- Titel: Aussagekräftige Überschrift  
+- Beschreibung: Einfache, kurze Produktbeschreibung (Mindestanzahl Zeichen per Admin einstellbar)  
+- Preis: Festpreis oder Verhandlungsbasis  
+- Kategorie: Aus vordefinierten Kategorien wählen  
+- Standort: Stadt/Region angeben  
+- Bilder: Bis zu 8 Bilder pro Anzeige  
+- Zustand: Neu, gebraucht, defekt  
+- Kontakt: Telefon, WhatsApp-Option  
+
+**4.2 Anzeigen-Verwaltung**  
+- Eigene Anzeigen bearbeiten  
+- Anzeigen pausieren/aktivieren  
+- Anzeigen löschen  
+- Bezahl-Optionen: Verschiedene Premium-Features buchbar (Preise per Admin einstellbar)  
+- Verkauft-markieren  
+- Statistiken (Aufrufe, Kontakte)  
+
+**4.3 Premium-Features (Bezahloptionen)**  
+- Hochschieben: Anzeige nach oben bringen (Preis per Admin einstellbar)  
+- Hervorhebung: Anzeige farblich markieren (Preis per Admin einstellbar)  
+- Top-Platzierung: Anzeige ganz oben fixieren (Preis per Admin einstellbar)  
+- Mehr Bilder: Zusätzliche Bilder über Standard hinaus (Preis per Admin einstellbar)  
+- Featured-Status: Besondere Kennzeichnung als Premium-Anzeige (Preis per Admin einstellbar)  
+- Längere Laufzeit: Anzeige länger aktiv halten (Preis per Admin einstellbar)  
+- Statistik-Plus: Detaillierte Aufruf-Statistiken (Preis per Admin einstellbar)  
+
+**4.4 Anzeigen-Darstellung**  
+- Übersichtliche Liste  
+- Große Bildvorschau  
+- Wichtige Infos auf einen Blick  
+- Teilen-Funktionen (WhatsApp, Facebook)  
+- Anzeige als PDF exportieren  
+
+---
+
+5. **KATEGORIEN-SYSTEM**  
+
+**5.1 Haupt-Kategorien (Kuba-spezifisch)**  
+- Fahrzeuge & Transport: Autos, Motorräder, Fahrräder, Ersatzteile  
+- Immobilien & Wohnen: Häuser, Wohnungen, Grundstücke, Zimmer  
+- Elektronik & Technik: Handys, Computer, TV, Haushaltsgeräte  
+- Mode & Kleidung: Herren, Damen, Kinder, Schuhe, Accessoires  
+- Haushalt & Garten: Möbel, Küche, Garten, Werkzeuge, Deko  
+- Sport & Freizeit: Sportgeräte, Outdoor, Hobbys, Spiele  
+- Dienstleistungen: Reparaturen, Unterricht, Transport, Reinigung  
+- Tiere & Zubehör: Haustiere, Futter, Käfige, Aquarien  
+- Bücher & Medien: Bücher, Musik, Filme, Zeitschriften  
+- Baby & Familie: Kinderwagen, Spielzeug, Babykleidung  
+- Lebensmittel & Getränke: Lokale Produkte, Spezialitäten  
+- Sonstiges: Alles was nicht in andere Kategorien passt  
+
+**5.2 Unterkategorien**  
+- Jede Hauptkategorie hat 5–10 Unterkategorien  
+- Einfache Navigation  
+- Schnelle Kategorie-Auswahl  
+
+---
+
+6. **SUCH- & FILTER-SYSTEM**  
+
+**6.1 Suchfunktionen**  
+- Textsuche: In Titel und Beschreibung  
+- Intelligente Suche: Auch bei Tippfehlern  
+- Suchvorschläge: Automatische Vervollständigung  
+- Gespeicherte Suchen: Für regelmäßige Suchanfragen  
+
+**6.2 Filter-Optionen**  
+- Preis: Von-bis Bereich  
+- Standort: Stadt, Region, Umkreis  
+- Kategorie: Haupt- und Unterkategorien  
+- Zustand: Neu, gebraucht, defekt  
+- Datum: Heute, diese Woche, letzter Monat  
+- Bilder: Nur Anzeigen mit Bildern  
+- Sortierung: Datum, Preis (hoch/niedrig), Entfernung  
+
+**6.3 Erweiterte Suche**  
+- Umkreissuche: Mit Kartenansicht  
+- Mehrere Filter kombinieren  
+- Ausschluss-Filter: Bestimmte Begriffe ausschließen  
+
+---
+
+7. **KOMMUNIKATION**  
+
+**7.1 Kontakt zwischen Nutzern**  
+- Telefonnummer anzeigen: Direkter Anruf möglich  
+- WhatsApp-Link: Ein-Klick zu WhatsApp-Chat  
+- Internes Nachrichtensystem: Nachrichten auf der Website zwischen Usern  
+
+**7.2 Nachrichtensystem**  
+- Sichere interne Nachrichten  
+- Anhang (Bild, PDF usw.) in Nachrichten versenden  
+- Spam-Schutz integriert  
+- Push-Benachrichtigungen bei neuen Nachrichten  
+
+---
+
+8. **MODERATION & SICHERHEIT**  
+
+**8.1 KI-basierte Moderation**  
+- Automatische KI-Prüfung jeder neuen Anzeige (DeepSeek KI)  
+- Inhalts-Analyse: Prüft Texte auf unangemessene Inhalte, Spam, Betrug  
+- Bild-Analyse: Prüft Bilder auf anstößige Inhalte  
+- Sofortige Freigabe guter Anzeigen  
+- Automatische Ablehnung problematischer Anzeigen mit Begründung  
+
+**8.2 Transparente Entscheidungen**  
+- Klare Begründungen bei Ablehnungen  
+- Einspruchs-Möglichkeit  
+- Manuelle Nachprüfung durch Admin  
+
+**8.3 Spam- & Betrugsschutz**  
+- Automatische Dubletten-Erkennung  
+- Benutzer blockieren/melden  
+
+**8.4 Admin-Panel für Moderation**  
+- KI-Einstellungen: Strenge anpassbar  
+- Einspruchs-Bearbeitung  
+- KI-Training  
+- Moderation-Statistiken  
+- Blacklist-Verwaltung  
+
+**8.5 Admin-Einstellungen**  
+- Beschreibung-Mindestlänge  
+- Premium-Preise konfigurierbar  
+- Preis-Einstellungen für alle Bezahlfeatures  
+- Zahlungsarten aktivieren/deaktivieren  
+- Kategorien-Verwaltung mit Drag & Drop  
+
+---
+
+10. **WERBUNG & BANNER**  
+
+**10.1 Banner-Positionen**  
+- Header-Banner (oben auf jeder Seite)  
+- Sidebar-Banner (rechts neben Suchergebnissen)  
+- Footer-Banner (unten auf jeder Seite)  
+- Mobile-Banner (zwischen Suchergebnissen)  
+- Kategorie-Banner (in Kategorie-Übersichten)  
+
+**10.2 Sponsored Anzeigen**  
+- Bezahlte Anzeigen ganz oben  
+- Farblich hervorgehoben  
+- Mit "Gesponsert"-Label  
+- Gezielte Platzierung nach Kategorien  
