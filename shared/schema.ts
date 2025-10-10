@@ -24,7 +24,9 @@ export const users = pgTable("users", {
 // Schema for local (email/password) registration
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email("Email inválido"),
-  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  name: z.string()
+    .min(2, "El nombre debe tener al menos 2 caracteres")
+    .regex(/^[^0-9]*$/, "El nombre no puede contener números"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
 }).pick({
   email: true,

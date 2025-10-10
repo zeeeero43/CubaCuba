@@ -923,6 +923,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH /api/user/profile - Update user profile (requires auth)
+  app.patch("/api/user/profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { name, email, province } = req.body;
+      
+      // Validate name doesn't contain numbers
+      if (name && /\d/.test(name)) {
+        return res.status(400).json({ message: "El nombre no puede contener números" });
+      }
+      
+      // Check if email is already used by another user
+      if (email) {
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser && existingUser.id !== req.user!.id) {
+          return res.status(400).json({ message: "Este correo electrónico ya está registrado" });
+        }
+      }
+
+      const updatedUser = await storage.updateUserProfile(req.user!.id, {
+        name,
+        email,
+        province
+      });
+
+      res.json({
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        province: updatedUser.province,
+        role: updatedUser.role,
+        provider: updatedUser.provider,
+        hasPhone: !!updatedUser.phone,
+      });
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Premium Features endpoints
   // GET /api/premium-options - Get available premium options
   app.get("/api/premium-options", async (req, res) => {

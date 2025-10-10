@@ -1017,9 +1017,6 @@ export default function ListingDetailPage() {
 
             <Separator />
 
-            {/* Seller Ratings */}
-            <SellerRatings sellerId={listing.sellerId} currentUserId={user?.id} />
-
             {listing.categoryId && (
               <>
                 <Separator />

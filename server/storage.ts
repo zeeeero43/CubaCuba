@@ -38,6 +38,7 @@ export interface IStorage {
   createOAuthUser(user: { email: string; name: string; provider: string; providerId: string; providerEmail: string }): Promise<User>;
   updateUserOAuth(id: string, oauth: { provider: string; providerId: string; providerEmail: string }): Promise<User>;
   updateUserPhone(id: string, phone: string, province: string): Promise<User>;
+  updateUserProfile(id: string, updates: { name?: string; email?: string; province?: string }): Promise<User>;
   updateUserPassword(id: string, password: string): Promise<void>;
   updateUserStrikes(id: string, strikes: number): Promise<void>;
   banUser(id: string, reason: string): Promise<void>;
@@ -337,6 +338,20 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({ phone, province })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserProfile(id: string, updates: { name?: string; email?: string; province?: string }): Promise<User> {
+    const updateData: any = {};
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.email !== undefined) updateData.email = updates.email;
+    if (updates.province !== undefined) updateData.province = updates.province;
+
+    const [user] = await db
+      .update(users)
+      .set(updateData)
       .where(eq(users.id, id))
       .returning();
     return user;

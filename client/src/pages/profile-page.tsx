@@ -1,26 +1,112 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart, Star, Users } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import type { Listing } from "@shared/schema";
+
+const provinces = [
+  "Pinar del Río", "Artemisa", "La Habana", "Mayabeque", "Matanzas",
+  "Cienfuegos", "Villa Clara", "Sancti Spíritus", "Ciego de Ávila",
+  "Camagüey", "Las Tunas", "Holguín", "Granma", "Santiago de Cuba",
+  "Guantánamo", "Isla de la Juventud"
+];
+
+const profileFormSchema = z.object({
+  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres").refine(
+    (val) => !/\d/.test(val),
+    { message: "El nombre no puede contener números" }
+  ),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  province: z.string().min(1, "Debe seleccionar una provincia"),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
+interface SellerProfile {
+  user: {
+    id: string;
+    name: string;
+    phone: string;
+    province: string;
+    createdAt: string;
+  };
+  followersCount: number;
+  followingCount: number;
+  avgRating: number;
+  ratingsCount: number;
+  isFollowing: boolean;
+}
 
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Fetch user's listings
   const { data: listings = [], isLoading: listingsLoading } = useQuery<Listing[]>({
     queryKey: ['/api/me/listings'],
     enabled: !!user,
   });
+
+  // Fetch user's public profile for stats
+  const { data: profileStats } = useQuery<SellerProfile>({
+    queryKey: ['/api/users', user?.id, 'public'],
+    enabled: !!user?.id,
+  });
+
+  // Profile edit form
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      name: user?.name || "",
+      email: user?.email || "",
+      province: user?.province || "",
+    },
+    values: {
+      name: user?.name || "",
+      email: user?.email || "",
+      province: user?.province || "",
+    },
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: (data: ProfileFormValues) => 
+      apiRequest('PATCH', '/api/user/profile', data),
+    onSuccess: () => {
+      toast({ title: "Perfil actualizado" });
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'public'] });
+      setEditDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "No se pudo actualizar el perfil", 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const onSubmit = (data: ProfileFormValues) => {
+    updateProfileMutation.mutate(data);
+  };
 
   // Delete listing mutation
   const deleteListingMutation = useMutation({
@@ -79,7 +165,104 @@ export default function ProfilePage() {
             </Button>
           </Link>
           <h1 className="text-lg font-semibold text-foreground">Mi Perfil</h1>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" data-testid="button-edit-profile">
+                <Edit className="w-5 h-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent data-testid="dialog-edit-profile">
+              <DialogHeader>
+                <DialogTitle>Editar Perfil</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Tu nombre" 
+                            {...field} 
+                            data-testid="input-profile-name"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email (opcional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email"
+                            placeholder="tu@email.com" 
+                            {...field} 
+                            data-testid="input-profile-email"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="province"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Provincia</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-profile-province">
+                              <SelectValue placeholder="Selecciona tu provincia" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {provinces.map((province) => (
+                              <SelectItem 
+                                key={province} 
+                                value={province}
+                                data-testid={`option-province-${province}`}
+                              >
+                                {province}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setEditDialogOpen(false)}
+                      className="flex-1"
+                      data-testid="button-cancel-edit"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1"
+                      disabled={updateProfileMutation.isPending}
+                      data-testid="button-save-profile"
+                    >
+                      {updateProfileMutation.isPending ? "Guardando..." : "Guardar"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -92,7 +275,7 @@ export default function ProfilePage() {
             </div>
             <CardTitle className="text-xl text-foreground">{user.name}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {user.isVerified === "true" ? "Cuenta verificada ✓" : "Cuenta no verificada"}
+              {user.phone ? "Cuenta verificada ✓" : "Cuenta no verificada"}
             </p>
           </CardHeader>
         </Card>
@@ -103,15 +286,17 @@ export default function ProfilePage() {
             <CardTitle className="text-base">Información personal</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <Phone className="w-5 h-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {user.phone.startsWith('+') ? user.phone : '+' + user.phone}
-                </p>
-                <p className="text-xs text-muted-foreground">Teléfono</p>
+            {user.phone && (
+              <div className="flex items-center space-x-3">
+                <Phone className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {user.phone.startsWith('+') ? user.phone : '+' + user.phone}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Teléfono</p>
+                </div>
               </div>
-            </div>
+            )}
             
             <div className="flex items-center space-x-3">
               <MapPin className="w-5 h-5 text-muted-foreground" />
@@ -254,13 +439,40 @@ export default function ProfilePage() {
 
         {/* Actions */}
         <div className="space-y-3">
-          {user.isVerified === "false" && (
+          {!user.phone && (
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-3">
                     Tu cuenta no está verificada. Verifica tu teléfono para acceder a todas las funciones.
                   </p>
+                  
+                  {/* Stats Section */}
+                  {profileStats && (
+                    <div className="flex justify-center items-center gap-4 mb-4 text-sm">
+                      <div className="flex items-center gap-1" data-testid="stat-followers">
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium">Seguidores:</span>
+                        <span data-testid="text-followers-count">{profileStats.followersCount}</span>
+                      </div>
+                      <span className="text-muted-foreground">|</span>
+                      <div className="flex items-center gap-1" data-testid="stat-following">
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium">Siguiendo:</span>
+                        <span data-testid="text-following-count">{profileStats.followingCount}</span>
+                      </div>
+                      <span className="text-muted-foreground">|</span>
+                      <div className="flex items-center gap-1" data-testid="stat-ratings">
+                        <span className="font-medium">Valoraciones:</span>
+                        <span data-testid="text-ratings-count">{profileStats.ratingsCount}</span>
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span data-testid="text-avg-rating">
+                          {profileStats.avgRating > 0 ? profileStats.avgRating.toFixed(1) : '0.0'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
                   <Link href="/auth" asChild>
                     <Button className="w-full" data-testid="button-verify-account">
                       Verificar cuenta
