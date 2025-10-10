@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { storage } from "./storage";
 import { insertCategorySchema, insertProductSchema, insertListingSchema, insertRatingSchema, updatePhoneSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
@@ -963,6 +963,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // PATCH /api/user/password - Change user password (requires auth)
+  app.patch("/api/user/password", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debes iniciar sesión" });
+    }
+
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Se requiere contraseña actual y nueva" });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "La nueva contraseña debe tener al menos 8 caracteres" });
+      }
+
+      // Get current user with password
+      const user = await storage.getUserById(req.user!.id);
+      if (!user || !user.password) {
+        return res.status(400).json({ message: "Usuario no encontrado o sin contraseña establecida" });
+      }
+
+      // Verify current password
+      const isValidPassword = await comparePasswords(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "La contraseña actual es incorrecta" });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update password in database
+      await storage.updateUserPassword(req.user!.id, hashedPassword);
+
+      res.json({ message: "Contraseña actualizada exitosamente" });
+    } catch (error: any) {
+      console.error("Error updating password:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });

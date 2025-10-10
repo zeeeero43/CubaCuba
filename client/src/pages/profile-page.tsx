@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart, Star, Users } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart, Star, Users, Lock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +36,17 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
+const passwordFormSchema = z.object({
+  currentPassword: z.string().min(1, "La contraseña actual es requerida"),
+  newPassword: z.string().min(8, "La nueva contraseña debe tener al menos 8 caracteres"),
+  confirmPassword: z.string().min(1, "Debes confirmar la nueva contraseña"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
+});
+
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
 interface SellerProfile {
   user: {
     id: string;
@@ -57,6 +68,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
   // Fetch user's listings
   const { data: listings = [], isLoading: listingsLoading } = useQuery<Listing[]>({
@@ -106,6 +118,41 @@ export default function ProfilePage() {
 
   const onSubmit = (data: ProfileFormValues) => {
     updateProfileMutation.mutate(data);
+  };
+
+  // Password change form
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  // Change password mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: (data: PasswordFormValues) => 
+      apiRequest('PATCH', '/api/user/password', {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      }),
+    onSuccess: () => {
+      toast({ title: "Contraseña actualizada exitosamente" });
+      passwordForm.reset();
+      setPasswordDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "No se pudo cambiar la contraseña", 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const onPasswordSubmit = (data: PasswordFormValues) => {
+    changePasswordMutation.mutate(data);
   };
 
   // Delete listing mutation
@@ -280,6 +327,52 @@ export default function ProfilePage() {
           </CardHeader>
         </Card>
 
+        {/* Profile Statistics */}
+        {profileStats && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-base">Estadísticas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-around items-center text-center">
+                <div data-testid="stat-followers">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-2xl font-bold text-foreground" data-testid="text-followers-count">
+                    {profileStats.followersCount}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Seguidores</p>
+                </div>
+                <div className="h-12 w-px bg-border"></div>
+                <div data-testid="stat-following">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-2xl font-bold text-foreground" data-testid="text-following-count">
+                    {profileStats.followingCount}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Siguiendo</p>
+                </div>
+                <div className="h-12 w-px bg-border"></div>
+                <div data-testid="stat-ratings">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">
+                    <span data-testid="text-avg-rating">
+                      {profileStats.avgRating > 0 ? profileStats.avgRating.toFixed(1) : '0.0'}
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <span data-testid="text-ratings-count">{profileStats.ratingsCount}</span> valoraciones
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* User Details */}
         <Card className="mb-6">
           <CardHeader>
@@ -446,33 +539,6 @@ export default function ProfilePage() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Tu cuenta no está verificada. Verifica tu teléfono para acceder a todas las funciones.
                   </p>
-                  
-                  {/* Stats Section */}
-                  {profileStats && (
-                    <div className="flex justify-center items-center gap-4 mb-4 text-sm">
-                      <div className="flex items-center gap-1" data-testid="stat-followers">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">Seguidores:</span>
-                        <span data-testid="text-followers-count">{profileStats.followersCount}</span>
-                      </div>
-                      <span className="text-muted-foreground">|</span>
-                      <div className="flex items-center gap-1" data-testid="stat-following">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">Siguiendo:</span>
-                        <span data-testid="text-following-count">{profileStats.followingCount}</span>
-                      </div>
-                      <span className="text-muted-foreground">|</span>
-                      <div className="flex items-center gap-1" data-testid="stat-ratings">
-                        <span className="font-medium">Valoraciones:</span>
-                        <span data-testid="text-ratings-count">{profileStats.ratingsCount}</span>
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span data-testid="text-avg-rating">
-                          {profileStats.avgRating > 0 ? profileStats.avgRating.toFixed(1) : '0.0'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  
                   <Link href="/auth" asChild>
                     <Button className="w-full" data-testid="button-verify-account">
                       Verificar cuenta
@@ -482,6 +548,105 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
           )}
+          
+          {/* Change Password Button/Dialog */}
+          <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center justify-center space-x-2"
+                data-testid="button-change-password"
+              >
+                <Lock className="w-4 h-4" />
+                <span>Cambiar contraseña</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent data-testid="dialog-change-password">
+              <DialogHeader>
+                <DialogTitle>Cambiar contraseña</DialogTitle>
+              </DialogHeader>
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contraseña actual</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password"
+                            placeholder="Tu contraseña actual" 
+                            {...field} 
+                            data-testid="input-current-password"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nueva contraseña</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password"
+                            placeholder="Mínimo 8 caracteres" 
+                            {...field} 
+                            data-testid="input-new-password"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar nueva contraseña</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password"
+                            placeholder="Repite la nueva contraseña" 
+                            {...field} 
+                            data-testid="input-confirm-password"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        passwordForm.reset();
+                        setPasswordDialogOpen(false);
+                      }}
+                      className="flex-1"
+                      data-testid="button-cancel-password"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1"
+                      disabled={changePasswordMutation.isPending}
+                      data-testid="button-save-password"
+                    >
+                      {changePasswordMutation.isPending ? "Guardando..." : "Cambiar contraseña"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
           
           <Button 
             variant="outline" 
