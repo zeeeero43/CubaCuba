@@ -104,8 +104,8 @@ export const listings = pgTable("listings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  currency: text("currency").notNull().default("CUP"),
+  price: decimal("price", { precision: 10, scale: 2 }), // Optional - can be null for "Precio a consultar"
+  currency: text("currency").notNull().default("CUP"), // "CUP" | "USD"
   priceType: text("price_type").notNull().default("fixed"), // "fixed" | "negotiable"
   categoryId: varchar("category_id").references(() => categories.id, { onDelete: "set null" }),
   sellerId: varchar("seller_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
@@ -113,7 +113,7 @@ export const listings = pgTable("listings", {
   locationRegion: text("location_region").notNull(), // province
   latitude: decimal("latitude", { precision: 10, scale: 8 }),  // Geographical coordinates
   longitude: decimal("longitude", { precision: 11, scale: 8 }), // for distance-based search
-  images: text("images").array().default(sql`ARRAY[]::text[]`), // max 8 image URLs
+  images: text("images").array().default(sql`ARRAY[]::text[]`), // max 10 image URLs
   condition: text("condition").notNull().default("used"), // "new" | "used" | "defective"
   contactPhone: text("contact_phone").notNull(),
   contactWhatsApp: text("contact_whatsapp").notNull().default("false"), // "true" | "false"
@@ -319,11 +319,12 @@ export const moderationLogs = pgTable("moderation_logs", {
 export const insertListingSchema = createInsertSchema(listings, {
   title: z.string().min(3, "El título debe tener al menos 3 caracteres").max(100, "El título no puede exceder 100 caracteres"),
   description: z.string().min(10, "La descripción debe tener al menos 10 caracteres").max(2000, "La descripción no puede exceder 2000 caracteres"),
-  price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Precio inválido"),
+  price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Precio inválido").optional().or(z.literal("")),
+  currency: z.enum(["CUP", "USD"], { message: "Moneda inválida" }),
   priceType: z.enum(["fixed", "negotiable"], { message: "Tipo de precio inválido" }),
   locationCity: z.string().min(2, "La ciudad es requerida"),
   locationRegion: z.string().min(1, "La región es requerida"),
-  images: z.array(z.string().min(1, "Imagen inválida")).max(8, "Máximo 8 imágenes permitidas").default([]),
+  images: z.array(z.string().min(1, "Imagen inválida")).max(10, "Máximo 10 imágenes permitidas").default([]),
   condition: z.enum(["new", "used", "defective"], { message: "Condición inválida" }),
   contactPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Formato de teléfono inválido"),
   contactWhatsApp: z.enum(["true", "false"], { message: "Valor WhatsApp inválido" }),
@@ -331,6 +332,7 @@ export const insertListingSchema = createInsertSchema(listings, {
   title: true,
   description: true,
   price: true,
+  currency: true,
   priceType: true,
   categoryId: true,
   locationCity: true,
