@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, User, Phone, MapPin, Calendar, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart, Star, Users, Lock } from "lucide-react";
+import { User, Phone, MapPin, Calendar, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart, Star, Users, Lock } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -204,25 +205,28 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="max-w-md mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" asChild>
-            <Button variant="ghost" size="icon" data-testid="button-back-home">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <h1 className="text-lg font-semibold text-foreground">Mi Perfil</h1>
-          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" data-testid="button-edit-profile">
-                <Edit className="w-5 h-5" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent data-testid="dialog-edit-profile">
-              <DialogHeader>
-                <DialogTitle>Editar Perfil</DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
+      <PageHeader 
+        title="Mi Perfil" 
+        backTo="/"
+        action={
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setEditDialogOpen(true)}
+            data-testid="button-edit-profile"
+          >
+            <Edit className="w-5 h-5" />
+          </Button>
+        }
+      />
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent data-testid="dialog-edit-profile">
+          <DialogHeader>
+            <DialogTitle>Editar Perfil</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
@@ -310,8 +314,6 @@ export default function ProfilePage() {
               </Form>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
 
       <div className="max-w-md mx-auto px-6 py-6">
         {/* Profile Card */}
