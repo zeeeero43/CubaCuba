@@ -153,10 +153,10 @@ export default function EditListingPage() {
     }
     
     // Check if we've reached the image limit
-    if (images.length >= 8) {
+    if (images.length >= 10) {
       toast({
         title: "Límite de imágenes alcanzado",
-        description: "Solo puedes subir un máximo de 8 imágenes",
+        description: "Solo puedes subir un máximo de 10 imágenes",
         variant: "destructive",
       });
       return;
@@ -273,8 +273,8 @@ export default function EditListingPage() {
       form.reset({
         title: existingListing.title,
         description: existingListing.description,
-        price: hasPrice ? existingListing.price.toString() : "",
-        currency: existingListing.currency || "CUP",
+        price: hasPrice && existingListing.price ? existingListing.price.toString() : "",
+        currency: (existingListing.currency as "CUP" | "USD") || "CUP",
         priceType: existingListing.priceType as "fixed" | "negotiable",
         categoryId: existingListing.categoryId || "",
         locationCity: existingListing.locationCity,
@@ -544,13 +544,13 @@ export default function EditListingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Camera className="w-5 h-5 text-primary" />
-                Imágenes (máximo 8)
+                Imágenes (máximo 10)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 px-4">
-                  Sube hasta 8 imágenes para tu anuncio
+                  Sube hasta 10 imágenes para tu anuncio
                 </p>
                 
                 {/* Simple file upload input */}
@@ -561,7 +561,7 @@ export default function EditListingPage() {
                       accept="image/*"
                       onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      disabled={images.length >= 8}
+                      disabled={images.length >= 10}
                       data-testid="input-image-upload"
                     />
                     <div className="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent flex flex-col items-center cursor-pointer">
