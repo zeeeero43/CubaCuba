@@ -61,6 +61,14 @@ interface ListingFilters {
   pageSize: number;
 }
 
+// Helper function to format price display
+function formatPrice(listing: Listing): string {
+  if (!listing.price) {
+    return "Precio a consultar";
+  }
+  return `${listing.price} ${listing.currency || "CUP"}`;
+}
+
 export default function ListingsPage() {
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -439,7 +447,7 @@ export default function ListingsPage() {
                         {listing.title}
                       </h3>
                       <p className="text-lg font-bold text-primary mb-2" data-testid={`text-price-${listing.id}`}>
-                        {listing.price} CUP
+                        {formatPrice(listing)}
                       </p>
                       <div className="flex items-center text-sm text-muted-foreground gap-2 mb-2">
                         <MapPin className="w-3 h-3" />
@@ -478,7 +486,7 @@ export default function ListingsPage() {
                           {listing.title}
                         </h3>
                         <p className="text-lg font-bold text-primary mb-2">
-                          {listing.price} CUP
+                          {formatPrice(listing)}
                         </p>
                         <div className="flex items-center text-sm text-muted-foreground gap-4">
                           <span className="flex items-center gap-1">

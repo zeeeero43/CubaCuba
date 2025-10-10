@@ -63,6 +63,14 @@ interface RatingsData {
   avg: number;
 }
 
+// Helper function to format price display
+function formatPrice(listing: Listing): string {
+  if (!listing.price) {
+    return "Precio a consultar";
+  }
+  return `${listing.price} ${listing.currency || "CUP"}`;
+}
+
 // Similar Listings Component
 function SimilarListings({ categoryId, currentListingId }: { categoryId: string; currentListingId: string }) {
   const [, setLocation] = useLocation();
@@ -122,7 +130,7 @@ function SimilarListings({ categoryId, currentListingId }: { categoryId: string;
                 {listing.title}
               </h4>
               <p className="text-primary font-bold text-base">
-                {listing.price} CUP
+                {formatPrice(listing)}
               </p>
               <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                 <MapPin className="w-3 h-3" />
@@ -714,11 +722,12 @@ export default function ListingDetailPage() {
     const safeCity = escapeHtml(listing.locationCity);
     const safeRegion = escapeHtml(listing.locationRegion);
     const safePhone = escapeHtml(listing.contactPhone);
-    const safePrice = escapeHtml(listing.price);
+    const priceDisplay = formatPrice(listing);
+    const safePrice = escapeHtml(priceDisplay);
     
     const conditionText = listing.condition === 'new' ? 'Nuevo' : 
                          listing.condition === 'used' ? 'Usado - Buen estado' : 'Usado - Con defectos';
-    const priceTypeText = listing.priceType === 'negotiable' ? '(Negociable)' : '(Precio fijo)';
+    const priceTypeText = listing.price ? (listing.priceType === 'negotiable' ? '(Negociable)' : '(Precio fijo)') : '';
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -739,7 +748,7 @@ export default function ListingDetailPage() {
         </head>
         <body>
           <h1>${safeTitle}</h1>
-          <div class="price">${safePrice} CUP ${priceTypeText}</div>
+          <div class="price">${safePrice} ${priceTypeText}</div>
           
           <div class="details">
             <div class="detail-item"><strong>Descripción:</strong> ${safeDescription}</div>
@@ -962,11 +971,13 @@ export default function ListingDetailPage() {
               </h1>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-3xl font-bold text-primary" data-testid="text-price">
-                  {listing.price} CUP
+                  {formatPrice(listing)}
                 </span>
-                <Badge variant={listing.priceType === 'negotiable' ? 'secondary' : 'outline'}>
-                  {listing.priceType === 'negotiable' ? 'Negociable' : 'Precio fijo'}
-                </Badge>
+                {listing.price && (
+                  <Badge variant={listing.priceType === 'negotiable' ? 'secondary' : 'outline'}>
+                    {listing.priceType === 'negotiable' ? 'Negociable' : 'Precio fijo'}
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center text-sm text-muted-foreground gap-4">
                 <span className="flex items-center gap-1">

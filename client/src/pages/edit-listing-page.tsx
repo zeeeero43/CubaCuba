@@ -43,6 +43,7 @@ export default function EditListingPage() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [listingId, setListingId] = useState<string>("");
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
+  const [noPriceSelected, setNoPriceSelected] = useState(false);
 
   // Extract listing ID from URL
   const urlParts = window.location.pathname.split('/');
@@ -78,6 +79,7 @@ export default function EditListingPage() {
       title: "",
       description: "",
       price: "",
+      currency: "CUP",
       priceType: "fixed",
       categoryId: "",
       locationCity: "",
@@ -114,7 +116,7 @@ export default function EditListingPage() {
     if (imageUrl) {
       setImages(prev => {
         // Check if image already exists or if we've reached the limit
-        if (prev.includes(imageUrl) || prev.length >= 8) {
+        if (prev.includes(imageUrl) || prev.length >= 10) {
           return prev;
         }
         const updatedImages = [...prev, imageUrl];
@@ -265,10 +267,14 @@ export default function EditListingPage() {
   // Load existing listing data into form
   useEffect(() => {
     if (existingListing) {
+      const hasPrice = existingListing.price !== null && existingListing.price !== undefined;
+      setNoPriceSelected(!hasPrice);
+      
       form.reset({
         title: existingListing.title,
         description: existingListing.description,
-        price: existingListing.price.toString(),
+        price: hasPrice ? existingListing.price.toString() : "",
+        currency: existingListing.currency || "CUP",
         priceType: existingListing.priceType as "fixed" | "negotiable",
         categoryId: existingListing.categoryId || "",
         locationCity: existingListing.locationCity,
@@ -345,24 +351,63 @@ export default function EditListingPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="price">Precio (CUP) *</Label>
-                  <div className="relative">
-                    <Euro className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      className="pl-10"
-                      {...form.register("price")}
-                      data-testid="input-price"
-                    />
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="noPrice"
+                    checked={noPriceSelected}
+                    onChange={(e) => {
+                      setNoPriceSelected(e.target.checked);
+                      if (e.target.checked) {
+                        form.setValue("price", "");
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-gray-300"
+                    data-testid="checkbox-no-price"
+                  />
+                  <Label htmlFor="noPrice" className="text-sm font-normal cursor-pointer">
+                    Sin precio (Precio a consultar)
+                  </Label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Precio {!noPriceSelected && "*"}</Label>
+                    <div className="relative">
+                      <Euro className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="pl-10"
+                        disabled={noPriceSelected}
+                        {...form.register("price")}
+                        data-testid="input-price"
+                      />
+                    </div>
+                    {form.formState.errors.price && (
+                      <p className="text-sm text-destructive">{form.formState.errors.price.message}</p>
+                    )}
                   </div>
-                  {form.formState.errors.price && (
-                    <p className="text-sm text-destructive">{form.formState.errors.price.message}</p>
-                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Moneda *</Label>
+                    <Select 
+                      onValueChange={(value) => form.setValue("currency", value as "CUP" | "USD")}
+                      value={form.watch("currency") || "CUP"}
+                      disabled={noPriceSelected}
+                    >
+                      <SelectTrigger data-testid="select-currency">
+                        <SelectValue placeholder="Selecciona moneda" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CUP">Peso Cubano (CUP)</SelectItem>
+                        <SelectItem value="USD">Dólar (USD)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

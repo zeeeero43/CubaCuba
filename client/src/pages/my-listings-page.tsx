@@ -27,6 +27,14 @@ import { ArrowLeft, MoreVertical, Edit, Pause, Play, Trash2, CheckCircle, Eye, P
 import { ModerationStatusBadge } from "@/components/ModerationStatusBadge";
 import { AppealDialog } from "@/components/AppealDialog";
 
+// Helper function to format price display
+function formatPrice(listing: Listing): string {
+  if (!listing.price) {
+    return "Precio a consultar";
+  }
+  return `${listing.price} ${listing.currency || "CUP"}`;
+}
+
 export default function MyListingsPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -231,7 +239,7 @@ export default function MyListingsPage() {
                       </div>
 
                       <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2" data-testid={`text-price-${listing.id}`}>
-                        {listing.price} {listing.currency}
+                        {formatPrice(listing)}
                       </p>
 
                       {/* Statistics */}
