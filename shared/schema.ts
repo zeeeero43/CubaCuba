@@ -479,3 +479,63 @@ export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertModerationLog = z.infer<typeof insertModerationLogSchema>;
 export type ModerationLog = typeof moderationLogs.$inferSelect;
+
+// Banners table - Advertisement banners
+export const banners = pgTable("banners", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  position: text("position").notNull(), // "header" | "sidebar" | "footer" | "mobile" | "category"
+  imageUrl: text("image_url").notNull(),
+  linkUrl: text("link_url"),
+  isActive: text("is_active").notNull().default("true"), // "true" | "false"
+  displayOrder: integer("display_order").notNull().default(0),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  positionIdx: index("banner_position_idx").on(table.position),
+}));
+
+export const insertBannerSchema = createInsertSchema(banners, {
+  position: z.enum(["header", "sidebar", "footer", "mobile", "category"], { message: "Position inválida" }),
+  imageUrl: z.string().url("URL de imagen inválida"),
+  linkUrl: z.string().url("URL de enlace inválida").optional(),
+  isActive: z.enum(["true", "false"]).default("true"),
+  displayOrder: z.number().int().min(0).default(0),
+}).pick({
+  position: true,
+  imageUrl: true,
+  linkUrl: true,
+  isActive: true,
+  displayOrder: true,
+});
+
+// Sponsored listings table
+export const sponsoredListings = pgTable("sponsored_listings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  listingId: varchar("listing_id").references(() => listings.id, { onDelete: "cascade" }).notNull(),
+  categoryId: varchar("category_id").references(() => categories.id, { onDelete: "set null" }),
+  expiresAt: timestamp("expires_at").notNull(),
+  isActive: text("is_active").notNull().default("true"), // "true" | "false"
+  displayOrder: integer("display_order").notNull().default(0),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  listingIdx: index("sponsored_listing_idx").on(table.listingId),
+  categoryIdx: index("sponsored_category_idx").on(table.categoryId),
+  expiresIdx: index("sponsored_expires_idx").on(table.expiresAt),
+}));
+
+export const insertSponsoredListingSchema = createInsertSchema(sponsoredListings, {
+  expiresAt: z.coerce.date(),
+  isActive: z.enum(["true", "false"]).default("true"),
+  displayOrder: z.number().int().min(0).default(0),
+}).pick({
+  listingId: true,
+  categoryId: true,
+  expiresAt: true,
+  isActive: true,
+  displayOrder: true,
+});
+
+export type InsertBanner = z.infer<typeof insertBannerSchema>;
+export type Banner = typeof banners.$inferSelect;
+export type InsertSponsoredListing = z.infer<typeof insertSponsoredListingSchema>;
+export type SponsoredListing = typeof sponsoredListings.$inferSelect;

@@ -1,6 +1,7 @@
 import { 
   users, categories, products, listings, premiumOptions, listingPremium, settings, favorites, follows, ratings, savedSearches,
   moderationReviews, moderationBlacklist, moderationReports, moderationSettings, adminUsers, moderationLogs,
+  banners, sponsoredListings,
   type User, type InsertUser, 
   type Category, type InsertCategory, 
   type Product, type InsertProduct,
@@ -17,7 +18,9 @@ import {
   type ModerationReport, type InsertModerationReport,
   type ModerationSetting, type InsertModerationSetting,
   type AdminUser, type InsertAdminUser,
-  type ModerationLog, type InsertModerationLog
+  type ModerationLog, type InsertModerationLog,
+  type Banner, type InsertBanner,
+  type SponsoredListing, type InsertSponsoredListing
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, like, sql, gte, lte, count } from "drizzle-orm";
@@ -207,6 +210,26 @@ export interface IStorage {
   updateListingModeration(listingId: string, status: string, reviewId?: string): Promise<Listing | undefined>;
   publishListing(listingId: string): Promise<Listing | undefined>;
   unpublishListing(listingId: string): Promise<Listing | undefined>;
+  
+  // Banners
+  getBanners(position?: string): Promise<Banner[]>;
+  getActiveBanners(position?: string): Promise<Banner[]>;
+  createBanner(banner: InsertBanner): Promise<Banner>;
+  updateBanner(id: string, updates: Partial<InsertBanner>): Promise<Banner | undefined>;
+  deleteBanner(id: string): Promise<boolean>;
+  toggleBannerActive(id: string): Promise<Banner | undefined>;
+  
+  // Sponsored Listings
+  getSponsoredListings(): Promise<SponsoredListing[]>;
+  getActiveSponsoredListings(categoryId?: string): Promise<SponsoredListing[]>;
+  createSponsoredListing(sponsored: InsertSponsoredListing): Promise<SponsoredListing>;
+  updateSponsoredListing(id: string, updates: Partial<InsertSponsoredListing>): Promise<SponsoredListing | undefined>;
+  deleteSponsoredListing(id: string): Promise<boolean>;
+  
+  // Category Management
+  updateCategory(id: string, updates: Partial<InsertCategory>): Promise<Category | undefined>;
+  deleteCategory(id: string): Promise<boolean>;
+  reorderCategories(categoryOrders: { id: string; order: number }[]): Promise<void>;
   
   sessionStore: session.Store;
 }
@@ -1413,6 +1436,96 @@ export class DatabaseStorage implements IStorage {
   async unpublishListing(listingId: string): Promise<Listing | undefined> {
     const [updated] = await db.update(listings).set({ isPublished: "false", updatedAt: new Date() }).where(eq(listings.id, listingId)).returning();
     return updated || undefined;
+  }
+
+  // Banners
+  async getBanners(position?: string): Promise<Banner[]> {
+    if (position) {
+      return await db.select().from(banners).where(eq(banners.position, position)).orderBy(banners.displayOrder);
+    }
+    return await db.select().from(banners).orderBy(banners.displayOrder);
+  }
+
+  async getActiveBanners(position?: string): Promise<Banner[]> {
+    const conditions = [eq(banners.isActive, "true")];
+    if (position) {
+      conditions.push(eq(banners.position, position));
+    }
+    return await db.select().from(banners).where(and(...conditions)).orderBy(banners.displayOrder);
+  }
+
+  async createBanner(banner: InsertBanner): Promise<Banner> {
+    const [created] = await db.insert(banners).values(banner).returning();
+    return created;
+  }
+
+  async updateBanner(id: string, updates: Partial<InsertBanner>): Promise<Banner | undefined> {
+    const [updated] = await db.update(banners).set({ ...updates, updatedAt: new Date() }).where(eq(banners.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteBanner(id: string): Promise<boolean> {
+    const result = await db.delete(banners).where(eq(banners.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async toggleBannerActive(id: string): Promise<Banner | undefined> {
+    const [banner] = await db.select().from(banners).where(eq(banners.id, id));
+    if (!banner) return undefined;
+    const newStatus = banner.isActive === "true" ? "false" : "true";
+    const [updated] = await db.update(banners).set({ isActive: newStatus, updatedAt: new Date() }).where(eq(banners.id, id)).returning();
+    return updated || undefined;
+  }
+
+  // Sponsored Listings
+  async getSponsoredListings(): Promise<SponsoredListing[]> {
+    return await db.select().from(sponsoredListings).orderBy(sponsoredListings.displayOrder);
+  }
+
+  async getActiveSponsoredListings(categoryId?: string): Promise<SponsoredListing[]> {
+    const now = new Date();
+    const conditions = [
+      eq(sponsoredListings.isActive, "true"),
+      gte(sponsoredListings.expiresAt, now)
+    ];
+    if (categoryId) {
+      conditions.push(eq(sponsoredListings.categoryId, categoryId));
+    }
+    return await db.select().from(sponsoredListings).where(and(...conditions)).orderBy(sponsoredListings.displayOrder);
+  }
+
+  async createSponsoredListing(sponsored: InsertSponsoredListing): Promise<SponsoredListing> {
+    const [created] = await db.insert(sponsoredListings).values(sponsored).returning();
+    return created;
+  }
+
+  async updateSponsoredListing(id: string, updates: Partial<InsertSponsoredListing>): Promise<SponsoredListing | undefined> {
+    const [updated] = await db.update(sponsoredListings).set(updates).where(eq(sponsoredListings.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteSponsoredListing(id: string): Promise<boolean> {
+    const result = await db.delete(sponsoredListings).where(eq(sponsoredListings.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Category Management
+  async updateCategory(id: string, updates: Partial<InsertCategory>): Promise<Category | undefined> {
+    const [updated] = await db.update(categories).set(updates).where(eq(categories.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteCategory(id: string): Promise<boolean> {
+    const result = await db.delete(categories).where(eq(categories.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async reorderCategories(categoryOrders: { id: string; order: number }[]): Promise<void> {
+    await Promise.all(
+      categoryOrders.map(({ id, order }) =>
+        db.update(categories).set({ order }).where(eq(categories.id, id))
+      )
+    );
   }
 }
 
