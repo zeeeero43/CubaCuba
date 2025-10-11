@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
+import SettingsPage from "@/pages/settings-page";
 import UserProfilePage from "@/pages/user-profile-page";
 import CreateListingPage from "@/pages/create-listing-page";
 import CategoriesPage from "@/pages/categories-page";
@@ -53,6 +54,7 @@ function Router() {
         <Route path="/category/:categoryId" component={CategoryPage} />
         <Route path="/profile/:userId" component={UserProfilePage} />
         <ProtectedRoute path="/profile" component={ProfilePage} />
+        <ProtectedRoute path="/settings" component={SettingsPage} />
         <ProtectedRoute path="/create-listing" component={CreateListingPage} />
         <Route path="/listing/:id" component={ListingDetailPage} />
         <Route path="/listings" component={ListingsPage} />
