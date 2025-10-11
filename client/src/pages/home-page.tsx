@@ -87,8 +87,17 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto">
         {/* Main Categories - Horizontal Scroll */}
         <div className="my-8">
-          <div className="px-4 mb-4">
+          <div className="px-4 mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Categorías</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/categories')}
+              className="text-primary hover:text-primary/80 md:hidden"
+              data-testid="button-view-all-categories"
+            >
+              <ArrowRight className="w-5 h-5" />
+            </Button>
           </div>
           {categoriesLoading ? (
             <div className="flex gap-3 px-4 overflow-x-auto no-scrollbar">
