@@ -7,6 +7,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Banner } from "@/components/Banner";
+import { ListingCard } from "@/components/ListingCard";
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Listing } from "@shared/schema";
 import { 
@@ -115,51 +116,36 @@ export default function HomePage() {
           <Banner position="header" />
         </div>
 
-        {/* Main Categories - Carousel */}
-        <div className="px-4 mb-6">
+        {/* Main Categories - Horizontal Scroll */}
+        <div className="mb-6">
           {categoriesLoading ? (
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="border-0 shadow-sm">
-                  <CardContent className="p-4 text-center">
-                    <Skeleton className="w-full h-24 rounded-lg" />
-                  </CardContent>
-                </Card>
+            <div className="flex gap-2 px-4 overflow-x-auto no-scrollbar">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="w-20 h-24 flex-shrink-0 rounded-xl" />
               ))}
             </div>
           ) : (
-            <Carousel
-              opts={{
-                loop: true,
-                align: "start",
-              }}
-              className="w-full"
-            >
-              <CarouselContent className="-ml-2 md:-ml-4">
-                {mainCategories.map((category) => {
-                  const IconComponent = iconMap[category.icon] || ShoppingBag;
-                  const colors = colorMap[category.color] || colorMap['cyan'];
-                  return (
-                    <CarouselItem key={category.id} className="pl-2 md:pl-4 basis-1/3">
-                      <Card
-                        className={`cursor-pointer hover:shadow-lg transition-all border-0 overflow-hidden ${colors.bg}`}
-                        onClick={() => navigate(`/category/${category.id}`)}
-                        data-testid={`card-category-${category.id}`}
-                      >
-                        <CardContent className="p-4 text-center">
-                          <IconComponent className={`w-8 h-8 mx-auto mb-2 ${colors.text}`} />
-                          <p className={`text-xs font-semibold ${colors.text} leading-tight`}>
-                            {category.name}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </CarouselItem>
-                  );
-                })}
-              </CarouselContent>
-              <CarouselPrevious className="left-0" />
-              <CarouselNext className="right-0" />
-            </Carousel>
+            <div className="flex gap-3 px-4 overflow-x-auto no-scrollbar pb-2">
+              {mainCategories.map((category) => {
+                const IconComponent = iconMap[category.icon] || ShoppingBag;
+                const colors = colorMap[category.color] || colorMap['cyan'];
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => navigate(`/category/${category.id}`)}
+                    className="flex-shrink-0 flex flex-col items-center gap-2 group"
+                    data-testid={`button-category-${category.id}`}
+                  >
+                    <div className={`w-16 h-16 rounded-2xl ${colors.bg} flex items-center justify-center transition-transform group-hover:scale-105`}>
+                      <IconComponent className={`w-8 h-8 ${colors.text}`} />
+                    </div>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center max-w-[70px] leading-tight">
+                      {category.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -208,49 +194,11 @@ export default function HomePage() {
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 {followedListings.slice(0, 6).map((listing) => (
-                  <Card 
-                    key={listing.id} 
-                    className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm ring-2 ring-primary/20"
-                    onClick={() => navigate(`/listing/${listing.id}`)}
-                    data-testid={`card-followed-listing-${listing.id}`}
-                  >
-                    <CardContent className="p-0">
-                      <div className="relative">
-                        <img
-                          src={listing.images && listing.images.length > 0 ? listing.images[0] : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center'}
-                          alt={listing.title}
-                          className="w-full h-32 object-cover rounded-t-lg"
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center';
-                          }}
-                        />
-                        {listing.condition === 'new' && (
-                          <Badge className="absolute top-2 left-2 bg-emerald-500 text-white text-xs">
-                            Nuevo
-                          </Badge>
-                        )}
-                        {listing.priceType === 'negotiable' && (
-                          <Badge className="absolute top-2 right-2 bg-blue-500 text-white text-xs">
-                            Negociable
-                          </Badge>
-                        )}
-                        <Badge className="absolute bottom-2 left-2 bg-primary text-white text-xs">
-                          Seguido
-                        </Badge>
-                      </div>
-                      <div className="p-3">
-                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2 line-clamp-2" data-testid={`text-followed-title-${listing.id}`}>
-                          {listing.title}
-                        </h4>
-                        <p className="font-bold text-lg text-gray-900 dark:text-gray-100" data-testid={`text-followed-price-${listing.id}`}>
-                          {listing.price} {listing.currency}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {listing.locationCity}, {listing.locationRegion}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    showFollowedBadge={true}
+                  />
                 ))}
               </div>
             )}
@@ -308,46 +256,10 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
               {featuredListings.map((listing) => (
-                <Card 
-                  key={listing.id} 
-                  className="cursor-pointer hover:shadow-md transition-shadow border-0 shadow-sm"
-                  onClick={() => navigate(`/listing/${listing.id}`)}
-                  data-testid={`card-listing-${listing.id}`}
-                >
-                  <CardContent className="p-0">
-                    <div className="relative">
-                      <img
-                        src={listing.images && listing.images.length > 0 ? listing.images[0] : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center'}
-                        alt={listing.title}
-                        className="w-full h-32 object-cover rounded-t-lg"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center';
-                        }}
-                      />
-                      {listing.condition === 'new' && (
-                        <Badge className="absolute top-2 left-2 bg-emerald-500 text-white text-xs">
-                          Nuevo
-                        </Badge>
-                      )}
-                      {listing.priceType === 'negotiable' && (
-                        <Badge className="absolute top-2 right-2 bg-blue-500 text-white text-xs">
-                          Negociable
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2 line-clamp-2" data-testid={`text-title-${listing.id}`}>
-                        {listing.title}
-                      </h4>
-                      <p className="font-bold text-lg text-gray-900 dark:text-gray-100" data-testid={`text-price-${listing.id}`}>
-                        {listing.price} {listing.currency}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {listing.locationCity}, {listing.locationRegion}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                />
               ))}
             </div>
           )}

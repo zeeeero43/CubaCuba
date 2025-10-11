@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Banner } from "@/components/Banner";
+import { ListingCard } from "@/components/ListingCard";
 import {
   Search,
   Filter,
@@ -435,6 +436,17 @@ export default function ListingsPage() {
           }>
             {displayListings.map((listing) => {
               const isSponsored = sponsoredListingIds.has(listing.id);
+              
+              if (viewMode === 'grid') {
+                return (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    isSponsored={isSponsored}
+                  />
+                );
+              }
+              
               return (
               <Card
                 key={listing.id}
@@ -444,57 +456,7 @@ export default function ListingsPage() {
                 onClick={() => navigate(`/listing/${listing.id}`)}
                 data-testid={`card-listing-${listing.id}`}
               >
-                {viewMode === 'grid' ? (
-                  <>
-                    <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden relative">
-                      {listing.images && listing.images.length > 0 ? (
-                        <img
-                          src={listing.images[0]}
-                          alt={listing.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          <div className="text-center">
-                            <div className="text-3xl mb-2">📷</div>
-                            <p className="text-sm">Sin imagen</p>
-                          </div>
-                        </div>
-                      )}
-                      {isSponsored && (
-                        <Badge className="absolute top-2 right-2 bg-yellow-500 text-white flex items-center gap-1" data-testid={`badge-sponsored-${listing.id}`}>
-                          <Star className="w-3 h-3 fill-white" />
-                          Gesponsert
-                        </Badge>
-                      )}
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-foreground mb-1 line-clamp-2" data-testid={`text-title-${listing.id}`}>
-                        {listing.title}
-                      </h3>
-                      <p className="text-lg font-bold text-primary mb-2" data-testid={`text-price-${listing.id}`}>
-                        {formatPrice(listing)}
-                      </p>
-                      <div className="flex items-center text-sm text-muted-foreground gap-2 mb-2">
-                        <MapPin className="w-3 h-3" />
-                        <span>{listing.locationCity}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(listing.createdAt).toLocaleDateString('es-ES')}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          {(listing as any).viewCount || 0}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </>
-                ) : (
+                {viewMode === 'list' && (
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden flex-shrink-0 relative">
