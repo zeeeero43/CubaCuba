@@ -98,7 +98,7 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              {/* Mobile: Only 3 categories */}
+              {/* Mobile: Only 3 categories + arrow */}
               <div className="flex md:hidden gap-4 px-4 overflow-x-auto no-scrollbar pb-2">
                 {mainCategories.slice(0, 3).map((category) => {
                   const IconComponent = iconMap[category.icon] || ShoppingBag;
@@ -119,6 +119,20 @@ export default function HomePage() {
                     </button>
                   );
                 })}
+                
+                {/* Arrow button for mobile */}
+                <button
+                  onClick={() => navigate('/categories')}
+                  className="flex-shrink-0 flex flex-col items-center gap-2 group"
+                  data-testid="button-view-all-categories-mobile"
+                >
+                  <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
+                    <ArrowRight className="w-8 h-8 text-gray-700 dark:text-gray-300" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center max-w-[80px] leading-tight">
+                    Ver todas
+                  </span>
+                </button>
               </div>
 
               {/* Desktop: All categories + arrow */}
