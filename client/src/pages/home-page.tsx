@@ -87,27 +87,18 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto">
         {/* Main Categories - Horizontal Scroll */}
         <div className="my-8">
-          <div className="px-4 mb-4 flex items-center justify-between">
+          <div className="px-4 mb-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Categorías</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/categories')}
-              className="text-primary hover:text-primary/80 md:hidden"
-              data-testid="button-view-all-categories"
-            >
-              <ArrowRight className="w-5 h-5" />
-            </Button>
           </div>
           {categoriesLoading ? (
             <div className="flex gap-3 px-4 overflow-x-auto no-scrollbar">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="w-24 h-28 flex-shrink-0 rounded-xl" />
               ))}
             </div>
           ) : (
             <div className="flex gap-4 px-4 overflow-x-auto no-scrollbar pb-2">
-              {mainCategories.map((category) => {
+              {mainCategories.slice(0, 5).map((category) => {
                 const IconComponent = iconMap[category.icon] || ShoppingBag;
                 const colors = colorMap[category.color] || colorMap['cyan'];
                 return (
@@ -126,6 +117,20 @@ export default function HomePage() {
                   </button>
                 );
               })}
+              
+              {/* Arrow button to view all categories */}
+              <button
+                onClick={() => navigate('/categories')}
+                className="flex-shrink-0 flex flex-col items-center gap-2 group"
+                data-testid="button-view-all-categories"
+              >
+                <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
+                  <ArrowRight className="w-8 h-8 text-gray-700 dark:text-gray-300" />
+                </div>
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center max-w-[80px] leading-tight">
+                  Ver todas
+                </span>
+              </button>
             </div>
           )}
         </div>
