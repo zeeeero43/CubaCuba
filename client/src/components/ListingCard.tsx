@@ -67,8 +67,8 @@ export function ListingCard({ listing, isSponsored = false, isFavorite = false, 
       onClick={handleCardClick}
       data-testid={`card-listing-${listing.id}`}
     >
-      <div className="relative aspect-[4/3] overflow-hidden">
-        {/* Image */}
+      {/* Image Section */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800">
         <img
           src={imageUrl}
           alt={listing.title}
@@ -101,64 +101,61 @@ export function ListingCard({ listing, isSponsored = false, isFavorite = false, 
         {/* Favorite Icon */}
         <button
           onClick={handleFavoriteClick}
-          className="absolute top-2 right-2 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors"
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors shadow-sm"
           data-testid={`button-favorite-${listing.id}`}
         >
           <Heart 
-            className={`w-4 h-4 ${localFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} 
+            className={`w-4 h-4 ${localFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} 
           />
         </button>
 
         {/* Image Count */}
         {imageCount > 1 && (
           <Badge 
-            className="absolute bottom-14 right-2 bg-black/60 text-white text-xs px-2 py-1"
+            className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5"
             data-testid={`badge-images-${listing.id}`}
           >
             {imageCount}
           </Badge>
         )}
+      </div>
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+      {/* Content Section */}
+      <div className="p-3">
+        {/* Location */}
+        <p 
+          className="text-xs text-gray-500 dark:text-gray-400 mb-1 line-clamp-1"
+          data-testid={`text-location-${listing.id}`}
+        >
+          {listing.locationCity || 'Sin ubicación'}
+        </p>
 
-        {/* Text Overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-3 text-white">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <p 
-                className="text-sm font-medium line-clamp-1 mb-1"
-                data-testid={`text-location-${listing.id}`}
-              >
-                {listing.locationCity || 'Sin ubicación'}
-              </p>
-              <h3 
-                className="text-base font-bold line-clamp-2 mb-1"
-                data-testid={`text-title-${listing.id}`}
-              >
-                {listing.title}
-              </h3>
-            </div>
+        {/* Title */}
+        <h3 
+          className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2 mb-2"
+          data-testid={`text-title-${listing.id}`}
+        >
+          {listing.title}
+        </h3>
+
+        {/* Price */}
+        <p 
+          className="text-lg font-bold text-primary"
+          data-testid={`text-price-${listing.id}`}
+        >
+          {formatPrice(listing)}
+        </p>
+
+        {/* Views (optional) */}
+        {listing.views !== undefined && (
+          <div 
+            className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mt-1"
+            data-testid={`text-views-${listing.id}`}
+          >
+            <Eye className="w-3 h-3" />
+            {listing.views}
           </div>
-          
-          <div className="flex items-center justify-between mt-1">
-            <p 
-              className="text-lg font-bold"
-              data-testid={`text-price-${listing.id}`}
-            >
-              {formatPrice(listing)}
-            </p>
-            {listing.views !== undefined && (
-              <div 
-                className="flex items-center gap-1 text-xs text-white/80"
-                data-testid={`text-views-${listing.id}`}
-              >
-                <Eye className="w-3 h-3" />
-                {listing.views}
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </Card>
   );

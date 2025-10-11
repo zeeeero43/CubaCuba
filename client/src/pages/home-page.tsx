@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SearchBar } from "@/components/SearchBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListingCard } from "@/components/ListingCard";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import type { Category, Listing } from "@shared/schema";
+import { useEffect, useRef } from "react";
 import { 
   Home,
   ShirtIcon as Shirt,
@@ -34,10 +35,46 @@ export default function HomePage() {
 
   const mainCategories = categoriesTree?.mainCategories || [];
 
-  // Fetch featured listings from API
-  const { data: featuredListings = [], isLoading: listingsLoading } = useQuery<Listing[]>({
-    queryKey: ['/api/listings/featured'],
+  // Fetch featured listings with infinite scroll
+  const {
+    data: listingsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: listingsLoading,
+  } = useInfiniteQuery({
+    queryKey: ['/api/listings/featured/paginated'],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await fetch(`/api/listings/featured/paginated?page=${pageParam}&limit=20`);
+      return response.json();
+    },
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.page + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
+
+  const featuredListings = listingsData?.pages.flatMap((page) => page.listings) || [];
+
+  // Intersection Observer for infinite scroll
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Icon mapping for categories
   const iconMap: Record<string, any> = {
@@ -55,11 +92,11 @@ export default function HomePage() {
   };
 
   const colorMap: Record<string, { bg: string; text: string }> = {
-    'cyan': { bg: 'bg-cyan-500', text: 'text-white' },
-    'black': { bg: 'bg-gray-900', text: 'text-white' },
-    'yellow': { bg: 'bg-yellow-400', text: 'text-gray-900' },
-    'green': { bg: 'bg-green-600', text: 'text-white' },
-    'white': { bg: 'bg-white border border-gray-200', text: 'text-gray-900' },
+    'cyan': { bg: 'bg-emerald-500', text: 'text-white' },
+    'black': { bg: 'bg-gray-800', text: 'text-white' },
+    'yellow': { bg: 'bg-amber-400', text: 'text-gray-900' },
+    'green': { bg: 'bg-emerald-600', text: 'text-white' },
+    'white': { bg: 'bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600', text: 'text-gray-900 dark:text-gray-100' },
   };
 
   return (
@@ -205,14 +242,26 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {featuredListings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {featuredListings.map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                  />
+                ))}
+              </div>
+              
+              {/* Infinite scroll trigger */}
+              <div ref={loadMoreRef} className="h-20 flex items-center justify-center mt-4">
+                {isFetchingNextPage && (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span>Cargando más...</span>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 

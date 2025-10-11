@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { Search, X } from "lucide-react";
+import { Search, X, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -100,12 +100,38 @@ export function SearchBar({
           )}
         </div>
         <Button 
+          onClick={() => {
+            // Use browser's geolocation API to get user's location
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  const { latitude, longitude } = position.coords;
+                  // Redirect to search with location
+                  navigate(`/search?lat=${latitude}&lng=${longitude}&nearby=true`);
+                },
+                (error) => {
+                  console.error('Error getting location:', error);
+                  alert('No se pudo obtener tu ubicación');
+                }
+              );
+            } else {
+              alert('Tu navegador no soporta geolocalización');
+            }
+          }}
+          className="ml-2 h-11 w-11 flex-shrink-0 bg-primary hover:bg-primary/90"
+          size="icon"
+          data-testid="button-location-search"
+        >
+          <MapPin className="h-5 w-5" />
+        </Button>
+        <Button 
           onClick={() => handleSearch()}
-          className="ml-2 h-11"
+          variant="ghost"
+          size="icon"
+          className="ml-2 h-11 w-11 flex-shrink-0"
           data-testid="button-search"
         >
-          <Search className="h-5 w-5 mr-2" />
-          Buscar
+          <Search className="h-5 w-5" />
         </Button>
       </div>
 

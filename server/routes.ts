@@ -195,11 +195,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET /api/listings/featured - Get featured listings
+  // GET /api/listings/featured - Get featured listings (original endpoint)
   app.get("/api/listings/featured", async (req, res) => {
     try {
       const listings = await storage.getFeaturedListings();
       res.json(listings);
+    } catch (error) {
+      console.error("Error fetching featured listings:", error);
+      res.status(500).json({ message: "Interner Serverfehler" });
+    }
+  });
+
+  // GET /api/listings/featured/paginated - Get featured listings with pagination
+  app.get("/api/listings/featured/paginated", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = (page - 1) * limit;
+      
+      const allListings = await storage.getFeaturedListings();
+      const total = allListings.length;
+      const listings = allListings.slice(offset, offset + limit);
+      
+      res.json({
+        listings,
+        page,
+        limit,
+        total,
+        hasMore: offset + limit < total
+      });
     } catch (error) {
       console.error("Error fetching featured listings:", error);
       res.status(500).json({ message: "Interner Serverfehler" });
