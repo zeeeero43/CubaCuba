@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
+import compression from "compression";
 import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
 import { registerRoutes } from "./routes";
@@ -11,6 +12,19 @@ const app = express();
 
 // Trust proxy for rate limiting and secure cookies
 app.set("trust proxy", 1);
+
+// Gzip/Brotli compression for ALL responses (saves 60-70% bandwidth)
+app.use(compression({
+  level: 6, // Compression level (0-9, 6 is good balance)
+  threshold: 1024, // Only compress if > 1KB
+  filter: (req: Request, res: Response) => {
+    // Always compress unless explicitly disabled
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
 
 // Security headers with helmet
 app.use(helmet({
