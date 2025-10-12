@@ -93,6 +93,16 @@ app.use('/api/resend-verification', authLimiter, authSlowDown);
 app.use('/api/reset-password', authLimiter, authSlowDown);
 app.use('/api/confirm-reset', authLimiter, authSlowDown);
 
+// Disable browser caching in development
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

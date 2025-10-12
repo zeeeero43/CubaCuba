@@ -106,14 +106,17 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+// Disable caching in development for easier testing
+const isDevelopment = import.meta.env.DEV;
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity, // Never mark data as stale (always use cache)
-      gcTime: 1000 * 60 * 30, // Keep unused data in cache for 30 minutes (improved from default 5min)
+      staleTime: isDevelopment ? 0 : Infinity, // Development: always fresh, Production: never stale
+      gcTime: isDevelopment ? 0 : 1000 * 60 * 30, // Development: no cache, Production: 30min cache
       retry: false,
     },
     mutations: {
