@@ -8,6 +8,7 @@ import { ObjectStorageService, ObjectNotFoundError, objectStorageClient } from "
 import { setObjectAclPolicy } from "./objectAcl";
 import { randomUUID } from "crypto";
 import { moderateContent, type ModerationResult } from "./moderation";
+import sharp from 'sharp';
 
 // Helper function to parse object path
 function parseObjectPath(fullPath: string): { bucketName: string; objectName: string } {
@@ -1196,16 +1197,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await tempFile.copy(finalFile);
       await tempFile.delete(); // Remove temp file
       
-      // Set public ACL policy for the final image location
-      await setObjectAclPolicy(finalFile, {
-        owner: userId,
-        visibility: "public", // Public so listing images can be viewed by everyone
-      });
-      
-      // Return normalized object path for frontend use
-      const normalizedPath = `/objects/users/${userId}/listings/images/${objectId}`;
-      
-      res.json({ objectPath: normalizedPath });
+      // ===== WEBP CONVERSION FOR BANDWIDTH OPTIMIZATION (Cuba) =====
+      try {
+        // Download the uploaded image
+        const [imageBuffer] = await finalFile.download();
+        
+        // Convert to WebP with 80% quality (good balance between size and quality)
+        const webpBuffer = await sharp(imageBuffer)
+          .webp({ quality: 80 })
+          .toBuffer();
+        
+        // Create new filename with .webp extension
+        const webpObjectName = finalObjectName.replace(/\.[^.]+$/, '.webp');
+        const webpFile = bucket.file(webpObjectName);
+        
+        // Upload the WebP version
+        await webpFile.save(webpBuffer, {
+          metadata: {
+            contentType: 'image/webp',
+          },
+        });
+        
+        // Delete the original file to save storage space
+        await finalFile.delete();
+        
+        // Set public ACL policy for the WebP image
+        await setObjectAclPolicy(webpFile, {
+          owner: userId,
+          visibility: "public",
+        });
+        
+        // Return normalized path with .webp extension
+        const normalizedPath = `/objects/users/${userId}/listings/images/${objectId.replace(/\.[^.]+$/, '.webp')}`;
+        
+        res.json({ objectPath: normalizedPath });
+      } catch (conversionError) {
+        console.error("WebP conversion error, falling back to original:", conversionError);
+        
+        // If conversion fails, keep original and set ACL
+        await setObjectAclPolicy(finalFile, {
+          owner: userId,
+          visibility: "public",
+        });
+        
+        const normalizedPath = `/objects/users/${userId}/listings/images/${objectId}`;
+        res.json({ objectPath: normalizedPath });
+      }
     } catch (error) {
       console.error("Error finalizing upload:", error);
       res.status(500).json({ error: "Internal server error" });
