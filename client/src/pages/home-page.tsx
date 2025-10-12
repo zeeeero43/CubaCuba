@@ -108,6 +108,9 @@ export default function HomePage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               Encuentra lo que buscas
             </h1>
+            <p className="text-primary font-semibold text-lg mb-1">
+              🇨🇺 De cubanos para cubanos
+            </p>
             <p className="text-gray-600 dark:text-gray-400">
               Miles de anuncios te esperan
             </p>

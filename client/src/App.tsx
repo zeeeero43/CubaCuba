@@ -10,6 +10,8 @@ import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
 import SettingsPage from "@/pages/settings-page";
+import AboutPage from "@/pages/about-page";
+import ModerationRulesPage from "@/pages/moderation-rules-page";
 import UserProfilePage from "@/pages/user-profile-page";
 import CreateListingPage from "@/pages/create-listing-page";
 import CategoriesPage from "@/pages/categories-page";
@@ -31,6 +33,7 @@ import AdminCategoriesPage from "@/pages/admin-categories-page";
 import AdminBannersPage from "@/pages/admin-banners-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
+import { Footer } from "@/components/Footer";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -49,6 +52,8 @@ function Router() {
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/about" component={AboutPage} />
+        <Route path="/moderation-rules" component={ModerationRulesPage} />
         <Route path="/search" component={SearchResultsPage} />
         <Route path="/categories" component={CategoriesPage} />
         <Route path="/category/:categoryId" component={CategoryPage} />
@@ -82,8 +87,11 @@ function App() {
       <TooltipProvider>
         <AuthProvider>
           <Toaster />
-          <div className="pb-20">
-            <Router />
+          <div className="min-h-screen flex flex-col">
+            <div className="flex-1 pb-20">
+              <Router />
+            </div>
+            <Footer />
           </div>
           <BottomNavigation />
         </AuthProvider>
