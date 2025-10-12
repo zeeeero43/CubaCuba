@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Banner } from "@/components/Banner";
 import { ArrowLeft, MapPin, Heart, Eye } from "lucide-react";
 import { useState } from "react";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 export default function CategoryPage() {
   const { categoryId } = useParams();
@@ -196,7 +197,7 @@ export default function CategoryPage() {
               >
                 <div className="relative">
                   {listing.images && listing.images.length > 0 ? (
-                    <img
+                    <OptimizedImage
                       src={listing.images[0]}
                       alt={listing.title}
                       className="w-full h-40 object-cover"

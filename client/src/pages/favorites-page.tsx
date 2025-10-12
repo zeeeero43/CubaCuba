@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ArrowLeft, Heart, Package, Eye, MapPin } from "lucide-react";
 import type { Listing } from "@shared/schema";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 export default function FavoritesPage() {
   const { data: favorites = [], isLoading } = useQuery<Listing[]>({
@@ -69,7 +70,7 @@ export default function FavoritesPage() {
                     <div className="flex gap-4">
                       {/* Image */}
                       {listing.images && listing.images.length > 0 ? (
-                        <img
+                        <OptimizedImage
                           src={listing.images[0]}
                           alt={listing.title}
                           className="w-24 h-24 object-cover rounded-lg flex-shrink-0"

@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MapPin, Eye, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import type { Listing } from "@shared/schema";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface SearchResponse {
   listings: Listing[];
@@ -251,7 +252,7 @@ export default function SearchResultsPage() {
                             {/* Image */}
                             {listing.images && listing.images.length > 0 ? (
                               <div className="aspect-video bg-muted relative overflow-hidden">
-                                <img
+                                <OptimizedImage
                                   src={listing.images[0]}
                                   alt={listing.title}
                                   className="w-full h-full object-cover"

@@ -6,6 +6,7 @@ import type { Listing } from "@shared/schema";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface ListingCardProps {
   listing: Listing;
@@ -69,13 +70,10 @@ export function ListingCard({ listing, isSponsored = false, isFavorite = false, 
     >
       {/* Image Section */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800">
-        <img
+        <OptimizedImage
           src={imageUrl}
           alt={listing.title}
           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => {
-            e.currentTarget.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center';
-          }}
         />
 
         {/* TOP Badge for sponsored/premium */}

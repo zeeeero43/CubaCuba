@@ -23,6 +23,13 @@ export function OptimizedImage({
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
+    // Fallback for browsers without IntersectionObserver (older Android browsers common in Cuba)
+    if (typeof IntersectionObserver === 'undefined') {
+      setImageSrc(src);
+      setIsLoading(false);
+      return;
+    }
+
     // Intersection Observer for lazy loading
     const observer = new IntersectionObserver(
       (entries) => {
