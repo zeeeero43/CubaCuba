@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import {
   ArrowLeft,
   Share2,
@@ -119,7 +120,7 @@ function SimilarListings({ categoryId, currentListingId }: { categoryId: string;
             data-testid={`similar-listing-${listing.id}`}
           >
             <div className="aspect-square overflow-hidden rounded-t-lg">
-              <img
+              <OptimizedImage
                 src={listing.images?.[0] || '/placeholder.jpg'}
                 alt={listing.title}
                 className="w-full h-full object-cover"
@@ -887,13 +888,11 @@ export default function ListingDetailPage() {
               onClick={() => setImageDialogOpen(true)}
               data-testid="image-container"
             >
-              <img
+              <OptimizedImage
                 src={listing.images[currentImageIndex]}
                 alt={`Imagen ${currentImageIndex + 1} de ${listing.title}`}
                 className="w-full h-auto max-h-[500px] object-contain"
-                onError={(e) => {
-                  e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E";
-                }}
+                fallbackSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E"
               />
             </div>
             
@@ -950,7 +949,7 @@ export default function ListingDetailPage() {
                 }`}
                 data-testid={`thumbnail-${index}`}
               >
-                <img
+                <OptimizedImage
                   src={image}
                   alt={`Miniatura ${index + 1}`}
                   className="w-full h-full object-contain"
@@ -1113,8 +1112,8 @@ export default function ListingDetailPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="relative bg-black">
-            <img
-              src={listing.images?.[currentImageIndex]}
+            <OptimizedImage
+              src={listing.images?.[currentImageIndex] || ''}
               alt={`Imagen ${currentImageIndex + 1} de ${listing.title}`}
               className="w-full h-auto max-h-[80vh] object-contain"
             />

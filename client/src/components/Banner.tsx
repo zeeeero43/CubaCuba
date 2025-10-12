@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Banner as BannerType } from "@shared/schema";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface BannerProps {
   position: "header" | "sidebar" | "footer" | "mobile" | "category";
@@ -31,7 +32,7 @@ export function Banner({ position, className = "" }: BannerProps) {
           className="block"
           data-testid={`banner-link-${banner.id}`}
         >
-          <img
+          <OptimizedImage
             src={banner.imageUrl}
             alt="Advertisement"
             className="w-full h-auto object-cover rounded-lg"
