@@ -33,7 +33,6 @@ import AdminCategoriesPage from "@/pages/admin-categories-page";
 import AdminBannersPage from "@/pages/admin-banners-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
-import { Footer } from "@/components/Footer";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -91,7 +90,6 @@ function App() {
             <div className="flex-1 pb-20">
               <Router />
             </div>
-            <Footer />
           </div>
           <BottomNavigation />
         </AuthProvider>
