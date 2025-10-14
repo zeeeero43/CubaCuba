@@ -79,9 +79,15 @@ export async function apiRequest(
   
   const res = await fetch(url, {
     method,
-    headers,
+    headers: {
+      ...headers,
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
+    cache: "no-store", // Disable browser caching completely
   });
 
   await throwIfResNotOk(res);
@@ -96,6 +102,12 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
+      cache: "no-store", // Disable browser caching completely
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

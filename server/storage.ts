@@ -991,12 +991,12 @@ export class DatabaseStorage implements IStorage {
 
     // Full-text search with fuzzy matching using pg_trgm
     if (q && q.trim()) {
-      // Use both full-text search AND similarity search for better results
-      // Full-text search for exact matches, similarity for typo tolerance
+      // Search in title, description, AND city for better location-based search
       conditions.push(
         or(
-          sql`to_tsvector('spanish', ${listings.title} || ' ' || ${listings.description}) @@ plainto_tsquery('spanish', ${q})`,
-          sql`similarity(${listings.title} || ' ' || ${listings.description}, ${q}) > 0.3`
+          sql`to_tsvector('spanish', ${listings.title} || ' ' || ${listings.description} || ' ' || ${listings.locationCity}) @@ plainto_tsquery('spanish', ${q})`,
+          sql`similarity(${listings.title} || ' ' || ${listings.description} || ' ' || ${listings.locationCity}, ${q}) > 0.3`,
+          sql`LOWER(${listings.locationCity}) LIKE LOWER(${'%' + q + '%'})`
         )!
       );
     }
