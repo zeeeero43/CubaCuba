@@ -1215,14 +1215,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // ===== WEBP CONVERSION FOR BANDWIDTH OPTIMIZATION =====
       try {
-        // Convert to WebP with 60% quality and resize to max 2000px width
+        // Convert to WebP with 70% quality and resize to max 2000px width
         // This ensures even large files get compressed significantly
         await sharp(originalPath)
           .resize(2000, 2000, { 
             fit: 'inside', 
             withoutEnlargement: true 
           })
-          .webp({ quality: 60 })
+          .webp({ quality: 70 })
           .toFile(webpPath);
         
         // Delete original file to save storage space
