@@ -159,11 +159,11 @@ export default function EditListingPage() {
       return;
     }
     
-    // Validate file size (10MB)
-    if (file.size > 10485760) {
+    // Validate file size (50MB)
+    if (file.size > 52428800) {
       toast({
         title: "Archivo demasiado grande",
-        description: "El archivo no puede superar los 10MB",
+        description: "El archivo no puede superar los 50MB",
         variant: "destructive",
       });
       return;
@@ -596,7 +596,7 @@ export default function EditListingPage() {
                         Arrastra archivos aquí o haz clic para seleccionar
                       </p>
                       <p className="text-xs text-gray-400 px-4">
-                        PNG, JPG, JPEG hasta 10MB (máximo {8 - images.length} restantes)
+                        PNG, JPG, JPEG hasta 50MB (máximo {8 - images.length} restantes)
                       </p>
                     </div>
                   </div>

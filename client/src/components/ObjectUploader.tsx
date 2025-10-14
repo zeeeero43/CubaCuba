@@ -21,14 +21,14 @@ interface ObjectUploaderProps {
  * 
  * @param props - Component props
  * @param props.maxNumberOfFiles - Maximum number of files allowed to be uploaded (default: 1)
- * @param props.maxFileSize - Maximum file size in bytes (default: 10MB)
+ * @param props.maxFileSize - Maximum file size in bytes (default: 50MB)
  * @param props.onComplete - Callback with uploaded file paths
  * @param props.buttonClassName - Optional CSS class name for the button
  * @param props.children - Content to be rendered inside the button
  */
 export function ObjectUploader({
   maxNumberOfFiles = 1,
-  maxFileSize = 10485760, // 10MB default
+  maxFileSize = 52428800, // 50MB default
   onComplete,
   buttonClassName,
   children,

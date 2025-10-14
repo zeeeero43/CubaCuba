@@ -54,7 +54,7 @@ const storage_multer = multer.diskStorage({
 const upload = multer({
   storage: storage_multer,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -1215,9 +1215,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // ===== WEBP CONVERSION FOR BANDWIDTH OPTIMIZATION =====
       try {
-        // Convert to WebP with 80% quality (good balance between size and quality)
+        // Convert to WebP with 60% quality and resize to max 2000px width
+        // This ensures even large files get compressed significantly
         await sharp(originalPath)
-          .webp({ quality: 80 })
+          .resize(2000, 2000, { 
+            fit: 'inside', 
+            withoutEnlargement: true 
+          })
+          .webp({ quality: 60 })
           .toFile(webpPath);
         
         // Delete original file to save storage space
