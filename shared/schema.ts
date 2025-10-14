@@ -319,7 +319,11 @@ export const moderationLogs = pgTable("moderation_logs", {
 export const insertListingSchema = createInsertSchema(listings, {
   title: z.string().min(3, "El título debe tener al menos 3 caracteres").max(100, "El título no puede exceder 100 caracteres"),
   description: z.string().min(10, "La descripción debe tener al menos 10 caracteres").max(2000, "La descripción no puede exceder 2000 caracteres"),
-  price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Precio inválido").optional().or(z.literal("")),
+  price: z.union([
+    z.string().regex(/^\d+(\.\d{1,2})?$/, "Precio inválido"),
+    z.literal(""),
+    z.null()
+  ]),
   currency: z.enum(["CUP", "USD"], { message: "Moneda inválida" }),
   priceType: z.enum(["fixed", "negotiable"], { message: "Tipo de precio inválido" }),
   locationCity: z.string().min(2, "La ciudad es requerida"),
