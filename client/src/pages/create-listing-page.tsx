@@ -191,17 +191,31 @@ export default function CreateListingPage() {
           const jsonMatch = error.message.match(/\{.*\}/);
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
-            errorData = {
-              message: parsed.message || errorData.message,
-              reasons: parsed.reasons || [],
-              specificIssues: parsed.specificIssues || [],
-              problematicWords: parsed.problematicWords || [],
-              aiExplanation: parsed.aiExplanation || "",
-              confidence: parsed.confidence || 0,
-              warning: parsed.warning || "",
-              reviewId: parsed.reviewId,
-              listingId: parsed.listingId
-            };
+            
+            // Check if it's a validation error with details
+            if (parsed.details) {
+              errorData = {
+                message: parsed.message || "Error de validación",
+                reasons: [],
+                specificIssues: [parsed.details],
+                problematicWords: [],
+                aiExplanation: parsed.details,
+                confidence: 100,
+                warning: "",
+              };
+            } else {
+              errorData = {
+                message: parsed.message || errorData.message,
+                reasons: parsed.reasons || [],
+                specificIssues: parsed.specificIssues || [],
+                problematicWords: parsed.problematicWords || [],
+                aiExplanation: parsed.aiExplanation || "",
+                confidence: parsed.confidence || 0,
+                warning: parsed.warning || "",
+                reviewId: parsed.reviewId,
+                listingId: parsed.listingId
+              };
+            }
           }
         } catch (e) {
           console.error('Error parsing rejection data:', e);
@@ -289,27 +303,21 @@ export default function CreateListingPage() {
     }
     
     try {
-      // Step 1: Get upload URL
-      const uploadResponse = await apiRequest('POST', '/api/listings/upload-image');
-      const { uploadURL, objectId } = await uploadResponse.json();
+      // Upload file to local server
+      const formData = new FormData();
+      formData.append('image', file);
       
-      // Step 2: Upload file directly to storage
-      const uploadFileResponse = await fetch(uploadURL, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
+      const response = await fetch('/api/listings/upload-image', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
       });
       
-      if (!uploadFileResponse.ok) {
-        throw new Error('Failed to upload file');
+      if (!response.ok) {
+        throw new Error('Upload failed');
       }
       
-      // Step 3: Finalize upload and get object path
-      const finalizeResponse = await apiRequest('POST', '/api/listings/finalize-upload', { objectId });
-      
-      const { objectPath } = await finalizeResponse.json();
+      const { objectPath } = await response.json();
       
       // Update images state
       setImages(prev => {

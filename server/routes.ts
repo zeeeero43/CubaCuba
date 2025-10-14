@@ -9,6 +9,10 @@ import { setObjectAclPolicy } from "./objectAcl";
 import { randomUUID } from "crypto";
 import { moderateContent, type ModerationResult } from "./moderation";
 import sharp from 'sharp';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
 
 // Helper function to parse object path
 function parseObjectPath(fullPath: string): { bucketName: string; objectName: string } {
@@ -20,6 +24,50 @@ function parseObjectPath(fullPath: string): { bucketName: string; objectName: st
   const objectName = pathParts.slice(2).join("/");
   return { bucketName, objectName };
 }
+
+// Configure multer for local file uploads
+const uploadDir = path.join(process.cwd(), 'uploads');
+
+// Ensure uploads directory exists
+if (!existsSync(uploadDir)) {
+  fs.mkdir(uploadDir, { recursive: true }).catch(console.error);
+}
+
+const storage_multer = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const userId = (req.user as any)?.id || 'anonymous';
+    const userDir = path.join(uploadDir, userId);
+    
+    // Create user-specific directory
+    if (!existsSync(userDir)) {
+      await fs.mkdir(userDir, { recursive: true });
+    }
+    
+    cb(null, userDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${randomUUID()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage: storage_multer,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'));
+    }
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -88,7 +136,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error.name === "ZodError") {
         const validationError = fromZodError(error);
-        return res.status(400).json({ message: `Validierungsfehler: Bitte überprüfen Sie die eingegebenen Daten` });
+        return res.status(400).json({ 
+          message: "Error de validación", 
+          details: validationError.message 
+        });
       }
       console.error("Error creating category:", error);
       res.status(500).json({ message: "Interner Serverfehler" });
@@ -155,7 +206,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error.name === "ZodError") {
         const validationError = fromZodError(error);
-        return res.status(400).json({ message: `Validierungsfehler: Bitte überprüfen Sie die eingegebenen Daten` });
+        return res.status(400).json({ 
+          message: "Error de validación", 
+          details: validationError.message 
+        });
       }
       console.error("Error creating product:", error);
       res.status(500).json({ message: "Interner Serverfehler" });
@@ -454,7 +508,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Zod validation error:', error.errors);
         console.error('Request body that failed:', JSON.stringify(req.body, null, 2));
         const validationError = fromZodError(error);
-        return res.status(400).json({ message: `Validierungsfehler: Bitte überprüfen Sie die eingegebenen Daten` });
+        return res.status(400).json({ 
+          message: "Error de validación", 
+          details: validationError.message 
+        });
       }
       console.error("Error creating listing:", error);
       res.status(500).json({ message: "Interner Serverfehler" });
@@ -498,7 +555,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error.name === "ZodError") {
         const validationError = fromZodError(error);
-        return res.status(400).json({ message: `Validierungsfehler: Bitte überprüfen Sie die eingegebenen Daten` });
+        return res.status(400).json({ 
+          message: "Error de validación", 
+          details: validationError.message 
+        });
       }
       console.error("Error updating listing:", error);
       res.status(500).json({ message: "Interner Serverfehler" });
@@ -1135,117 +1195,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Simplified image upload endpoint with user-specific folders
-  app.post("/api/listings/upload-image", async (req, res) => {
+  // Local image upload with WebP conversion
+  app.post("/api/listings/upload-image", upload.single('image'), async (req, res) => {
     // Require authentication for listing image uploads
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Sie müssen sich anmelden, um Bilder hochzuladen" });
     }
 
+    if (!req.file) {
+      return res.status(400).json({ error: "No image file provided" });
+    }
+
     try {
-      const objectStorageService = new ObjectStorageService();
+      const userId = req.user!.id;
+      const originalPath = req.file.path;
+      const filename = req.file.filename;
+      const webpFilename = filename.replace(/\.[^.]+$/, '.webp');
+      const webpPath = path.join(path.dirname(originalPath), webpFilename);
       
-      // Get upload URL and objectId from the service
-      const { uploadURL, objectId } = await objectStorageService.getObjectEntityUploadURL();
-      
-      res.json({ 
-        uploadURL,
-        objectId,
-        userId: req.user!.id
-      });
+      // ===== WEBP CONVERSION FOR BANDWIDTH OPTIMIZATION =====
+      try {
+        // Convert to WebP with 80% quality (good balance between size and quality)
+        await sharp(originalPath)
+          .webp({ quality: 80 })
+          .toFile(webpPath);
+        
+        // Delete original file to save storage space
+        await fs.unlink(originalPath);
+        
+        // Return relative path for storing in database
+        const objectPath = `/uploads/${userId}/${webpFilename}`;
+        res.json({ objectPath });
+      } catch (conversionError) {
+        console.error("WebP conversion error, using original:", conversionError);
+        
+        // If conversion fails, keep original
+        const objectPath = `/uploads/${userId}/${filename}`;
+        res.json({ objectPath });
+      }
     } catch (error) {
-      console.error("Error getting upload URL:", error);
+      console.error("Error uploading image:", error);
       res.status(500).json({ error: "Interner Serverfehler" });
     }
   });
 
-  // Finalize image upload and set ACL (secure version)
-  app.post("/api/listings/finalize-upload", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden, um Bilder zu verwalten" });
-    }
-
-    const { objectId } = req.body;
-    
-    if (!objectId) {
-      return res.status(400).json({ error: "objectId is required" });
-    }
-
+  // Serve uploaded images
+  app.get("/uploads/:userId/:filename", async (req, res) => {
     try {
-      const objectStorageService = new ObjectStorageService();
+      const { userId, filename } = req.params;
+      const filePath = path.join(uploadDir, userId, filename);
       
-      // Construct the expected object path using server-controlled logic
-      const privateDir = objectStorageService.getPrivateObjectDir();
-      const tempObjectPath = `${privateDir}/uploads/${objectId}`;
-      
-      // Verify the object exists at the expected location
-      const { bucketName, objectName } = parseObjectPath(tempObjectPath);
-      const bucket = objectStorageClient.bucket(bucketName);
-      const tempFile = bucket.file(objectName);
-      
-      const [exists] = await tempFile.exists();
-      if (!exists) {
-        return res.status(404).json({ error: "Uploaded file not found" });
+      // Check if file exists
+      if (!existsSync(filePath)) {
+        return res.status(404).json({ error: "Image not found" });
       }
       
-      // Create user-specific final path: users/{userId}/listings/images/{objectId}
-      const userId = req.user!.id;
-      const finalObjectPath = `${privateDir}/users/${userId}/listings/images/${objectId}`;
-      const { bucketName: finalBucketName, objectName: finalObjectName } = parseObjectPath(finalObjectPath);
-      const finalFile = bucket.file(finalObjectName);
+      // Determine content type
+      const ext = path.extname(filename).toLowerCase();
+      const contentTypes: Record<string, string> = {
+        '.webp': 'image/webp',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif'
+      };
       
-      // Move/copy the file to the user-specific location
-      await tempFile.copy(finalFile);
-      await tempFile.delete(); // Remove temp file
+      res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache images for 1 year
       
-      // ===== WEBP CONVERSION FOR BANDWIDTH OPTIMIZATION (Cuba) =====
-      try {
-        // Download the uploaded image
-        const [imageBuffer] = await finalFile.download();
-        
-        // Convert to WebP with 80% quality (good balance between size and quality)
-        const webpBuffer = await sharp(imageBuffer)
-          .webp({ quality: 80 })
-          .toBuffer();
-        
-        // Create new filename with .webp extension
-        const webpObjectName = finalObjectName.replace(/\.[^.]+$/, '.webp');
-        const webpFile = bucket.file(webpObjectName);
-        
-        // Upload the WebP version
-        await webpFile.save(webpBuffer, {
-          metadata: {
-            contentType: 'image/webp',
-          },
-        });
-        
-        // Delete the original file to save storage space
-        await finalFile.delete();
-        
-        // Set public ACL policy for the WebP image
-        await setObjectAclPolicy(webpFile, {
-          owner: userId,
-          visibility: "public",
-        });
-        
-        // Return normalized path with .webp extension
-        const normalizedPath = `/objects/users/${userId}/listings/images/${objectId.replace(/\.[^.]+$/, '.webp')}`;
-        
-        res.json({ objectPath: normalizedPath });
-      } catch (conversionError) {
-        console.error("WebP conversion error, falling back to original:", conversionError);
-        
-        // If conversion fails, keep original and set ACL
-        await setObjectAclPolicy(finalFile, {
-          owner: userId,
-          visibility: "public",
-        });
-        
-        const normalizedPath = `/objects/users/${userId}/listings/images/${objectId}`;
-        res.json({ objectPath: normalizedPath });
-      }
+      const fileBuffer = await fs.readFile(filePath);
+      res.send(fileBuffer);
     } catch (error) {
-      console.error("Error finalizing upload:", error);
+      console.error("Error serving image:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -2533,7 +2554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createModerationLog({
         action: "categories_reordered",
         targetType: "category",
-        targetId: null,
+        targetId: "",
         performedBy: req.user!.id,
         details: JSON.stringify(categoryOrders)
       });

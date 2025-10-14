@@ -997,10 +997,12 @@ export default function ListingDetailPage() {
 
             {/* Description */}
             <div>
-              <h2 className="text-lg font-semibold mb-2">Descripción</h2>
-              <p className="text-foreground whitespace-pre-wrap" data-testid="text-description">
-                {listing.description}
-              </p>
+              <h2 className="text-lg font-semibold mb-3">Descripción</h2>
+              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl">
+                <p className="text-foreground whitespace-pre-wrap" data-testid="text-description">
+                  {listing.description}
+                </p>
+              </div>
             </div>
 
             <Separator />
