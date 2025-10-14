@@ -4,6 +4,7 @@ import { Search, X, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SearchBarProps {
   defaultValue?: string;
@@ -23,6 +24,7 @@ export function SearchBar({
   const [, navigate] = useLocation();
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   const { data: suggestions = [] } = useQuery<string[]>({
     queryKey: ['/api/search/suggestions', query],
@@ -109,21 +111,13 @@ export function SearchBar({
         </Button>
         <Button 
           onClick={() => {
-            // Use browser's geolocation API to get user's location
-            if (navigator.geolocation) {
-              navigator.geolocation.getCurrentPosition(
-                (position) => {
-                  const { latitude, longitude } = position.coords;
-                  // Redirect to search with location
-                  navigate(`/search?lat=${latitude}&lng=${longitude}&nearby=true`);
-                },
-                (error) => {
-                  console.error('Error getting location:', error);
-                  alert('No se pudo obtener tu ubicación');
-                }
-              );
+            if (user?.province) {
+              // Set user's province/city in search field and search
+              setQuery(user.province);
+              // Search by region (province)
+              navigate(`/search?region=${encodeURIComponent(user.province)}`);
             } else {
-              alert('Tu navegador no soporta geolocalización');
+              alert('Por favor, inicia sesión para buscar en tu ciudad');
             }
           }}
           variant="ghost"

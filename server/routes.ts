@@ -645,6 +645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         categoryId: req.query.categoryId as string,
         subcategoryId: req.query.subcategoryId as string,
         region: req.query.region as string,
+        city: req.query.city as string,
         priceMin: req.query.priceMin ? Number(req.query.priceMin) : undefined,
         priceMax: req.query.priceMax ? Number(req.query.priceMax) : undefined,
         condition: req.query.condition as string,

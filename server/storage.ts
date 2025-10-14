@@ -951,6 +951,7 @@ export class DatabaseStorage implements IStorage {
     categoryId?: string;
     subcategoryId?: string;
     region?: string;
+    city?: string;
     priceMin?: number;
     priceMax?: number;
     condition?: string;
@@ -970,6 +971,7 @@ export class DatabaseStorage implements IStorage {
       categoryId,
       subcategoryId,
       region,
+      city,
       priceMin,
       priceMax,
       condition,
@@ -1024,6 +1026,11 @@ export class DatabaseStorage implements IStorage {
     // Region filter
     if (region) {
       conditions.push(eq(listings.locationRegion, region));
+    }
+
+    // City filter
+    if (city) {
+      conditions.push(eq(listings.locationCity, city));
     }
 
     // Price range filter - use SQL to cast decimal to numeric for comparison
