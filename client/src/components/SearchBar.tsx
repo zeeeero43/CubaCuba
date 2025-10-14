@@ -100,6 +100,14 @@ export function SearchBar({
           )}
         </div>
         <Button 
+          onClick={() => handleSearch()}
+          className="ml-2 h-11 w-11 flex-shrink-0 bg-primary hover:bg-primary/90"
+          size="icon"
+          data-testid="button-search"
+        >
+          <Search className="h-5 w-5" />
+        </Button>
+        <Button 
           onClick={() => {
             // Use browser's geolocation API to get user's location
             if (navigator.geolocation) {
@@ -118,20 +126,12 @@ export function SearchBar({
               alert('Tu navegador no soporta geolocalización');
             }
           }}
-          className="ml-2 h-11 w-11 flex-shrink-0 bg-primary hover:bg-primary/90"
-          size="icon"
-          data-testid="button-location-search"
-        >
-          <MapPin className="h-5 w-5" />
-        </Button>
-        <Button 
-          onClick={() => handleSearch()}
           variant="ghost"
           size="icon"
           className="ml-2 h-11 w-11 flex-shrink-0"
-          data-testid="button-search"
+          data-testid="button-location-search"
         >
-          <Search className="h-5 w-5" />
+          <MapPin className="h-5 w-5" />
         </Button>
       </div>
 
