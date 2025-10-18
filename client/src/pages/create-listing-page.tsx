@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 import { ArrowLeft, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText, Sparkles } from "lucide-react";
 import type { Category } from "@shared/schema";
 import {
@@ -65,6 +66,7 @@ export default function CreateListingPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [images, setImages] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
@@ -118,7 +120,7 @@ export default function CreateListingPage() {
       locationRegion: "",
       images: [],
       condition: "used",
-      contactPhone: "",
+      contactPhone: user?.phone || "",
       contactWhatsApp: "false",
     },
   });
