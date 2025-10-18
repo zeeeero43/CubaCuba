@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertListingSchema, type InsertListing } from "@shared/schema";
@@ -120,10 +120,17 @@ export default function CreateListingPage() {
       locationRegion: "",
       images: [],
       condition: "used",
-      contactPhone: user?.phone || "",
+      contactPhone: "",
       contactWhatsApp: "false",
     },
   });
+
+  // Update phone number when user data loads
+  useEffect(() => {
+    if (user?.phone) {
+      form.setValue("contactPhone", user.phone);
+    }
+  }, [user?.phone, form]);
 
   const purchasePremiumMutation = useMutation({
     mutationFn: async ({ listingId, featureIds }: { listingId: string; featureIds: string[] }) => {

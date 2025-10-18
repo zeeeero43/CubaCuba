@@ -89,7 +89,10 @@ export function PremiumFeaturesSelector({
                 <div className="flex items-start gap-4">
                   <Checkbox
                     checked={isSelected}
-                    onCheckedChange={() => toggleFeature(feature.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFeature(feature.id);
+                    }}
                     className="mt-1"
                     data-testid={`checkbox-feature-${feature.id}`}
                   />
