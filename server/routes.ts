@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Health check endpoint
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", message: "Rico-Cuba API funktioniert" });
+    res.json({ status: "ok", message: "API de Rico-Cuba funcionando" });
   });
 
   // Categories endpoints
@@ -85,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(categories);
     } catch (error) {
       console.error("Error fetching categories:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -95,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(tree);
     } catch (error) {
       console.error("Error fetching categories tree:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -106,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(subcategories);
     } catch (error) {
       console.error("Error fetching subcategories:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -114,19 +114,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const category = await storage.getCategory(req.params.id);
       if (!category) {
-        return res.status(404).json({ message: "Kategorie nicht gefunden" });
+        return res.status(404).json({ message: "Categoría no encontrada" });
       }
       res.json(category);
     } catch (error) {
       console.error("Error fetching category:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   app.post("/api/categories", async (req, res) => {
     // SECURITY: Only authenticated users can create categories
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden, um Kategorien zu erstellen" });
+      return res.status(401).json({ message: "Debe iniciar sesión para crear categorías" });
     }
 
     try {
@@ -142,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       console.error("Error creating category:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -153,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(products);
     } catch (error) {
       console.error("Error fetching products:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(products);
     } catch (error) {
       console.error("Error fetching featured products:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(products);
     } catch (error) {
       console.error("Error fetching products by category:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -181,18 +181,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const product = await storage.getProduct(req.params.id);
       if (!product) {
-        return res.status(404).json({ message: "Produkt nicht gefunden" });
+        return res.status(404).json({ message: "Producto no encontrado" });
       }
       res.json(product);
     } catch (error) {
       console.error("Error fetching product:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   app.post("/api/products", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden, um Produkte zu erstellen" });
+      return res.status(401).json({ message: "Debe iniciar sesión para crear productos" });
     }
 
     try {
@@ -212,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       console.error("Error creating product:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -246,7 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(response);
     } catch (error) {
       console.error("Error fetching listings:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -257,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(listings);
     } catch (error) {
       console.error("Error fetching featured listings:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -281,14 +281,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error fetching featured listings:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // GET /api/listings/following - Get listings from followed users (requires auth)
   app.get("/api/listings/following", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -296,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(listings);
     } catch (error) {
       console.error("Error fetching followed listings:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -305,19 +305,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const listing = await storage.getListing(req.params.id);
       if (!listing) {
-        return res.status(404).json({ message: "Anzeige nicht gefunden" });
+        return res.status(404).json({ message: "Anuncio no encontrado" });
       }
       res.json(listing);
     } catch (error) {
       console.error("Error fetching listing:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // POST /api/listings - Create new listing (requires auth)
   app.post("/api/listings", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden, um Anzeigen zu erstellen" });
+      return res.status(401).json({ message: "Debe iniciar sesión para crear anuncios" });
     }
 
     try {
@@ -336,10 +336,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.categoryId) {
         const category = await storage.getCategory(validatedData.categoryId);
         if (!category) {
-          return res.status(400).json({ message: "Die ausgewählte Kategorie existiert nicht" });
+          return res.status(400).json({ message: "La categoría seleccionada no existe" });
         }
         if (!category.parentId) {
-          return res.status(400).json({ message: "Sie müssen eine Unterkategorie auswählen, nicht eine Hauptkategorie" });
+          return res.status(400).json({ message: "Debe seleccionar una subcategoría, no una categoría principal" });
         }
       }
       
@@ -348,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const minLength = parseInt(minLengthSetting?.value || "50");
       if (validatedData.description && validatedData.description.length < minLength) {
         return res.status(400).json({ 
-          message: `Die Beschreibung muss mindestens ${minLength} Zeichen haben. Aktuell hat sie ${validatedData.description.length} Zeichen.` 
+          message: `La descripción debe tener al menos ${minLength} caracteres. Actualmente tiene ${validatedData.description.length} caracteres.` 
         });
       }
       
@@ -356,9 +356,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserById(req.user!.id);
       if (user?.isBanned === "true") {
         return res.status(403).json({ 
-          message: "Ihr Konto wurde dauerhaft wegen schwerwiegender Verstöße gegen unsere Inhaltsrichtlinien gesperrt",
-          warning: "Aktivitäten, die gegen kubanische Gesetze verstoßen, können den zuständigen Behörden gemeldet werden",
-          reason: user.banReason || "Mehrfache Verstöße gegen die Inhaltsrichtlinien"
+          message: "Su cuenta ha sido suspendida permanentemente por violaciones graves a nuestras políticas de contenido",
+          warning: "Las actividades que violan las leyes cubanas pueden ser reportadas a las autoridades competentes",
+          reason: user.banReason || "Múltiples violaciones a las políticas de contenido"
         });
       }
 
@@ -412,7 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const maxStrikes = parseInt(maxStrikesSetting?.value || "5");
         
         if (currentStrikes >= maxStrikes) {
-          await storage.banUser(req.user!.id, `Konto automatisch gesperrt wegen ${currentStrikes} Moderationsverstößen`);
+          await storage.banUser(req.user!.id, `Cuenta suspendida automáticamente por ${currentStrikes} violaciones de moderación`);
         }
 
         // Create rejection log
@@ -441,30 +441,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const parsedAnalysis = JSON.parse(aiAnalysis);
           aiExplanation = parsedAnalysis?.textAnalysis?.explanation || 
                           parsedAnalysis?.explanation || 
-                          "Inhalt erkannt, der gegen unsere Richtlinien verstößt";
+                          "Contenido detectado que viola nuestras políticas";
         } catch (e) {
-          aiExplanation = "Inhalt erkannt, der gegen unsere Richtlinien verstößt";
+          aiExplanation = "Contenido detectado que viola nuestras políticas";
         }
         
         // Return error with specific AI reasons + review ID for appeal
         const reasonsInSpanish: Record<string, string> = {
-          "inappropriate_text": "Unangemessener Inhalt im Text erkannt",
-          "cuba_policy_violation": "Verstoß gegen kubanische Inhaltsrichtlinien",
-          "inappropriate_images": "Unangemessene Bilder erkannt",
-          "spam_detected": "Spam-Inhalt erkannt",
-          "duplicate_listing": "Doppelte Anzeige erkannt"
+          "inappropriate_text": "Contenido inapropiado detectado en el texto",
+          "cuba_policy_violation": "Violación de las políticas de contenido cubanas",
+          "inappropriate_images": "Imágenes inapropiadas detectadas",
+          "spam_detected": "Contenido spam detectado",
+          "duplicate_listing": "Anuncio duplicado detectado"
         };
 
         const translatedReasons = moderationResult.reasons.map(r => reasonsInSpanish[r] || r);
         
         return res.status(400).json({ 
-          message: "Ihre Anzeige wurde wegen Verstoßes gegen unsere Inhaltsrichtlinien abgelehnt",
+          message: "Su anuncio fue rechazado por violación de nuestras políticas de contenido",
           reasons: translatedReasons,
           specificIssues: specificIssues,
           problematicWords: problematicWords,
           aiExplanation: aiExplanation,
           confidence: moderationResult.confidence,
-          warning: "⚠️ POLIZEIWARNUNG: Wiederholte Verstöße gegen die Inhaltsrichtlinien werden den zuständigen kubanischen Behörden gemeldet.",
+          warning: "⚠️ ADVERTENCIA LEGAL: Violaciones repetidas a las políticas de contenido serán reportadas a las autoridades cubanas competentes.",
           reviewId: review.id, // Include review ID for appeals
           listingId: listing.id
         });
@@ -514,14 +514,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       console.error("Error creating listing:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // PUT /api/listings/:id - Update listing (requires auth + ownership)
   app.put("/api/listings/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -538,17 +538,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.categoryId) {
         const category = await storage.getCategory(validatedData.categoryId);
         if (!category) {
-          return res.status(400).json({ message: "Die ausgewählte Kategorie existiert nicht" });
+          return res.status(400).json({ message: "La categoría seleccionada no existe" });
         }
         if (!category.parentId) {
-          return res.status(400).json({ message: "Sie müssen eine Unterkategorie auswählen, nicht eine Hauptkategorie" });
+          return res.status(400).json({ message: "Debe seleccionar una subcategoría, no una categoría principal" });
         }
       }
       
       const listing = await storage.updateListing(req.params.id, req.user!.id, validatedData);
       
       if (!listing) {
-        return res.status(404).json({ message: "Anzeige nicht gefunden oder keine Berechtigung" });
+        return res.status(404).json({ message: "Anuncio no encontrado o sin permiso" });
       }
       
       res.json(listing);
@@ -561,14 +561,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       console.error("Error updating listing:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // DELETE /api/listings/:id - Delete listing (requires auth + ownership)
   app.delete("/api/listings/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -576,19 +576,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listing = await storage.getListing(req.params.id);
       
       if (!listing) {
-        return res.status(404).json({ message: "Anzeige nicht gefunden" });
+        return res.status(404).json({ message: "Anuncio no encontrado" });
       }
       
       // Check ownership
       if (listing.sellerId !== req.user!.id) {
-        return res.status(403).json({ message: "Keine Berechtigung, diese Anzeige zu löschen" });
+        return res.status(403).json({ message: "No tiene permiso para eliminar este anuncio" });
       }
       
       // Delete the listing from database first
       const success = await storage.deleteListing(req.params.id, req.user!.id);
       
       if (!success) {
-        return res.status(404).json({ message: "Fehler beim Löschen der Anzeige" });
+        return res.status(404).json({ message: "Error al eliminar el anuncio" });
       }
       
       // Delete associated images from object storage (non-blocking)
@@ -606,56 +606,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Initiated deletion of ${listing.images.length} images for listing ${req.params.id}`);
       }
       
-      res.json({ message: "Anzeige erfolgreich gelöscht" });
+      res.json({ message: "Anuncio eliminado exitosamente" });
     } catch (error) {
       console.error("Error deleting listing:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // PATCH /api/listings/:id/status - Update listing status (requires auth + ownership)
   app.patch("/api/listings/:id/status", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     const { status } = req.body;
     
     if (!status || !['active', 'paused', 'sold'].includes(status)) {
-      return res.status(400).json({ message: "Ungültiger Status" });
+      return res.status(400).json({ message: "Estado inválido" });
     }
 
     try {
       const success = await storage.setListingStatus(req.params.id, req.user!.id, status);
       
       if (!success) {
-        return res.status(404).json({ message: "Anzeige nicht gefunden oder keine Berechtigung" });
+        return res.status(404).json({ message: "Anuncio no encontrado o sin permiso" });
       }
       
-      res.json({ message: "Status erfolgreich aktualisiert" });
+      res.json({ message: "Estado actualizado exitosamente" });
     } catch (error) {
       console.error("Error updating listing status:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // PATCH /api/listings/:id/sold - Mark listing as sold (requires auth + ownership)
   app.patch("/api/listings/:id/sold", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
       const success = await storage.markListingSold(req.params.id, req.user!.id);
       
       if (!success) {
-        return res.status(404).json({ message: "Anzeige nicht gefunden oder keine Berechtigung" });
+        return res.status(404).json({ message: "Anuncio no encontrado o sin permiso" });
       }
       
-      res.json({ message: "Anzeige als verkauft markiert" });
+      res.json({ message: "Anuncio marcado como vendido" });
     } catch (error) {
       console.error("Error marking listing as sold:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -663,10 +663,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/listings/:id/view", async (req, res) => {
     try {
       await storage.incrementViews(req.params.id);
-      res.json({ message: "Ansicht registriert" });
+      res.json({ message: "Vista registrada" });
     } catch (error) {
       console.error("Error incrementing views:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -674,17 +674,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/listings/:id/contact", async (req, res) => {
     try {
       await storage.incrementContacts(req.params.id);
-      res.json({ message: "Kontakt registriert" });
+      res.json({ message: "Contacto registrado" });
     } catch (error) {
       console.error("Error incrementing contacts:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // GET /api/me/listings - Get current user's listings (requires auth)
   app.get("/api/me/listings", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -692,7 +692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(listings);
     } catch (error) {
       console.error("Error fetching user listings:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -734,7 +734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(response);
     } catch (error) {
       console.error("Error searching listings:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -750,14 +750,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(suggestions);
     } catch (error) {
       console.error("Error getting search suggestions:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // GET /api/search/saved - Get user's saved searches (requires auth)
   app.get("/api/search/saved", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -765,20 +765,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(savedSearches);
     } catch (error) {
       console.error("Error fetching saved searches:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // POST /api/search/saved - Save a search (requires auth)
   app.post("/api/search/saved", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
       const { name, searchParams } = req.body;
       if (!name || searchParams === undefined) {
-        return res.status(400).json({ message: "Name und Suchparameter sind erforderlich" });
+        return res.status(400).json({ message: "El nombre y los parámetros de búsqueda son obligatorios" });
       }
 
       // Ensure searchParams is stored as a string (it should already be a query string)
@@ -794,26 +794,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(savedSearch);
     } catch (error) {
       console.error("Error saving search:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // DELETE /api/search/saved/:id - Delete a saved search (requires auth)
   app.delete("/api/search/saved/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
       const success = await storage.deleteSavedSearch(req.params.id, req.user!.id);
       if (!success) {
-        return res.status(404).json({ message: "Gespeicherte Suche nicht gefunden" });
+        return res.status(404).json({ message: "Búsqueda guardada no encontrada" });
       }
 
-      res.json({ message: "Suche gelöscht" });
+      res.json({ message: "Búsqueda eliminada" });
     } catch (error) {
       console.error("Error deleting saved search:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -821,7 +821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/favorites/:listingId - Add listing to favorites (requires auth)
   app.post("/api/favorites/:listingId", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -829,29 +829,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json({ message: "Zu Favoriten hinzugefügt" });
     } catch (error) {
       console.error("Error adding favorite:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // DELETE /api/favorites/:listingId - Remove from favorites (requires auth)
   app.delete("/api/favorites/:listingId", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
       await storage.removeFavorite(req.user!.id, req.params.listingId);
-      res.json({ message: "Aus Favoriten entfernt" });
+      res.json({ message: "Eliminado de favoritos" });
     } catch (error) {
       console.error("Error removing favorite:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // GET /api/favorites - Get user's favorite listings (requires auth)
   app.get("/api/favorites", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -859,14 +859,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(favorites);
     } catch (error) {
       console.error("Error fetching favorites:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // GET /api/favorites/:listingId/check - Check if listing is favorited (requires auth)
   app.get("/api/favorites/:listingId/check", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -874,7 +874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ isFavorite });
     } catch (error) {
       console.error("Error checking favorite:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -884,7 +884,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const profile = await storage.getUserPublicProfile(req.params.id);
       if (!profile) {
-        return res.status(404).json({ message: "Benutzer nicht gefunden" });
+        return res.status(404).json({ message: "Usuario no encontrado" });
       }
 
       // If authenticated and not same user, check if following
@@ -896,42 +896,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ ...profile, isFollowing });
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // POST /api/users/:id/follow - Follow a user (requires auth)
   app.post("/api/users/:id/follow", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     // Prevent following self
     if (req.user!.id === req.params.id) {
-      return res.status(400).json({ message: "Sie können sich nicht selbst folgen" });
+      return res.status(400).json({ message: "No puede seguirse a sí mismo" });
     }
 
     try {
       await storage.followUser(req.user!.id, req.params.id);
-      res.status(201).json({ message: "Sie folgen jetzt diesem Benutzer" });
+      res.status(201).json({ message: "Ahora sigue a este usuario" });
     } catch (error) {
       console.error("Error following user:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // DELETE /api/users/:id/follow - Unfollow a user (requires auth)
   app.delete("/api/users/:id/follow", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
       await storage.unfollowUser(req.user!.id, req.params.id);
-      res.json({ message: "Sie folgen diesem Benutzer nicht mehr" });
+      res.json({ message: "Ya no sigue a este usuario" });
     } catch (error) {
       console.error("Error unfollowing user:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -946,19 +946,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(ratings);
     } catch (error) {
       console.error("Error fetching ratings:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // POST /api/users/:id/ratings - Rate a user (requires auth)
   app.post("/api/users/:id/ratings", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     // Prevent rating self
     if (req.user!.id === req.params.id) {
-      return res.status(400).json({ message: "Sie können sich nicht selbst bewerten" });
+      return res.status(400).json({ message: "No puede valorarse a sí mismo" });
     }
 
     try {
@@ -979,14 +979,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       console.error("Error creating rating:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // POST /api/user/phone - Update user phone and province (requires auth)
   app.post("/api/user/phone", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -996,7 +996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.phone) {
         const existingUser = await storage.getUserByPhone(validatedData.phone);
         if (existingUser && existingUser.id !== req.user!.id) {
-          return res.status(400).json({ message: "Diese Telefonnummer ist bereits registriert" });
+          return res.status(400).json({ message: "Este número de teléfono ya está registrado" });
         }
       }
 
@@ -1022,14 +1022,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       console.error("Error updating phone:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // PATCH /api/user/profile - Update user profile (requires auth)
   app.patch("/api/user/profile", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -1037,14 +1037,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate name doesn't contain numbers
       if (name && /\d/.test(name)) {
-        return res.status(400).json({ message: "Der Name darf keine Zahlen enthalten" });
+        return res.status(400).json({ message: "El nombre no puede contener números" });
       }
       
       // Check if email is already used by another user
       if (email) {
         const existingUser = await storage.getUserByEmail(email);
         if (existingUser && existingUser.id !== req.user!.id) {
-          return res.status(400).json({ message: "Diese E-Mail-Adresse ist bereits registriert" });
+          return res.status(400).json({ message: "Esta dirección de correo electrónico ya está registrada" });
         }
       }
 
@@ -1066,37 +1066,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // PATCH /api/user/password - Change user password (requires auth)
   app.patch("/api/user/password", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
       const { currentPassword, newPassword } = req.body;
 
       if (!currentPassword || !newPassword) {
-        return res.status(400).json({ message: "Aktuelles und neues Passwort erforderlich" });
+        return res.status(400).json({ message: "Se requiere contraseña actual y nueva" });
       }
 
       if (newPassword.length < 8) {
-        return res.status(400).json({ message: "Das neue Passwort muss mindestens 8 Zeichen lang sein" });
+        return res.status(400).json({ message: "La nueva contraseña debe tener al menos 8 caracteres" });
       }
 
       // Get current user with password
       const user = await storage.getUserById(req.user!.id);
       if (!user || !user.password) {
-        return res.status(400).json({ message: "Benutzer nicht gefunden oder kein Passwort festgelegt" });
+        return res.status(400).json({ message: "Usuario no encontrado o sin contraseña establecida" });
       }
 
       // Verify current password
       const isValidPassword = await comparePasswords(currentPassword, user.password);
       if (!isValidPassword) {
-        return res.status(401).json({ message: "Das aktuelle Passwort ist falsch" });
+        return res.status(401).json({ message: "La contraseña actual es incorrecta" });
       }
 
       // Hash new password
@@ -1105,10 +1105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update password in database
       await storage.updateUserPassword(req.user!.id, hashedPassword);
 
-      res.json({ message: "Passwort erfolgreich aktualisiert" });
+      res.json({ message: "Contraseña actualizada exitosamente" });
     } catch (error: any) {
       console.error("Error updating password:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1120,34 +1120,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(options);
     } catch (error) {
       console.error("Error fetching premium options:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // POST /api/listings/:id/premium - Purchase premium feature (requires auth + ownership)
   app.post("/api/listings/:id/premium", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     const { premiumOptionId } = req.body;
     
     if (!premiumOptionId) {
-      return res.status(400).json({ message: "Premium-Options-ID erforderlich" });
+      return res.status(400).json({ message: "Se requiere ID de opción premium" });
     }
 
     try {
       // Verify listing ownership
       const listing = await storage.getListing(req.params.id);
       if (!listing || listing.sellerId !== req.user!.id) {
-        return res.status(404).json({ message: "Anzeige nicht gefunden oder keine Berechtigung" });
+        return res.status(404).json({ message: "Anuncio no encontrado o sin permiso" });
       }
 
       const purchase = await storage.purchasePremium(req.params.id, premiumOptionId);
       res.status(201).json(purchase);
     } catch (error) {
       console.error("Error purchasing premium:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1158,7 +1158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(features);
     } catch (error) {
       console.error("Error fetching premium features:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1199,7 +1199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/listings/upload-image", upload.single('image'), async (req, res) => {
     // Require authentication for listing image uploads
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden, um Bilder hochzuladen" });
+      return res.status(401).json({ message: "Debe iniciar sesión para subir imágenes" });
     }
 
     if (!req.file) {
@@ -1281,23 +1281,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Submit appeal for rejected listing (accepts listingId)
   app.post("/api/moderation/appeal", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
       const { listingId, reason } = req.body;
 
       if (!reason || reason.trim().length < 20) {
-        return res.status(400).json({ message: "Der Grund für den Einspruch muss mindestens 20 Zeichen lang sein" });
+        return res.status(400).json({ message: "El motivo de la apelación debe tener al menos 20 caracteres" });
       }
 
       const listing = await storage.getListing(listingId);
       if (!listing || listing.sellerId !== req.user!.id) {
-        return res.status(403).json({ message: "Sie haben keine Berechtigung, Einspruch gegen diese Anzeige einzulegen" });
+        return res.status(403).json({ message: "No tiene permiso para apelar este anuncio" });
       }
 
       if (listing.moderationStatus !== "rejected") {
-        return res.status(400).json({ message: "Nur abgelehnte Anzeigen können angefochten werden" });
+        return res.status(400).json({ message: "Solo se pueden apelar anuncios rechazados" });
       }
 
       // Get the moderation review for this listing
@@ -1308,7 +1308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if already appealed
       if (review.status === "appealed") {
-        return res.status(400).json({ message: "Sie haben bereits Einspruch gegen diese Anzeige eingelegt. Bitte warten Sie auf die Überprüfung durch den Administrator." });
+        return res.status(400).json({ message: "Ya ha apelado este anuncio. Por favor espere la revisión del administrador." });
       }
 
       // Update review status to appealed
@@ -1332,14 +1332,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updated);
     } catch (error) {
       console.error("Error submitting appeal:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // Get moderation status for a listing
   app.get("/api/moderation/status/:listingId", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -1347,11 +1347,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listing = await storage.getListing(listingId);
       
       if (!listing) {
-        return res.status(404).json({ message: "Anzeige nicht gefunden" });
+        return res.status(404).json({ message: "Anuncio no encontrado" });
       }
 
       if (listing.sellerId !== req.user!.id) {
-        return res.status(403).json({ message: "Sie haben keine Berechtigung, diese Anzeige anzuzeigen" });
+        return res.status(403).json({ message: "No tiene permiso para ver este anuncio" });
       }
 
       const review = await storage.getModerationReviewByListing(listingId);
@@ -1363,25 +1363,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error getting moderation status:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // Submit user report
   app.post("/api/moderation/report", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden, um zu melden" });
+      return res.status(401).json({ message: "Debe iniciar sesión para reportar" });
     }
 
     try {
       const { listingId, reportedUserId, reason, description } = req.body;
 
       if (!reason) {
-        return res.status(400).json({ message: "Der Meldegrund ist erforderlich" });
+        return res.status(400).json({ message: "El motivo del reporte es obligatorio" });
       }
 
       if (!listingId && !reportedUserId) {
-        return res.status(400).json({ message: "Sie müssen eine Anzeige oder einen Benutzer melden" });
+        return res.status(400).json({ message: "Debe reportar un anuncio o un usuario" });
       }
 
       const report = await storage.createModerationReport({
@@ -1404,14 +1404,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(report);
     } catch (error) {
       console.error("Error creating report:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // Get user's reports
   app.get("/api/moderation/my-reports", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     try {
@@ -1419,25 +1419,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(reports);
     } catch (error) {
       console.error("Error fetching user reports:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // User-friendly report endpoint (used by ReportDialog)
   app.post("/api/reports", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden, um zu melden" });
+      return res.status(401).json({ message: "Debe iniciar sesión para reportar" });
     }
 
     try {
       const { type, targetId, reason, description } = req.body;
 
       if (!reason) {
-        return res.status(400).json({ message: "Der Meldegrund ist erforderlich" });
+        return res.status(400).json({ message: "El motivo del reporte es obligatorio" });
       }
 
       if (!type || !targetId) {
-        return res.status(400).json({ message: "Typ und Ziel-ID sind erforderlich" });
+        return res.status(400).json({ message: "Se requiere tipo e ID de objetivo" });
       }
 
       const report = await storage.createModerationReport({
@@ -1460,7 +1460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(report);
     } catch (error) {
       console.error("Error creating report:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1469,12 +1469,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to check admin access
   const requireAdmin = async (req: any, res: any, next: any) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden" });
+      return res.status(401).json({ message: "Debe iniciar sesión" });
     }
 
     const isAdmin = await storage.isAdmin(req.user!.id);
     if (!isAdmin) {
-      return res.status(403).json({ message: "Zugriff verweigert. Administratorrechte erforderlich" });
+      return res.status(403).json({ message: "Acceso denegado. Se requieren permisos de administrador" });
     }
 
     next();
@@ -1492,7 +1492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ isAdmin, admin });
     } catch (error) {
       console.error("Error checking admin status:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1572,7 +1572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error fetching admin dashboard:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1587,7 +1587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Error fetching pending reviews:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1602,7 +1602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Error fetching appealed reviews:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1618,7 +1618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const review = await storage.getModerationReview(reviewId);
       if (!review) {
-        return res.status(404).json({ message: "Überprüfung nicht gefunden" });
+        return res.status(404).json({ message: "Revisión no encontrada" });
       }
 
       const updated = await storage.updateModerationReview(reviewId, {
@@ -1645,7 +1645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updated);
     } catch (error) {
       console.error("Error making review decision:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1682,7 +1682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(enrichedReports);
     } catch (error) {
       console.error("Error fetching reports:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1693,13 +1693,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { resolution, action } = req.body; // action: "dismiss" | "confirm"
 
       if (!resolution) {
-        return res.status(400).json({ message: "Die Lösung ist erforderlich" });
+        return res.status(400).json({ message: "La resolución es obligatoria" });
       }
 
       const resolved = await storage.resolveReport(reportId, req.user!.id, resolution);
       
       if (!resolved) {
-        return res.status(404).json({ message: "Meldung nicht gefunden" });
+        return res.status(404).json({ message: "Reporte no encontrado" });
       }
 
       // If action is "confirm" and it's a listing report, delete the listing
@@ -1707,7 +1707,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const deleted = await storage.deleteListingAsAdmin(resolved.listingId);
         
         if (!deleted) {
-          return res.status(400).json({ message: "Die Anzeige konnte nicht gelöscht werden" });
+          return res.status(400).json({ message: "No se pudo eliminar el anuncio" });
         }
         
         await storage.createModerationLog({
@@ -1730,7 +1730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(resolved);
     } catch (error) {
       console.error("Error resolving report:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1790,7 +1790,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ items: parsedLogs, total });
     } catch (error) {
       console.error("Error fetching rejection logs:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1802,7 +1802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(blacklist);
     } catch (error) {
       console.error("Error fetching blacklist:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1834,7 +1834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(item);
     } catch (error) {
       console.error("Error adding blacklist item:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1847,7 +1847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updated = await storage.updateBlacklistItem(id, updates);
       
       if (!updated) {
-        return res.status(404).json({ message: "Element nicht gefunden" });
+        return res.status(404).json({ message: "Elemento no encontrado" });
       }
 
       await storage.createModerationLog({
@@ -1861,7 +1861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updated);
     } catch (error) {
       console.error("Error updating blacklist item:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1872,7 +1872,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deleted = await storage.deleteBlacklistItem(id);
 
       if (!deleted) {
-        return res.status(404).json({ message: "Element nicht gefunden" });
+        return res.status(404).json({ message: "Elemento no encontrado" });
       }
 
       await storage.createModerationLog({
@@ -1886,7 +1886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting blacklist item:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1897,7 +1897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error) {
       console.error("Error fetching settings:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1907,7 +1907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { key, value, type, description } = req.body;
 
       if (!key || !value) {
-        return res.status(400).json({ message: "Schlüssel und Wert sind erforderlich" });
+        return res.status(400).json({ message: "Se requiere clave y valor" });
       }
 
       const setting = await storage.setModerationSetting(key, value, type, description);
@@ -1923,7 +1923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(setting);
     } catch (error) {
       console.error("Error updating setting:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1934,7 +1934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(allUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1944,7 +1944,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { reason } = req.body;
 
-      await storage.banUser(id, reason || "Vom Administrator gesperrt");
+      await storage.banUser(id, reason || "Suspendido por el administrador");
       
       await storage.createModerationLog({
         action: "user_blocked",
@@ -1954,10 +1954,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: JSON.stringify({ reason })
       });
 
-      res.json({ success: true, message: "Benutzer erfolgreich gesperrt" });
+      res.json({ success: true, message: "Usuario suspendido exitosamente" });
     } catch (error) {
       console.error("Error blocking user:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -1976,10 +1976,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: null
       });
 
-      res.json({ success: true, message: "Benutzer erfolgreich entsperrt" });
+      res.json({ success: true, message: "Usuario desbloqueado exitosamente" });
     } catch (error) {
       console.error("Error unblocking user:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -2003,10 +2003,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: JSON.stringify({ strikes })
       });
 
-      res.json({ success: true, message: "Verwarnungen erfolgreich aktualisiert" });
+      res.json({ success: true, message: "Advertencias actualizadas exitosamente" });
     } catch (error) {
       console.error("Error updating strikes:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -2016,7 +2016,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId, role, permissions } = req.body;
 
       if (!userId || !role) {
-        return res.status(400).json({ message: "Benutzer-ID und Rolle sind erforderlich" });
+        return res.status(400).json({ message: "Se requiere ID de usuario y rol" });
       }
 
       const admin = await storage.createAdminUser({
@@ -2037,7 +2037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(admin);
     } catch (error) {
       console.error("Error creating admin user:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -2050,7 +2050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updated = await storage.updateAdminUser(id, updates);
       
       if (!updated) {
-        return res.status(404).json({ message: "Administrator nicht gefunden" });
+        return res.status(404).json({ message: "Administrador no encontrado" });
       }
 
       await storage.createModerationLog({
@@ -2064,7 +2064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updated);
     } catch (error) {
       console.error("Error updating admin user:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -2075,7 +2075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deleted = await storage.deleteAdminUser(id);
 
       if (!deleted) {
-        return res.status(404).json({ message: "Administrator nicht gefunden" });
+        return res.status(404).json({ message: "Administrador no encontrado" });
       }
 
       await storage.createModerationLog({
@@ -2089,7 +2089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting admin user:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -2104,7 +2104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(features);
     } catch (error) {
       console.error("Error fetching premium features:", error);
-      res.status(500).json({ message: "Fehler beim Laden der Premium-Features" });
+      res.status(500).json({ message: "Error al cargar las funciones premium" });
     }
   });
 
@@ -2117,7 +2117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updated = await storage.updatePremiumOption(id, updates);
 
       if (!updated) {
-        return res.status(404).json({ message: "Premium-Feature nicht gefunden" });
+        return res.status(404).json({ message: "Función premium no encontrada" });
       }
 
       await storage.createModerationLog({
@@ -2131,7 +2131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updated);
     } catch (error) {
       console.error("Error updating premium feature:", error);
-      res.status(500).json({ message: "Fehler beim Aktualisieren des Premium-Features" });
+      res.status(500).json({ message: "Error al actualizar la función premium" });
     }
   });
 
@@ -2155,7 +2155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Error fetching moderation logs:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -2170,14 +2170,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(features);
     } catch (error) {
       console.error("Error fetching premium features:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
   // Purchase premium features for a listing
   app.post("/api/listings/:id/premium", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sie müssen sich anmelden, um Premium-Funktionen zu aktivieren" });
+      return res.status(401).json({ message: "Debe iniciar sesión para activar funciones premium" });
     }
 
     try {
@@ -2191,10 +2191,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify listing belongs to user
       const listing = await storage.getListing(listingId);
       if (!listing) {
-        return res.status(404).json({ message: "Anzeige nicht gefunden" });
+        return res.status(404).json({ message: "Anuncio no encontrado" });
       }
       if (listing.sellerId !== req.user!.id) {
-        return res.status(403).json({ message: "Sie haben keine Berechtigung, diese Anzeige zu ändern" });
+        return res.status(403).json({ message: "No tiene permiso para modificar este anuncio" });
       }
 
       // Validate feature IDs against active options
@@ -2217,12 +2217,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ 
         success: true, 
-        message: "Premium-Funktionen erfolgreich aktiviert",
+        message: "Funciones premium activadas exitosamente",
         purchases 
       });
     } catch (error: any) {
       console.error("Error purchasing premium features:", error);
-      res.status(500).json({ message: error.message || "Fehler beim Aktivieren der Premium-Funktionen" });
+      res.status(500).json({ message: error.message || "Error al activar las funciones premium" });
     }
   });
 
@@ -2237,7 +2237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ minLength: parseInt(setting?.value || "50") });
     } catch (error) {
       console.error("Error fetching description min length:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -2253,7 +2253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(banners);
     } catch (error) {
       console.error("Error fetching active banners:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -2265,7 +2265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(sponsored);
     } catch (error) {
       console.error("Error fetching active sponsored listings:", error);
-      res.status(500).json({ message: "Interner Serverfehler" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   });
 
@@ -2281,7 +2281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(banners);
     } catch (error) {
       console.error("Error fetching banners:", error);
-      res.status(500).json({ message: "Fehler beim Laden der Banner" });
+      res.status(500).json({ message: "Error al cargar los banners" });
     }
   });
 
@@ -2302,7 +2302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(banner);
     } catch (error) {
       console.error("Error creating banner:", error);
-      res.status(500).json({ message: "Fehler beim Erstellen des Banners" });
+      res.status(500).json({ message: "Error al crear el banner" });
     }
   });
 
@@ -2328,7 +2328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(banner);
     } catch (error) {
       console.error("Error updating banner:", error);
-      res.status(500).json({ message: "Fehler beim Aktualisieren des Banners" });
+      res.status(500).json({ message: "Error al actualizar el banner" });
     }
   });
 
@@ -2353,7 +2353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting banner:", error);
-      res.status(500).json({ message: "Fehler beim Löschen des Banners" });
+      res.status(500).json({ message: "Error al eliminar el banner" });
     }
   });
 
@@ -2378,7 +2378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(banner);
     } catch (error) {
       console.error("Error toggling banner:", error);
-      res.status(500).json({ message: "Fehler beim Umschalten des Banners" });
+      res.status(500).json({ message: "Error al alternar el banner" });
     }
   });
 
@@ -2393,7 +2393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(listings);
     } catch (error) {
       console.error("Error fetching sponsored listings:", error);
-      res.status(500).json({ message: "Fehler beim Laden der gesponserten Anzeigen" });
+      res.status(500).json({ message: "Error al cargar los anuncios patrocinados" });
     }
   });
 
@@ -2414,7 +2414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(sponsored);
     } catch (error) {
       console.error("Error creating sponsored listing:", error);
-      res.status(500).json({ message: "Fehler beim Erstellen der gesponserten Anzeige" });
+      res.status(500).json({ message: "Error al crear el anuncio patrocinado" });
     }
   });
 
@@ -2440,7 +2440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(sponsored);
     } catch (error) {
       console.error("Error updating sponsored listing:", error);
-      res.status(500).json({ message: "Fehler beim Aktualisieren der gesponserten Anzeige" });
+      res.status(500).json({ message: "Error al actualizar el anuncio patrocinado" });
     }
   });
 
@@ -2465,7 +2465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting sponsored listing:", error);
-      res.status(500).json({ message: "Fehler beim Löschen der gesponserten Anzeige" });
+      res.status(500).json({ message: "Error al eliminar el anuncio patrocinado" });
     }
   });
 
@@ -2490,7 +2490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(category);
     } catch (error) {
       console.error("Error creating category:", error);
-      res.status(500).json({ message: "Fehler beim Erstellen der Kategorie" });
+      res.status(500).json({ message: "Error al crear la categoría" });
     }
   });
 
@@ -2502,7 +2502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const category = await storage.updateCategory(id, updates);
       
       if (!category) {
-        return res.status(404).json({ message: "Kategorie nicht gefunden" });
+        return res.status(404).json({ message: "Categoría no encontrada" });
       }
       
       await storage.createModerationLog({
@@ -2516,7 +2516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(category);
     } catch (error) {
       console.error("Error updating category:", error);
-      res.status(500).json({ message: "Fehler beim Aktualisieren der Kategorie" });
+      res.status(500).json({ message: "Error al actualizar la categoría" });
     }
   });
 
@@ -2527,7 +2527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deleted = await storage.deleteCategory(id);
       
       if (!deleted) {
-        return res.status(404).json({ message: "Kategorie nicht gefunden" });
+        return res.status(404).json({ message: "Categoría no encontrada" });
       }
       
       await storage.createModerationLog({
@@ -2541,7 +2541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting category:", error);
-      res.status(500).json({ message: "Fehler beim Löschen der Kategorie" });
+      res.status(500).json({ message: "Error al eliminar la categoría" });
     }
   });
 
@@ -2567,7 +2567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error reordering categories:", error);
-      res.status(500).json({ message: "Fehler beim Sortieren der Kategorien" });
+      res.status(500).json({ message: "Error al ordenar las categorías" });
     }
   });
 
