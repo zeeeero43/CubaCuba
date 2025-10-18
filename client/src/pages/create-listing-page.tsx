@@ -125,12 +125,21 @@ export default function CreateListingPage() {
     },
   });
 
+  // Watch form values outside of render to avoid infinite loops
+  const watchedCurrency = form.watch("currency");
+  const watchedPriceType = form.watch("priceType");
+  const watchedCategoryId = form.watch("categoryId");
+  const watchedLocationRegion = form.watch("locationRegion");
+  const watchedCondition = form.watch("condition");
+  const watchedContactWhatsApp = form.watch("contactWhatsApp");
+  const watchedDescription = form.watch("description");
+
   // Update phone number when user data loads
   useEffect(() => {
-    if (user?.phone) {
-      form.setValue("contactPhone", user.phone);
+    if (user?.phone && !form.getValues("contactPhone")) {
+      form.setValue("contactPhone", user.phone, { shouldDirty: false });
     }
-  }, [user?.phone, form]);
+  }, [user?.phone]);
 
   const purchasePremiumMutation = useMutation({
     mutationFn: async ({ listingId, featureIds }: { listingId: string; featureIds: string[] }) => {
@@ -460,11 +469,11 @@ export default function CreateListingPage() {
                 />
                 <div className="flex items-center justify-between text-sm">
                   <p className={`${
-                    (form.watch("description")?.length || 0) < descriptionMinLength 
+                    (watchedDescription?.length || 0) < descriptionMinLength 
                       ? 'text-destructive' 
                       : 'text-muted-foreground'
                   }`} data-testid="text-description-counter">
-                    {form.watch("description")?.length || 0} / {descriptionMinLength} caracteres mínimos
+                    {watchedDescription?.length || 0} / {descriptionMinLength} caracteres mínimos
                   </p>
                 </div>
                 {form.formState.errors.description && (
@@ -517,7 +526,7 @@ export default function CreateListingPage() {
                     <Label htmlFor="currency">Moneda *</Label>
                     <Select 
                       onValueChange={(value) => form.setValue("currency", value as "CUP" | "USD")}
-                      value={form.watch("currency") || "CUP"}
+                      value={watchedCurrency || "CUP"}
                       disabled={noPriceSelected}
                     >
                       <SelectTrigger data-testid="select-currency">
@@ -535,7 +544,7 @@ export default function CreateListingPage() {
                   <Label htmlFor="priceType">Tipo de precio *</Label>
                   <Select 
                     onValueChange={(value) => form.setValue("priceType", value as "fixed" | "negotiable")}
-                    value={form.watch("priceType") || ""}
+                    value={watchedPriceType || ""}
                   >
                     <SelectTrigger data-testid="select-price-type">
                       <SelectValue placeholder="Selecciona tipo" />
@@ -585,7 +594,7 @@ export default function CreateListingPage() {
                 <Label htmlFor="categoryId">Subcategoría *</Label>
                 <Select 
                   onValueChange={(value) => form.setValue("categoryId", value)}
-                  value={form.watch("categoryId") || ""}
+                  value={watchedCategoryId || ""}
                   disabled={!selectedMainCategory}
                 >
                   <SelectTrigger data-testid="select-subcategory">
@@ -622,7 +631,7 @@ export default function CreateListingPage() {
                   <Label htmlFor="locationRegion">Provincia *</Label>
                   <Select 
                     onValueChange={(value) => form.setValue("locationRegion", value)}
-                    value={form.watch("locationRegion") || ""}
+                    value={watchedLocationRegion || ""}
                   >
                     <SelectTrigger data-testid="select-province">
                       <SelectValue placeholder="Selecciona provincia" />
@@ -645,7 +654,7 @@ export default function CreateListingPage() {
                 <Label htmlFor="condition">Estado del artículo *</Label>
                 <Select 
                   onValueChange={(value) => form.setValue("condition", value as "new" | "used" | "defective")}
-                  value={form.watch("condition") || ""}
+                  value={watchedCondition || ""}
                 >
                   <SelectTrigger data-testid="select-condition">
                     <SelectValue placeholder="Selecciona el estado" />
@@ -778,7 +787,7 @@ export default function CreateListingPage() {
                 <input
                   type="checkbox"
                   id="whatsapp"
-                  checked={form.watch("contactWhatsApp") === "true"}
+                  checked={watchedContactWhatsApp === "true"}
                   onChange={(e) => form.setValue("contactWhatsApp", e.target.checked ? "true" : "false")}
                   className="rounded"
                   data-testid="checkbox-whatsapp"

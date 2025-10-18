@@ -1,0 +1,67 @@
+chunk-RPCDYKBN.js?v=495822ee:16670 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (chunk-RPCDYKBN.js?v=495822ee:19659:19)
+    at scheduleUpdateOnFiber (chunk-RPCDYKBN.js?v=495822ee:18533:11)
+    at dispatchSetState (chunk-RPCDYKBN.js?v=495822ee:12403:15)
+    at setRef (chunk-2K77HOHX.js?v=495822ee:18:12)
+    at chunk-2K77HOHX.js?v=495822ee:27:23
+    at Array.map (<anonymous>)
+    at chunk-2K77HOHX.js?v=495822ee:26:27
+    at setRef (chunk-2K77HOHX.js?v=495822ee:18:12)
+    at chunk-2K77HOHX.js?v=495822ee:27:23
+    at Array.map (<anonymous>)Understand this error
+chunk-RPCDYKBN.js?v=495822ee:521 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+printWarning @ chunk-RPCDYKBN.js?v=495822ee:521Understand this error
+chunk-RPCDYKBN.js?v=495822ee:14032 The above error occurred in the <button> component:
+
+    at button
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=495822ee:42:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=495822ee:79:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=495822ee:56:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=495822ee:42:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DWHWBRTN.js?v=495822ee:1927:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=495822ee:182:13
+    at _c (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/components/ui/select.tsx:26:11)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at CollectionProvider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ND3F6ENZ.js?v=495822ee:29:13)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at Popper (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DWHWBRTN.js?v=495822ee:1919:11)
+    at Select (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=495822ee:84:5)
+    at div
+    at div
+    at div
+    at div
+    at _c9 (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/components/ui/card.tsx:20:11)
+    at form
+    at div
+    at div
+    at CreateListingPage (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/pages/create-listing-page.tsx:68:24)
+    at Route (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=495822ee:265:16)
+    at ProtectedRoute (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=495822ee:321:17)
+    at Router
+    at div
+    at div
+    at AuthProvider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/hooks/use-auth.tsx:27:32)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at TooltipProvider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=495822ee:61:5)
+    at QueryClientProvider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=495822ee:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-RPCDYKBN.js?v=495822ee:14032Understand this error
+chunk-RPCDYKBN.js?v=495822ee:9129 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (chunk-RPCDYKBN.js?v=495822ee:19659:19)
+    at scheduleUpdateOnFiber (chunk-RPCDYKBN.js?v=495822ee:18533:11)
+    at dispatchSetState (chunk-RPCDYKBN.js?v=495822ee:12403:15)
+    at setRef (chunk-2K77HOHX.js?v=495822ee:18:12)
+    at chunk-2K77HOHX.js?v=495822ee:27:23
+    at Array.map (<anonymous>)
+    at chunk-2K77HOHX.js?v=495822ee:26:27
+    at setRef (chunk-2K77HOHX.js?v=495822ee:18:12)
+    at chunk-2K77HOHX.js?v=495822ee:27:23
+    at Array.map (<anonymous>)
