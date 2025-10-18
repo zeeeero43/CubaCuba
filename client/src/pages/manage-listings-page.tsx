@@ -41,7 +41,7 @@ export default function ManageListingsPage() {
 
   // Delete listing mutation
   const deleteListingMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/listings/${id}`, 'DELETE'),
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/listings/${id}`),
     onSuccess: () => {
       toast({
         title: "Anuncio eliminado",
