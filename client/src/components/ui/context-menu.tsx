@@ -6,7 +6,13 @@ import { cn } from "@/lib/utils"
 
 const ContextMenu = ContextMenuPrimitive.Root
 
-const ContextMenuTrigger = ContextMenuPrimitive.Trigger
+const ContextMenuTrigger = React.forwardRef<
+  React.ElementRef<typeof ContextMenuPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Trigger>
+>((props, ref) => (
+  <ContextMenuPrimitive.Trigger ref={ref} translate="no" {...props} />
+))
+ContextMenuTrigger.displayName = ContextMenuPrimitive.Trigger.displayName
 
 const ContextMenuGroup = ContextMenuPrimitive.Group
 
@@ -24,6 +30,7 @@ const ContextMenuSubTrigger = React.forwardRef<
 >(({ className, inset, children, ...props }, ref) => (
   <ContextMenuPrimitive.SubTrigger
     ref={ref}
+    translate="no"
     className={cn(
       "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
       inset && "pl-8",
@@ -79,6 +86,7 @@ const ContextMenuItem = React.forwardRef<
 >(({ className, inset, ...props }, ref) => (
   <ContextMenuPrimitive.Item
     ref={ref}
+    translate="no"
     className={cn(
       "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       inset && "pl-8",
