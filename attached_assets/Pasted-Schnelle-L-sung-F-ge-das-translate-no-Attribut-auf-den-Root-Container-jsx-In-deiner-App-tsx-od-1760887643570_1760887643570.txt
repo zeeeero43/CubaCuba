@@ -1,0 +1,47 @@
+Schnelle Lösung:
+Füge das translate="no" Attribut auf den Root-Container:
+jsx// In deiner App.tsx oder index.html
+<div id="root" translate="no">
+Oder spezifisch auf problematischen Komponenten:
+jsx<label translate="no">
+  {/* Dein Label Text */}
+</label>
+Bessere Lösung:
+Nutze eine echte i18n-Library statt Google Translate:
+bashnpm install react-i18next i18next
+Warum das passiert:
+Google Translate zerstückelt deine Textnodes, um sie zu übersetzen. React erwartet aber das ursprüngliche DOM → Fehler beim removeChild.
+Der WebSocket-Fehler (localhost:undefined) ist ein separates Problem - da fehlt vermutlich eine Umgebungsvariable für den Port.
+Brauchst du Hilfe beim Setup von react-i18next?WiederholenKhabe das gemacht ("<label translate="no">") bringt aber nichtrsAnalysierte DOM-Manipulation und formulierte alternative Lösungsansätze.Der Nutzer hat translate="no" auf dem Label hinzugefügt, aber es funktioniert nicht. Das Problem ist, dass Google Translate das gesamte DOM manipuliert, nicht nur einzelne Labels.
+Das translate="no" muss auf einem höheren Level gesetzt werden - idealerweise auf dem Root-Element oder auf größeren Container-Elementen. Außerdem muss man oft noch zusätzliche Meta-Tags setzen.
+Ich sollte ihm die effektiveren Lösungen geben:
+
+Meta-Tag im HTML Head
+translate="no" auf dem Root-Element
+CSS-Workaround mit pointer-events
+Oder die richtige Lösung: i18n statt Google Translate
+
+Der Nutzer möchte kurze, direkte Antworten ohne viel Drumherum.Nein, das reicht nicht. Google Translate manipuliert das gesamte DOM.
+Probier das:
+
+In index.html im <html> Tag:
+
+html<html lang="de" translate="no">
+
+Und im <head>:
+
+html<meta name="google" content="notranslate">
+
+Auf dem Root-Div:
+
+html<div id="root" className="notranslate" translate="no">
+Wenn das auch nicht hilft:
+CSS-Workaround - füge zu deinem CSS hinzu:
+cssbody {
+  transform: translateZ(0);
+}
+Das zwingt einen neuen Rendering-Kontext.
+Echte Lösung:
+Google Translate und React-SPAs vertragen sich einfach schlecht. Du brauchst entweder:
+
+Eine echte i18n-Library (react-i18next)
