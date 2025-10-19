@@ -14,8 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowLeft, ArrowRight, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText, Sparkles, CheckCircle, ChevronRight, Car, Building, Building2, Smartphone, ShoppingBag, Home, Dumbbell, Wrench, Dog, Book, BookOpen, Baby, Package2, Palette, Store, UserSquare, Shirt, Activity, Sofa, GraduationCap, Laptop, Bike, Briefcase, type LucideIcon } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, X, Upload, MapPin, Euro, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText, Sparkles, CheckCircle, ChevronRight, type LucideIcon } from "lucide-react";
 import type { Category } from "@shared/schema";
 import {
   Dialog,
@@ -32,12 +31,7 @@ import {
 } from "@/components/ui/alert";
 import { PremiumFeaturesSelector } from "@/components/PremiumFeaturesSelector";
 import { Progress } from "@/components/ui/progress";
-
-// Helper function to get Lucide icon component from string name
-const getIconComponent = (iconName: string) => {
-  const IconComponent = (LucideIcons as any)[iconName];
-  return IconComponent || Tag; // Fallback to Tag icon if not found
-};
+import { getIconComponent } from "@/lib/utils";
 
 const provinces = [
   { value: "havana", label: "La Habana" },

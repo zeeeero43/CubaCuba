@@ -10,14 +10,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { ArrowLeft, Tag, ChevronRight } from "lucide-react";
-import * as LucideIcons from "lucide-react";
-
-// Helper function to get Lucide icon component from string name
-const getIconComponent = (iconName: string) => {
-  const IconComponent = (LucideIcons as any)[iconName];
-  return IconComponent || Tag; // Fallback to Tag icon if not found
-};
+import { ArrowLeft, ChevronRight } from "lucide-react";
+import { getIconComponent } from "@/lib/utils";
 
 export default function CategoriesPage() {
   const [, navigate] = useLocation();

@@ -19,6 +19,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { AdminLayout } from "@/components/AdminLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getIconComponent } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,15 +28,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, GripVertical, Pencil, Trash2, Package, Tag } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { Plus, GripVertical, Pencil, Trash2, Package } from "lucide-react";
 import type { Category } from "@shared/schema";
-
-// Helper function to get Lucide icon component from string name
-const getIconComponent = (iconName: string) => {
-  const IconComponent = (LucideIcons as any)[iconName];
-  return IconComponent || Tag; // Fallback to Tag icon if not found
-};
 
 interface SortableSubcategoryItemProps {
   category: Category;
