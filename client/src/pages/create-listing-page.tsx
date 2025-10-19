@@ -297,23 +297,49 @@ export default function CreateListingPage() {
       return;
     }
 
+    // Validar tamaño individual de cada archivo
+    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB por imagen
+    const filesToUpload: File[] = [];
+    let totalSize = 0;
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      if (file.size > 5 * 1024 * 1024) {
+      
+      if (file.size > MAX_FILE_SIZE) {
         toast({
-          title: "Archivo demasiado grande",
-          description: "El tamaño máximo permitido es 5MB",
+          title: "Imagen demasiado grande",
+          description: `"${file.name}" supera los 3MB. Por favor, comprime la imagen antes de subirla.`,
           variant: "destructive"
         });
         continue;
       }
 
+      totalSize += file.size;
+      filesToUpload.push(file);
+    }
+
+    // Validar tamaño total (las imágenes Base64 son ~33% más grandes)
+    const estimatedBase64Size = totalSize * 1.33;
+    if (estimatedBase64Size > 45 * 1024 * 1024) { // 45MB límite para estar seguro
+      toast({
+        title: "Demasiadas imágenes grandes",
+        description: "El tamaño total de las imágenes es demasiado grande. Por favor, sube menos imágenes o comprime las imágenes.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Subir las imágenes válidas
+    for (const file of filesToUpload) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImages(prev => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     }
+
+    // Resetear el input para permitir seleccionar el mismo archivo de nuevo
+    e.target.value = '';
   };
 
   const handleDragStart = (index: number) => {
