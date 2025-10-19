@@ -4,6 +4,51 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     
+    <!-- Google Translate DOM Patching - MUST BE FIRST -->
+    <script>
+      (function() {
+        const originalRemoveChild = Node.prototype.removeChild;
+        const originalInsertBefore = Node.prototype.insertBefore;
+        const originalReplaceChild = Node.prototype.replaceChild;
+
+        Node.prototype.removeChild = function(child) {
+          try {
+            return originalRemoveChild.call(this, child);
+          } catch (e) {
+            if (e.name === 'NotFoundError') {
+              console.warn('Google Translate DOM interference - removeChild suppressed');
+              return child;
+            }
+            throw e;
+          }
+        };
+
+        Node.prototype.insertBefore = function(newNode, referenceNode) {
+          try {
+            return originalInsertBefore.call(this, newNode, referenceNode);
+          } catch (e) {
+            if (e.name === 'NotFoundError') {
+              console.warn('Google Translate DOM interference - insertBefore suppressed');
+              return newNode;
+            }
+            throw e;
+          }
+        };
+
+        Node.prototype.replaceChild = function(newChild, oldChild) {
+          try {
+            return originalReplaceChild.call(this, newChild, oldChild);
+          } catch (e) {
+            if (e.name === 'NotFoundError') {
+              console.warn('Google Translate DOM interference - replaceChild suppressed');
+              return oldChild;
+            }
+            throw e;
+          }
+        };
+      })();
+    </script>
+    
     <!-- PWA Support -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0ea5e9" />
