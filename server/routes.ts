@@ -1215,14 +1215,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // ===== WEBP CONVERSION FOR BANDWIDTH OPTIMIZATION =====
       try {
-        // Convert to WebP with 70% quality and resize to max 2000px width
-        // This ensures even large files get compressed significantly
+        // Convert to WebP with 85% quality and resize to max 2000px width
+        // This ensures even large files get compressed significantly while maintaining quality
         await sharp(originalPath)
           .resize(2000, 2000, { 
             fit: 'inside', 
             withoutEnlargement: true 
           })
-          .webp({ quality: 70 })
+          .webp({ quality: 85 })
           .toFile(webpPath);
         
         // Delete original file to save storage space
@@ -1240,7 +1240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      res.status(500).json({ error: "Interner Serverfehler" });
+      res.status(500).json({ error: "Error al subir la imagen" });
     }
   });
 

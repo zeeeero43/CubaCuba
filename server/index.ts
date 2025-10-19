@@ -55,6 +55,7 @@ const globalLimiter = rateLimit({
   message: { message: "Demasiadas solicitudes, intenta de nuevo más tarde" },
   standardHeaders: true,
   legacyHeaders: false,
+  skipFailedRequests: true, // Don't count failed requests
 });
 
 // Authentication endpoints rate limiting
@@ -151,7 +152,12 @@ app.use((req, res, next) => {
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    let message = err.message || "Error interno del servidor";
+
+    // Translate common errors to Spanish
+    if (err.type === 'entity.too.large' || err.message?.includes('too large')) {
+      message = "El archivo es demasiado grande. Por favor, reduce el tamaño de las imágenes.";
+    }
 
     res.status(status).json({ message });
     throw err;
