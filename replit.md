@@ -15,8 +15,11 @@ Rico-Cuba is a full-stack e-commerce platform designed for the Cuban market, fea
 - **Banner Advertisement System**: 5 banner positions (header, sidebar, footer, mobile, category) with admin management for external advertising
 - **Hierarchical Category Management**: Accordion-based admin interface with drag & drop reordering for subcategories within their parent category
 - **Admin UI Consistency**: All admin pages now use AdminLayout with unified sidebar navigation
-- **Client-Specified Category Structure**: Complete category overhaul with 6 main categories (Comprar & Vender, Autos/Vehículos, Inmobiliaria, Generación de Energía, Servicios Ofrecidos, Material de Construcción & Maquinaria) based on client PDF specifications, all in Spanish with hierarchical subcategories
+- **Client-Specified Category Structure**: Complete category overhaul with 7 main categories (Comprar & Vender, Autos/Vehículos, Inmobiliaria, Generación de Energía, Servicios Ofrecidos, Material de Construcción & Maquinaria, Empleos) based on client PDF specifications, all in Spanish with hierarchical subcategories
 - **Dynamic Icon System**: Migrated from emoji icons to Lucide React icon components with centralized getIconComponent helper in lib/utils.ts for consistent icon rendering across all pages (home, categories, create-listing, admin)
+- **Job Listings Category**: New "Empleos" main category with subcategories "Ofertas de Empleo" (job offers) and "Busco Trabajo" (job seeking)
+- **Enhanced Listing Creation UX**: Auto-navigation to next wizard step after subcategory selection, province auto-filled from user profile, strengthened validation for required fields
+- **Mobile-First Bottom Navigation**: BottomNavigation component now hidden on desktop (lg:hidden) to prevent layout interference with dropdowns and maintain clean desktop UI
 
 ## User Preferences
 
