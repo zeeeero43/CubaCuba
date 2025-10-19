@@ -90,9 +90,6 @@ const categoryData = [
       { name: "Servicio de Acompañamiento", icon: "Users" },
       { name: "Servicio de Tickets", icon: "Ticket" },
       { name: "Otros", icon: "MoreHorizontal" },
-      { name: "Empleos", icon: "Briefcase" },
-      { name: "Ofertas de Empleo", icon: "ClipboardList" },
-      { name: "Busco Empleo", icon: "User" },
     ]
   },
   // 6. Material de Construcción & Maquinaria
@@ -110,6 +107,16 @@ const categoryData = [
       { name: "Mármol / Granito / Azulejos", icon: "Square" },
       { name: "Maquinaria de Construcción", icon: "Truck" },
       { name: "Otros", icon: "MoreHorizontal" },
+    ]
+  },
+  // 7. Empleos
+  {
+    name: "Empleos",
+    icon: "Users",
+    order: 7,
+    subcategories: [
+      { name: "Ofertas de Empleo", icon: "ClipboardList" },
+      { name: "Busco Trabajo", icon: "UserSearch" },
     ]
   },
 ];
