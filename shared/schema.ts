@@ -326,6 +326,7 @@ export const insertListingSchema = createInsertSchema(listings, {
   ]),
   currency: z.enum(["CUP", "USD"], { message: "Moneda inválida" }),
   priceType: z.enum(["fixed", "consult"], { message: "Tipo de precio inválido" }),
+  categoryId: z.string().min(1, "La categoría es requerida"),
   locationCity: z.string().min(2, "La ciudad es requerida"),
   locationRegion: z.string().min(1, "La región es requerida"),
   images: z.array(z.string().min(1, "Imagen inválida")).max(10, "Máximo 10 imágenes permitidas").default([]),

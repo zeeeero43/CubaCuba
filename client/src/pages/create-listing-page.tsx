@@ -132,13 +132,20 @@ export default function CreateListingPage() {
       currency: "CUP",
       categoryId: "",
       locationCity: "",
-      locationRegion: "",
+      locationRegion: user?.province || "",
       images: [],
       condition: "used",
       contactPhone: "",
       contactWhatsApp: "true", // Default WhatsApp ON
     },
   });
+
+  // Set user's province as default when user data is available
+  useEffect(() => {
+    if (user?.province && !form.getValues("locationRegion")) {
+      form.setValue("locationRegion", user.province);
+    }
+  }, [user, form]);
 
   // Watch form values
   const watchedCategoryId = form.watch("categoryId");
@@ -373,6 +380,14 @@ export default function CreateListingPage() {
           });
           return false;
         }
+        if (!values.locationCity || values.locationCity.trim().length === 0) {
+          toast({
+            title: "Ciudad requerida",
+            description: "Por favor ingresa tu ciudad",
+            variant: "destructive"
+          });
+          return false;
+        }
         return true;
         
       case 3: // Images
@@ -575,7 +590,15 @@ export default function CreateListingPage() {
                     ? 'border-2 border-blue-600 bg-blue-50 dark:bg-blue-950'
                     : 'border hover:border-blue-400'
                 }`}
-                onClick={() => form.setValue("categoryId", subcategory.id)}
+                onClick={() => {
+                  form.setValue("categoryId", subcategory.id);
+                  // Auto-navigate to next step after subcategory selection
+                  setTimeout(() => {
+                    if (validateStep(1)) {
+                      setCurrentStep(2);
+                    }
+                  }, 300);
+                }}
                 data-testid={`subcategory-card-${subcategory.id}`}
               >
                 <CardContent className="p-4">
