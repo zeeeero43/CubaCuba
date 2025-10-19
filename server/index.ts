@@ -81,9 +81,9 @@ const authSlowDown = slowDown({
 
 app.use(globalLimiter);
 
-// Body parsing with size limits
-app.use(express.json({ limit: '20kb' }));
-app.use(express.urlencoded({ extended: false, limit: '20kb' }));
+// Body parsing with size limits (50mb for image uploads as base64)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 // Apply auth rate limiting to authentication endpoints
 app.use('/api/login', authLimiter, authSlowDown);
