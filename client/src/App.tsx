@@ -90,10 +90,49 @@ function App() {
     };
     
     removeBanner();
-    const observer = new MutationObserver(removeBanner);
-    observer.observe(document.body, { childList: true, subtree: true });
+    const bannerObserver = new MutationObserver(removeBanner);
+    bannerObserver.observe(document.body, { childList: true, subtree: true });
+
+    // ULTIMATE FIX: Protect ALL Radix UI elements from Google Translate
+    const protectRadixElements = () => {
+      const radixSelectors = [
+        '[data-radix-collection-item]',
+        '[data-radix-select-viewport]',
+        '[data-radix-select-content]',
+        '[data-radix-select-item]',
+        '[data-radix-popper-content-wrapper]',
+        '[data-radix-portal]',
+        '[role="dialog"]',
+        '[role="menu"]',
+        '[role="menubar"]',
+        '[role="radiogroup"]',
+        '[role="checkbox"]',
+        '[role="switch"]',
+        '[role="combobox"]',
+        '[role="listbox"]',
+        '[role="option"]',
+        '[role="tooltip"]',
+        '[data-state]',
+        '[aria-hidden="true"]'
+      ].join(',');
+      
+      const elements = document.querySelectorAll(radixSelectors);
+      elements.forEach(el => {
+        if (!el.hasAttribute('translate')) {
+          el.setAttribute('translate', 'no');
+        }
+      });
+    };
+
+    // Run immediately and on DOM changes
+    protectRadixElements();
+    const radixObserver = new MutationObserver(protectRadixElements);
+    radixObserver.observe(document.body, { childList: true, subtree: true });
     
-    return () => observer.disconnect();
+    return () => {
+      bannerObserver.disconnect();
+      radixObserver.disconnect();
+    };
   }, []);
 
   return (
