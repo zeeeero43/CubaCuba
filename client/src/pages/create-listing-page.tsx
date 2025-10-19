@@ -14,7 +14,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowLeft, ArrowRight, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText, Sparkles, CheckCircle, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText, Sparkles, CheckCircle, ChevronRight, Car, Building, Building2, Smartphone, ShoppingBag, Home, Dumbbell, Wrench, Dog, Book, BookOpen, Baby, Package2, Palette, Store, UserSquare, Shirt, Activity, Sofa, GraduationCap, Laptop, Bike, Briefcase, type LucideIcon } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import type { Category } from "@shared/schema";
 import {
   Dialog,
@@ -31,6 +32,12 @@ import {
 } from "@/components/ui/alert";
 import { PremiumFeaturesSelector } from "@/components/PremiumFeaturesSelector";
 import { Progress } from "@/components/ui/progress";
+
+// Helper function to get Lucide icon component from string name
+const getIconComponent = (iconName: string) => {
+  const IconComponent = (LucideIcons as any)[iconName];
+  return IconComponent || Tag; // Fallback to Tag icon if not found
+};
 
 const provinces = [
   { value: "havana", label: "La Habana" },
@@ -70,13 +77,13 @@ export default function CreateListingPage() {
   const { user } = useAuth();
   
   // Fetch premium features
-  const { data: premiumFeatures = [] } = useQuery({
+  const { data: premiumFeatures = [] } = useQuery<any[]>({
     queryKey: ['/api/premium-features'],
   });
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState(1);
-  const hasPremiumFeatures = premiumFeatures && premiumFeatures.length > 0;
+  const hasPremiumFeatures = Array.isArray(premiumFeatures) && premiumFeatures.length > 0;
   const totalSteps = hasPremiumFeatures ? 5 : 4; // Skip premium step if no features available
   
   // Form state
@@ -436,7 +443,18 @@ export default function CreateListingPage() {
 
   const handleFinalSubmit = () => {
     if (!validateStep(currentStep)) return;
-    form.handleSubmit(onSubmit)();
+    
+    form.handleSubmit(
+      (data) => onSubmit(data),
+      (errors) => {
+        console.error("Form validation errors:", errors);
+        toast({
+          title: "Error de validación",
+          description: "Por favor completa todos los campos requeridos correctamente",
+          variant: "destructive"
+        });
+      }
+    )();
   };
 
   const renderStepIndicator = () => {
@@ -508,26 +526,31 @@ export default function CreateListingPage() {
         <div>
           <Label className="text-lg mb-4 block">Categoría Principal *</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {mainCategories.map((category) => (
-              <Card
-                key={category.id}
-                className={`cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
-                  selectedMainCategory === category.id
-                    ? 'border-2 border-blue-600 bg-blue-50 dark:bg-blue-950'
-                    : 'border hover:border-blue-400'
-                }`}
-                onClick={() => {
-                  setSelectedMainCategory(category.id);
-                  form.setValue("categoryId", "");
-                }}
-                data-testid={`category-card-${category.id}`}
-              >
-                <CardContent className="p-6 text-center">
-                  <div className="text-4xl mb-3">{category.icon}</div>
-                  <h3 className="font-semibold text-sm">{category.name}</h3>
-                </CardContent>
-              </Card>
-            ))}
+            {mainCategories.map((category) => {
+              const IconComponent = getIconComponent(category.icon);
+              return (
+                <Card
+                  key={category.id}
+                  className={`cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
+                    selectedMainCategory === category.id
+                      ? 'border-2 border-blue-600 bg-blue-50 dark:bg-blue-950'
+                      : 'border hover:border-blue-400'
+                  }`}
+                  onClick={() => {
+                    setSelectedMainCategory(category.id);
+                    form.setValue("categoryId", "");
+                  }}
+                  data-testid={`category-card-${category.id}`}
+                >
+                  <CardContent className="p-6 text-center">
+                    <div className="mb-3 flex justify-center">
+                      <IconComponent className="w-12 h-12 text-blue-600" />
+                    </div>
+                    <h3 className="font-semibold text-sm">{category.name}</h3>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       ) : (
