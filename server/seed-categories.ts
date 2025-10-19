@@ -92,7 +92,7 @@ const categoryData = [
       { name: "Otros", icon: "MoreHorizontal" },
       { name: "Empleos", icon: "Briefcase" },
       { name: "Ofertas de Empleo", icon: "ClipboardList" },
-      { name: "Busco Empleo", icon: "UserSearch" },
+      { name: "Busco Empleo", icon: "User" },
     ]
   },
   // 6. Material de Construcción & Maquinaria
@@ -103,13 +103,13 @@ const categoryData = [
     subcategories: [
       { name: "Aires Acondicionados & Accesorios", icon: "Wind" },
       { name: "Cemento / Pegamento / Masilla", icon: "Package2" },
-      { name: "Armadura de Hormigón", icon: "Construction" },
+      { name: "Armadura de Hormigón", icon: "HardHat" },
       { name: "Arena & Grava", icon: "Mountain" },
       { name: "Geo-Material", icon: "Layers" },
       { name: "Puertas / Ventanas & Portones", icon: "DoorOpen" },
       { name: "Mármol / Granito / Azulejos", icon: "Square" },
-      { name: "Maquinaria de Construcción", icon: "Forklift" },
-      { name: "Otros", icon: "Blocks" },
+      { name: "Maquinaria de Construcción", icon: "Truck" },
+      { name: "Otros", icon: "MoreHorizontal" },
     ]
   },
 ];

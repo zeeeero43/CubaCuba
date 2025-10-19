@@ -27,8 +27,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, GripVertical, Pencil, Trash2, Package } from "lucide-react";
+import { Plus, GripVertical, Pencil, Trash2, Package, Tag } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import type { Category } from "@shared/schema";
+
+// Helper function to get Lucide icon component from string name
+const getIconComponent = (iconName: string) => {
+  const IconComponent = (LucideIcons as any)[iconName];
+  return IconComponent || Tag; // Fallback to Tag icon if not found
+};
 
 interface SortableSubcategoryItemProps {
   category: Category;
@@ -50,6 +57,8 @@ function SortableSubcategoryItem({ category, onEdit, onDelete }: SortableSubcate
     transition,
   };
 
+  const IconComponent = getIconComponent(category.icon);
+
   return (
     <div
       ref={setNodeRef}
@@ -62,7 +71,7 @@ function SortableSubcategoryItem({ category, onEdit, onDelete }: SortableSubcate
       </div>
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-lg">{category.icon}</span>
+          <IconComponent className="w-5 h-5 text-blue-600" />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{category.name}</span>
         </div>
       </div>
@@ -94,7 +103,7 @@ export default function AdminCategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    icon: "📦",
+    icon: "Package",
     parentId: "",
     color: "#10b981"
   });
@@ -252,13 +261,16 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div>
-                  <Label>Symbol (Emoji)</Label>
+                  <Label>Symbol (Lucide Icon Name)</Label>
                   <Input
                     value={formData.icon}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                    placeholder="📦"
+                    placeholder="Package"
                     data-testid="input-category-icon"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Beispiele: Car, Home, Smartphone, Package, etc.
+                  </p>
                 </div>
                 <div>
                   <Label>Farbe</Label>
@@ -277,11 +289,17 @@ export default function AdminCategoriesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Keine (Hauptkategorie)</SelectItem>
-                      {categoriesData?.mainCategories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.icon} {cat.name}
-                        </SelectItem>
-                      ))}
+                      {categoriesData?.mainCategories.map((cat) => {
+                        const IconComp = getIconComponent(cat.icon);
+                        return (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            <div className="flex items-center gap-2">
+                              <IconComp className="w-4 h-4" />
+                              {cat.name}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -312,7 +330,10 @@ export default function AdminCategoriesPage() {
                     <div className="flex items-center gap-3 px-4">
                       <AccordionTrigger className="flex-1 py-4 hover:no-underline">
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{mainCategory.icon}</span>
+                          {(() => {
+                            const MainIconComponent = getIconComponent(mainCategory.icon);
+                            return <MainIconComponent className="w-7 h-7 text-blue-600" />;
+                          })()}
                           <span className="font-semibold text-lg">{mainCategory.name}</span>
                           <span className="text-xs text-gray-500 ml-2">
                             ({subcategories.length} Unterkategorien)
@@ -396,12 +417,15 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
                 <div>
-                  <Label>Symbol (Emoji)</Label>
+                  <Label>Symbol (Lucide Icon Name)</Label>
                   <Input
                     value={formData.icon}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     data-testid="input-edit-category-icon"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Beispiele: Car, Home, Smartphone, Package, etc.
+                  </p>
                 </div>
                 <div>
                   <Label>Farbe</Label>
@@ -422,11 +446,17 @@ export default function AdminCategoriesPage() {
                       <SelectItem value="none">Keine (Hauptkategorie)</SelectItem>
                       {categoriesData?.mainCategories
                         .filter(cat => cat.id !== editingCategory.id)
-                        .map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.icon} {cat.name}
-                          </SelectItem>
-                        ))}
+                        .map((cat) => {
+                          const IconComp = getIconComponent(cat.icon);
+                          return (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              <div className="flex items-center gap-2">
+                                <IconComp className="w-4 h-4" />
+                                {cat.name}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                     </SelectContent>
                   </Select>
                 </div>
