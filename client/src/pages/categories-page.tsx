@@ -10,18 +10,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { 
-  ArrowLeft,
-  ShoppingBag,
-  Wrench,
-  Car,
-  Building2,
-  GraduationCap,
-  Briefcase,
-  Building,
-  Package2,
-  ChevronRight
-} from "lucide-react";
+import { ArrowLeft, Tag, ChevronRight } from "lucide-react";
+import * as LucideIcons from "lucide-react";
+
+// Helper function to get Lucide icon component from string name
+const getIconComponent = (iconName: string) => {
+  const IconComponent = (LucideIcons as any)[iconName];
+  return IconComponent || Tag; // Fallback to Tag icon if not found
+};
 
 export default function CategoriesPage() {
   const [, navigate] = useLocation();
@@ -36,18 +32,6 @@ export default function CategoriesPage() {
 
   const mainCategories = categoriesTree?.mainCategories || [];
   const subcategories = categoriesTree?.subcategories || {};
-
-  // Icon mapping
-  const iconMap: Record<string, any> = {
-    'ShoppingBag': ShoppingBag,
-    'Wrench': Wrench,
-    'Car': Car,
-    'Building2': Building2,
-    'GraduationCap': GraduationCap,
-    'Briefcase': Briefcase,
-    'Building': Building,
-    'Package2': Package2,
-  };
 
   const colorMap: Record<string, { bg: string; text: string; border: string }> = {
     'cyan': { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200' },
@@ -92,7 +76,7 @@ export default function CategoriesPage() {
         ) : (
           <Accordion type="multiple" className="w-full space-y-3">
             {mainCategories.map((category) => {
-              const IconComponent = iconMap[category.icon] || ShoppingBag;
+              const IconComponent = getIconComponent(category.icon);
               const colors = colorMap[category.color] || colorMap['cyan'];
               const subs = subcategories[category.id] || [];
 

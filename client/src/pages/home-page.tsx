@@ -7,20 +7,14 @@ import { ListingCard } from "@/components/ListingCard";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import type { Category, Listing } from "@shared/schema";
 import { useEffect, useRef } from "react";
-import { 
-  Home,
-  ShirtIcon as Shirt,
-  Monitor,
-  ArrowRight,
-  ShoppingBag,
-  Wrench,
-  Car,
-  Building2,
-  GraduationCap,
-  Briefcase,
-  Building,
-  Package2
-} from "lucide-react";
+import { ArrowRight, Tag } from "lucide-react";
+import * as LucideIcons from "lucide-react";
+
+// Helper function to get Lucide icon component from string name
+const getIconComponent = (iconName: string) => {
+  const IconComponent = (LucideIcons as any)[iconName];
+  return IconComponent || Tag; // Fallback to Tag icon if not found
+};
 
 export default function HomePage() {
   const [, navigate] = useLocation();
@@ -76,21 +70,6 @@ export default function HomePage() {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Icon mapping for categories
-  const iconMap: Record<string, any> = {
-    'Home': Home,
-    'Shirt': Shirt, 
-    'Monitor': Monitor,
-    'ShoppingBag': ShoppingBag,
-    'Wrench': Wrench,
-    'Car': Car,
-    'Building2': Building2,
-    'GraduationCap': GraduationCap,
-    'Briefcase': Briefcase,
-    'Building': Building,
-    'Package2': Package2,
-  };
-
   const colorMap: Record<string, { bg: string; text: string }> = {
     'cyan': { bg: 'bg-emerald-500', text: 'text-white' },
     'black': { bg: 'bg-gray-800', text: 'text-white' },
@@ -141,7 +120,7 @@ export default function HomePage() {
               {/* Mobile: Only 3 categories + arrow */}
               <div className="flex md:hidden gap-4 px-4 overflow-x-auto no-scrollbar pb-2">
                 {mainCategories.slice(0, 3).map((category) => {
-                  const IconComponent = iconMap[category.icon] || ShoppingBag;
+                  const IconComponent = getIconComponent(category.icon);
                   const colors = colorMap[category.color] || colorMap['cyan'];
                   return (
                     <button
@@ -178,7 +157,7 @@ export default function HomePage() {
               {/* Desktop: All categories + arrow */}
               <div className="hidden md:flex gap-4 px-4 overflow-x-auto no-scrollbar pb-2">
                 {mainCategories.map((category) => {
-                  const IconComponent = iconMap[category.icon] || ShoppingBag;
+                  const IconComponent = getIconComponent(category.icon);
                   const colors = colorMap[category.color] || colorMap['cyan'];
                   return (
                     <button
