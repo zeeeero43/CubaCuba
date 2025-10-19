@@ -12,8 +12,8 @@ export default function BottomNavigation() {
   const [location, navigate] = useLocation();
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
-      <div className="max-w-md mx-auto px-4 py-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
+      <div className="max-w-md lg:max-w-6xl mx-auto px-4 py-2">
         <div className="flex items-center justify-around">
           <Button 
             variant="ghost" 

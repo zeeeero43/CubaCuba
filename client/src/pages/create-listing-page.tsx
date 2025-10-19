@@ -156,7 +156,7 @@ export default function CreateListingPage() {
   // Update phone number when user data loads
   useEffect(() => {
     if (user?.phone && !form.getValues("contactPhone")) {
-      form.setValue("contactPhone", user.phone, { shouldDirty: false });
+      form.setValue("contactPhone", user.phone, { shouldValidate: true, shouldTouch: true });
     }
   }, [user?.phone]);
 
@@ -376,14 +376,6 @@ export default function CreateListingPage() {
           toast({
             title: "Provincia requerida",
             description: "Por favor selecciona tu provincia",
-            variant: "destructive"
-          });
-          return false;
-        }
-        if (!values.locationCity || values.locationCity.trim().length === 0) {
-          toast({
-            title: "Ciudad requerida",
-            description: "Por favor ingresa tu ciudad",
             variant: "destructive"
           });
           return false;

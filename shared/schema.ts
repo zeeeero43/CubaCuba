@@ -109,7 +109,7 @@ export const listings = pgTable("listings", {
   priceType: text("price_type").notNull().default("fixed"), // "fixed" | "consult"
   categoryId: varchar("category_id").references(() => categories.id, { onDelete: "set null" }),
   sellerId: varchar("seller_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  locationCity: text("location_city").notNull(),
+  locationCity: text("location_city"),
   locationRegion: text("location_region").notNull(), // province
   latitude: decimal("latitude", { precision: 10, scale: 8 }),  // Geographical coordinates
   longitude: decimal("longitude", { precision: 11, scale: 8 }), // for distance-based search
@@ -327,7 +327,11 @@ export const insertListingSchema = createInsertSchema(listings, {
   currency: z.enum(["CUP", "USD"], { message: "Moneda inválida" }),
   priceType: z.enum(["fixed", "consult"], { message: "Tipo de precio inválido" }),
   categoryId: z.string().min(1, "La categoría es requerida"),
-  locationCity: z.string().min(2, "La ciudad es requerida"),
+  locationCity: z.union([
+    z.string().min(2, "La ciudad debe tener al menos 2 caracteres"),
+    z.literal(""),
+    z.null()
+  ]).optional(),
   locationRegion: z.string().min(1, "La región es requerida"),
   images: z.array(z.string().min(1, "Imagen inválida")).max(10, "Máximo 10 imágenes permitidas").default([]),
   condition: z.enum(["new", "used", "defective"], { message: "Condición inválida" }),
