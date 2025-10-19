@@ -143,7 +143,7 @@ export default function CreateListingPage() {
   // Set user's province as default when user data is available
   useEffect(() => {
     if (user?.province && !form.getValues("locationRegion")) {
-      form.setValue("locationRegion", user.province);
+      form.setValue("locationRegion", user.province, { shouldValidate: true, shouldTouch: true });
     }
   }, [user, form]);
 
