@@ -81,6 +81,21 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    const removeBanner = () => {
+      const banner = document.getElementById('replit-dev-banner');
+      if (banner) {
+        banner.remove();
+      }
+    };
+    
+    removeBanner();
+    const observer = new MutationObserver(removeBanner);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
