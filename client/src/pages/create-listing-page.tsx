@@ -130,6 +130,7 @@ export default function CreateListingPage() {
       description: "",
       price: "",
       currency: "CUP",
+      priceType: "fixed",
       categoryId: "",
       locationCity: "",
       locationRegion: user?.province || "",
@@ -495,7 +496,7 @@ export default function CreateListingPage() {
               <div className="flex flex-col items-center flex-1">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
                   currentStep === step.number 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-green-600 text-white' 
                     : currentStep > step.number 
                     ? 'bg-green-600 text-white' 
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
@@ -554,8 +555,8 @@ export default function CreateListingPage() {
                   key={category.id}
                   className={`cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
                     selectedMainCategory === category.id
-                      ? 'border-2 border-blue-600 bg-blue-50 dark:bg-blue-950'
-                      : 'border hover:border-blue-400'
+                      ? 'border-2 border-green-600 bg-green-50 dark:bg-green-950'
+                      : 'border hover:border-green-400'
                   }`}
                   onClick={() => {
                     setSelectedMainCategory(category.id);
@@ -565,7 +566,7 @@ export default function CreateListingPage() {
                 >
                   <CardContent className="p-6 text-center">
                     <div className="mb-3 flex justify-center">
-                      <IconComponent className="w-12 h-12 text-blue-600" />
+                      <IconComponent className="w-12 h-12 text-green-600" />
                     </div>
                     <h3 className="font-semibold text-sm">{category.name}</h3>
                   </CardContent>
@@ -599,8 +600,8 @@ export default function CreateListingPage() {
                 key={subcategory.id}
                 className={`cursor-pointer transition-all hover:shadow-md ${
                   watchedCategoryId === subcategory.id
-                    ? 'border-2 border-blue-600 bg-blue-50 dark:bg-blue-950'
-                    : 'border hover:border-blue-400'
+                    ? 'border-2 border-green-600 bg-green-50 dark:bg-green-950'
+                    : 'border hover:border-green-400'
                 }`}
                 onClick={() => {
                   form.setValue("categoryId", subcategory.id);
@@ -615,7 +616,7 @@ export default function CreateListingPage() {
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <ChevronRight className="w-5 h-5 text-blue-600" />
+                    <ChevronRight className="w-5 h-5 text-green-600" />
                     <span className="font-medium">{subcategory.name}</span>
                   </div>
                 </CardContent>
@@ -764,14 +765,14 @@ export default function CreateListingPage() {
                   }`}
                   data-testid={`image-preview-${index}`}
                 >
-                  <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 transition-colors">
+                  <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-green-400 transition-colors">
                     <img
                       src={image}
                       alt={`Preview ${index + 1}`}
                       className="w-full h-32 object-cover"
                     />
                     {index === 0 && (
-                      <Badge className="absolute top-2 left-2 bg-blue-600 shadow-lg">
+                      <Badge className="absolute top-2 left-2 bg-green-600 shadow-lg">
                         📸 Principal
                       </Badge>
                     )}
@@ -902,7 +903,7 @@ export default function CreateListingPage() {
         <div className="mb-8">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
+            className="flex items-center gap-2 text-green-600 hover:text-green-700 mb-4"
             data-testid="button-back"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -1027,7 +1028,7 @@ export default function CreateListingPage() {
               data-testid="button-appeal"
               disabled={!rejectionData?.reviewId}
               size="lg"
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
             >
               📋 Presentar Apelación
             </Button>
