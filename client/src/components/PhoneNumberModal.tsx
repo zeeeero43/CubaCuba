@@ -50,7 +50,6 @@ interface PhoneNumberModalProps {
 
 export function PhoneNumberModal({ open, onClose }: PhoneNumberModalProps) {
   const { toast } = useToast();
-  const [selectedProvince, setSelectedProvince] = useState("");
 
   const form = useForm<UpdatePhone>({
     resolver: zodResolver(updatePhoneSchema),
@@ -59,6 +58,8 @@ export function PhoneNumberModal({ open, onClose }: PhoneNumberModalProps) {
       province: "",
     },
   });
+
+  const watchedProvince = form.watch("province");
 
   const updatePhoneMutation = useMutation({
     mutationFn: async (data: UpdatePhone) => {
@@ -138,11 +139,8 @@ export function PhoneNumberModal({ open, onClose }: PhoneNumberModalProps) {
           <div className="space-y-2">
             <Label htmlFor="province">Provincia</Label>
             <Select 
-              onValueChange={(value) => {
-                setSelectedProvince(value);
-                form.setValue("province", value);
-              }}
-              value={selectedProvince}
+              onValueChange={(value) => form.setValue("province", value)}
+              value={watchedProvince}
             >
               <SelectTrigger data-testid="select-province-modal">
                 <SelectValue placeholder="Selecciona tu provincia" />

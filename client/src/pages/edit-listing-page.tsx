@@ -108,6 +108,15 @@ export default function EditListingPage() {
     },
   });
 
+  // Watch form values outside of render to avoid infinite loops
+  const watchedDescription = form.watch("description");
+  const watchedCurrency = form.watch("currency");
+  const watchedPriceType = form.watch("priceType");
+  const watchedCategoryId = form.watch("categoryId");
+  const watchedLocationRegion = form.watch("locationRegion");
+  const watchedCondition = form.watch("condition");
+  const watchedContactWhatsApp = form.watch("contactWhatsApp");
+
   const updateListingMutation = useMutation({
     mutationFn: (data: InsertListing) => apiRequest('PUT', `/api/listings/${id}`, data),
     onSuccess: () => {
@@ -365,11 +374,11 @@ export default function EditListingPage() {
                 />
                 <div className="flex items-center justify-between text-sm">
                   <p className={`${
-                    (form.watch("description")?.length || 0) < descriptionMinLength 
+                    (watchedDescription?.length || 0) < descriptionMinLength 
                       ? 'text-destructive' 
                       : 'text-muted-foreground'
                   }`} data-testid="text-description-counter">
-                    {form.watch("description")?.length || 0} / {descriptionMinLength} caracteres mínimos
+                    {watchedDescription?.length || 0} / {descriptionMinLength} caracteres mínimos
                   </p>
                 </div>
                 {form.formState.errors.description && (
@@ -422,7 +431,7 @@ export default function EditListingPage() {
                     <Label htmlFor="currency">Moneda *</Label>
                     <Select 
                       onValueChange={(value) => form.setValue("currency", value as "CUP" | "USD")}
-                      value={form.watch("currency") || "CUP"}
+                      value={watchedCurrency || "CUP"}
                       disabled={noPriceSelected}
                     >
                       <SelectTrigger data-testid="select-currency">
@@ -440,7 +449,7 @@ export default function EditListingPage() {
                   <Label htmlFor="priceType">Tipo de precio *</Label>
                   <Select 
                     onValueChange={(value) => form.setValue("priceType", value as "fixed" | "negotiable")}
-                    value={form.watch("priceType") || ""}
+                    value={watchedPriceType || ""}
                   >
                     <SelectTrigger data-testid="select-price-type">
                       <SelectValue placeholder="Selecciona tipo" />
@@ -490,7 +499,7 @@ export default function EditListingPage() {
                 <Label htmlFor="categoryId">Subcategoría *</Label>
                 <Select 
                   onValueChange={(value) => form.setValue("categoryId", value)}
-                  value={form.watch("categoryId") || ""}
+                  value={watchedCategoryId || ""}
                   disabled={!selectedMainCategory}
                 >
                   <SelectTrigger data-testid="select-subcategory">
@@ -527,7 +536,7 @@ export default function EditListingPage() {
                   <Label htmlFor="locationRegion">Provincia *</Label>
                   <Select 
                     onValueChange={(value) => form.setValue("locationRegion", value)}
-                    value={form.watch("locationRegion") || ""}
+                    value={watchedLocationRegion || ""}
                   >
                     <SelectTrigger data-testid="select-province">
                       <SelectValue placeholder="Selecciona provincia" />
@@ -550,7 +559,7 @@ export default function EditListingPage() {
                 <Label htmlFor="condition">Estado del artículo *</Label>
                 <Select 
                   onValueChange={(value) => form.setValue("condition", value as "new" | "used" | "defective")}
-                  value={form.watch("condition") || ""}
+                  value={watchedCondition || ""}
                 >
                   <SelectTrigger data-testid="select-condition">
                     <SelectValue placeholder="Selecciona el estado" />
@@ -683,7 +692,7 @@ export default function EditListingPage() {
                 <input
                   type="checkbox"
                   id="whatsapp"
-                  checked={form.watch("contactWhatsApp") === "true"}
+                  checked={watchedContactWhatsApp === "true"}
                   onChange={(e) => form.setValue("contactWhatsApp", e.target.checked ? "true" : "false")}
                   className="rounded"
                   data-testid="checkbox-whatsapp"
