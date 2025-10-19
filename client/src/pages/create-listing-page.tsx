@@ -532,7 +532,7 @@ export default function CreateListingPage() {
                       <SelectTrigger data-testid="select-currency">
                         <SelectValue placeholder="Selecciona moneda" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent translate="no">
                         <SelectItem value="CUP">Peso Cubano (CUP)</SelectItem>
                         <SelectItem value="USD">Dólar (USD)</SelectItem>
                       </SelectContent>
@@ -549,7 +549,7 @@ export default function CreateListingPage() {
                     <SelectTrigger data-testid="select-price-type">
                       <SelectValue placeholder="Selecciona tipo" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent translate="no">
                       <SelectItem value="fixed">Precio fijo</SelectItem>
                       <SelectItem value="negotiable">Negociable</SelectItem>
                     </SelectContent>
@@ -580,7 +580,7 @@ export default function CreateListingPage() {
                   <SelectTrigger data-testid="select-main-category">
                     <SelectValue placeholder="Selecciona categoría principal" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent translate="no">
                     {mainCategories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -600,7 +600,7 @@ export default function CreateListingPage() {
                   <SelectTrigger data-testid="select-subcategory">
                     <SelectValue placeholder={selectedMainCategory ? "Selecciona subcategoría" : "Primero selecciona una categoría principal"} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent translate="no">
                     {availableSubcategories.map((subcategory) => (
                       <SelectItem key={subcategory.id} value={subcategory.id}>
                         {subcategory.name}
@@ -636,7 +636,7 @@ export default function CreateListingPage() {
                     <SelectTrigger data-testid="select-province">
                       <SelectValue placeholder="Selecciona provincia" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent translate="no">
                       {provinces.map((province) => (
                         <SelectItem key={province.value} value={province.value}>
                           {province.label}
@@ -659,7 +659,7 @@ export default function CreateListingPage() {
                   <SelectTrigger data-testid="select-condition">
                     <SelectValue placeholder="Selecciona el estado" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent translate="no">
                     <SelectItem value="new">Nuevo</SelectItem>
                     <SelectItem value="used">Usado - Buen estado</SelectItem>
                     <SelectItem value="defective">Usado - Con defectos</SelectItem>

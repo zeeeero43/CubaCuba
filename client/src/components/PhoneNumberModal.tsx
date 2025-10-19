@@ -145,7 +145,7 @@ export function PhoneNumberModal({ open, onClose }: PhoneNumberModalProps) {
               <SelectTrigger data-testid="select-province-modal">
                 <SelectValue placeholder="Selecciona tu provincia" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent translate="no">
                 {provinces.map((province) => (
                   <SelectItem key={province.value} value={province.value}>
                     {province.label}

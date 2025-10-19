@@ -1,0 +1,71 @@
+Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+    at removeChildFromContainer (chunk-RPCDYKBN.js?v=495822ee:8462:23)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17508:21)
+    at recursivelyTraverseDeletionEffects (chunk-RPCDYKBN.js?v=495822ee:17486:13)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17534:17)
+    at recursivelyTraverseDeletionEffects (chunk-RPCDYKBN.js?v=495822ee:17486:13)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17577:15)
+    at recursivelyTraverseDeletionEffects (chunk-RPCDYKBN.js?v=495822ee:17486:13)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17503:17)
+    at recursivelyTraverseDeletionEffects (chunk-RPCDYKBN.js?v=495822ee:17486:13)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17577:15)Understand this error
+chunk-RPCDYKBN.js?v=495822ee:14032 The above error occurred in the <Portal> component:
+
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=495822ee:296:58
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=495822ee:79:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=495822ee:56:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=495822ee:42:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-J6XQH5WG.js?v=495822ee:258:22
+    at SelectPortal
+    at _c7 (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/components/ui/select.tsx:123:12)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at CollectionProvider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ND3F6ENZ.js?v=495822ee:29:13)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at Popper (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DWHWBRTN.js?v=495822ee:1919:11)
+    at Select (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=495822ee:84:5)
+    at div
+    at form
+    at div
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=495822ee:42:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-J6XQH5WG.js?v=495822ee:59:7
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=495822ee:79:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=495822ee:56:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=495822ee:42:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RAC7JVDL.js?v=495822ee:29:5
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YMPAITLL.js?v=495822ee:233:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YMPAITLL.js?v=495822ee:156:58
+    at Presence (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOR5ERF5.js?v=495822ee:24:11)
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YMPAITLL.js?v=495822ee:147:64
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=495822ee:79:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=495822ee:56:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=495822ee:42:13
+    at https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-J6XQH5WG.js?v=495822ee:258:22
+    at Presence (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOR5ERF5.js?v=495822ee:24:11)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at DialogPortal (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YMPAITLL.js?v=495822ee:109:11)
+    at _c3 (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/components/ui/dialog.tsx:52:12)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at Dialog (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YMPAITLL.js?v=495822ee:50:5)
+    at PhoneNumberModal (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/components/PhoneNumberModal.tsx:60:36)
+    at AuthProvider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/src/hooks/use-auth.tsx:27:32)
+    at Provider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-54LY3QNH.js?v=495822ee:38:15)
+    at TooltipProvider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=495822ee:61:5)
+    at QueryClientProvider (https://49276f75-2ab3-444f-8c76-c736223cb661-00-jbclcke0m955.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=495822ee:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-RPCDYKBN.js?v=495822ee:14032Understand this error
+chunk-RPCDYKBN.js?v=495822ee:9129 Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+    at removeChildFromContainer (chunk-RPCDYKBN.js?v=495822ee:8462:23)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17508:21)
+    at recursivelyTraverseDeletionEffects (chunk-RPCDYKBN.js?v=495822ee:17486:13)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17534:17)
+    at recursivelyTraverseDeletionEffects (chunk-RPCDYKBN.js?v=495822ee:17486:13)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17577:15)
+    at recursivelyTraverseDeletionEffects (chunk-RPCDYKBN.js?v=495822ee:17486:13)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17503:17)
+    at recursivelyTraverseDeletionEffects (chunk-RPCDYKBN.js?v=495822ee:17486:13)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=495822ee:17577:15)
