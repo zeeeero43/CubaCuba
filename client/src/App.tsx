@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
@@ -90,65 +91,28 @@ function App() {
     };
     
     removeBanner();
-    const bannerObserver = new MutationObserver(removeBanner);
-    bannerObserver.observe(document.body, { childList: true, subtree: true });
-
-    // ULTIMATE FIX: Protect ALL Radix UI elements from Google Translate
-    const protectRadixElements = () => {
-      const radixSelectors = [
-        '[data-radix-collection-item]',
-        '[data-radix-select-viewport]',
-        '[data-radix-select-content]',
-        '[data-radix-select-item]',
-        '[data-radix-popper-content-wrapper]',
-        '[data-radix-portal]',
-        '[role="dialog"]',
-        '[role="menu"]',
-        '[role="menubar"]',
-        '[role="radiogroup"]',
-        '[role="checkbox"]',
-        '[role="switch"]',
-        '[role="combobox"]',
-        '[role="listbox"]',
-        '[role="option"]',
-        '[role="tooltip"]',
-        '[data-state]',
-        '[aria-hidden="true"]'
-      ].join(',');
-      
-      const elements = document.querySelectorAll(radixSelectors);
-      elements.forEach(el => {
-        if (!el.hasAttribute('translate')) {
-          el.setAttribute('translate', 'no');
-        }
-      });
-    };
-
-    // Run immediately and on DOM changes
-    protectRadixElements();
-    const radixObserver = new MutationObserver(protectRadixElements);
-    radixObserver.observe(document.body, { childList: true, subtree: true });
+    const observer = new MutationObserver(removeBanner);
+    observer.observe(document.body, { childList: true, subtree: true });
     
-    return () => {
-      bannerObserver.disconnect();
-      radixObserver.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <div className="min-h-screen flex flex-col">
-            <div className="flex-1 pb-20">
-              <Router />
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <div className="min-h-screen flex flex-col">
+              <div className="flex-1 pb-20">
+                <Router />
+              </div>
             </div>
-          </div>
-          <BottomNavigation />
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+            <BottomNavigation />
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
