@@ -449,9 +449,29 @@ export default function CreateListingPage() {
       (data) => onSubmit(data),
       (errors) => {
         console.error("Form validation errors:", errors);
+        
+        // Extract specific error messages
+        const errorMessages = Object.entries(errors)
+          .map(([field, error]: [string, any]) => {
+            const fieldNames: Record<string, string> = {
+              title: "Título",
+              description: "Descripción",
+              categoryId: "Categoría",
+              locationRegion: "Provincia",
+              locationCity: "Ciudad",
+              contactPhone: "Teléfono",
+              price: "Precio",
+              images: "Imágenes",
+              condition: "Condición",
+              contactWhatsApp: "WhatsApp"
+            };
+            return `${fieldNames[field] || field}: ${error?.message || 'Campo requerido'}`;
+          })
+          .join("\n");
+        
         toast({
           title: "Error de validación",
-          description: "Por favor completa todos los campos requeridos correctamente",
+          description: errorMessages || "Por favor completa todos los campos requeridos correctamente",
           variant: "destructive"
         });
       }
