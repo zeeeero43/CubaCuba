@@ -69,9 +69,15 @@ export default function CreateListingPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   
+  // Fetch premium features
+  const { data: premiumFeatures = [] } = useQuery({
+    queryKey: ['/api/premium-features'],
+  });
+
   // Wizard state
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5;
+  const hasPremiumFeatures = premiumFeatures && premiumFeatures.length > 0;
+  const totalSteps = hasPremiumFeatures ? 5 : 4; // Skip premium step if no features available
   
   // Form state
   const [images, setImages] = useState<string[]>([]);
@@ -439,7 +445,7 @@ export default function CreateListingPage() {
       { number: 2, label: "Detalles" },
       { number: 3, label: "Imágenes" },
       { number: 4, label: "Precio" },
-      { number: 5, label: "Premium" },
+      ...(hasPremiumFeatures ? [{ number: 5, label: "Premium" }] : []),
     ];
 
     return (
@@ -485,7 +491,7 @@ export default function CreateListingPage() {
       case 4:
         return renderPriceStep();
       case 5:
-        return renderPremiumStep();
+        return hasPremiumFeatures ? renderPremiumStep() : null;
       default:
         return null;
     }
@@ -498,50 +504,74 @@ export default function CreateListingPage() {
         <p className="text-gray-600 dark:text-gray-400">Elige la categoría que mejor describa tu producto</p>
       </div>
 
-      <div className="space-y-4">
+      {!selectedMainCategory ? (
         <div>
-          <Label htmlFor="main-category">Categoría Principal *</Label>
-          <Select
-            value={selectedMainCategory}
-            onValueChange={(value) => {
-              setSelectedMainCategory(value);
-              form.setValue("categoryId", "");
-            }}
-          >
-            <SelectTrigger data-testid="select-main-category">
-              <SelectValue placeholder="Selecciona categoría principal" />
-            </SelectTrigger>
-            <SelectContent>
-              {mainCategories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.icon} {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {selectedMainCategory && availableSubcategories.length > 0 && (
-          <div>
-            <Label htmlFor="subcategory">Subcategoría *</Label>
-            <Select
-              value={watchedCategoryId || ""}
-              onValueChange={(value) => form.setValue("categoryId", value)}
-            >
-              <SelectTrigger data-testid="select-subcategory">
-                <SelectValue placeholder="Selecciona subcategoría" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableSubcategories.map((subcategory) => (
-                  <SelectItem key={subcategory.id} value={subcategory.id}>
-                    {subcategory.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Label className="text-lg mb-4 block">Categoría Principal *</Label>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {mainCategories.map((category) => (
+              <Card
+                key={category.id}
+                className={`cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
+                  selectedMainCategory === category.id
+                    ? 'border-2 border-blue-600 bg-blue-50 dark:bg-blue-950'
+                    : 'border hover:border-blue-400'
+                }`}
+                onClick={() => {
+                  setSelectedMainCategory(category.id);
+                  form.setValue("categoryId", "");
+                }}
+                data-testid={`category-card-${category.id}`}
+              >
+                <CardContent className="p-6 text-center">
+                  <div className="text-4xl mb-3">{category.icon}</div>
+                  <h3 className="font-semibold text-sm">{category.name}</h3>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label className="text-lg">Subcategoría *</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedMainCategory("");
+                form.setValue("categoryId", "");
+              }}
+              data-testid="button-change-category"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Cambiar categoría
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {availableSubcategories.map((subcategory) => (
+              <Card
+                key={subcategory.id}
+                className={`cursor-pointer transition-all hover:shadow-md ${
+                  watchedCategoryId === subcategory.id
+                    ? 'border-2 border-blue-600 bg-blue-50 dark:bg-blue-950'
+                    : 'border hover:border-blue-400'
+                }`}
+                onClick={() => form.setValue("categoryId", subcategory.id)}
+                data-testid={`subcategory-card-${subcategory.id}`}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <ChevronRight className="w-5 h-5 text-blue-600" />
+                    <span className="font-medium">{subcategory.name}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -665,35 +695,48 @@ export default function CreateListingPage() {
         </div>
 
         {images.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {images.map((image, index) => (
-              <div
-                key={index}
-                draggable
-                onDragStart={() => handleDragStart(index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragEnd={handleDragEnd}
-                className="relative group cursor-move"
-                data-testid={`image-preview-${index}`}
-              >
-                <img
-                  src={image}
-                  alt={`Preview ${index + 1}`}
-                  className="w-full h-32 object-cover rounded-lg"
-                />
-                {index === 0 && (
-                  <Badge className="absolute top-2 left-2 bg-blue-600">Principal</Badge>
-                )}
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  data-testid={`button-remove-image-${index}`}
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Arrastra las imágenes para cambiar su orden. La primera imagen será la principal.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {images.map((image, index) => (
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`relative group cursor-move transition-all ${
+                    draggedIndex === index ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
+                  }`}
+                  data-testid={`image-preview-${index}`}
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+                  <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 transition-colors">
+                    <img
+                      src={image}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover"
+                    />
+                    {index === 0 && (
+                      <Badge className="absolute top-2 left-2 bg-blue-600 shadow-lg">
+                        📸 Principal
+                      </Badge>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
+                      data-testid={`button-remove-image-${index}`}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none" />
+                  </div>
+                  <p className="text-xs text-center mt-1 text-gray-500">Imagen {index + 1}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -750,7 +793,6 @@ export default function CreateListingPage() {
                 <SelectContent>
                   <SelectItem value="CUP">CUP (Pesos Cubanos)</SelectItem>
                   <SelectItem value="USD">USD (Dólares)</SelectItem>
-                  <SelectItem value="EUR">EUR (Euros)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
