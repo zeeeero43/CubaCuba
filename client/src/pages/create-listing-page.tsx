@@ -14,7 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowLeft, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera, AlertTriangle, Ban, FileText, Sparkles, CheckCircle, ChevronRight } from "lucide-react";
 import type { Category } from "@shared/schema";
 import {
   Dialog,
@@ -30,6 +30,7 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { PremiumFeaturesSelector } from "@/components/PremiumFeaturesSelector";
+import { Progress } from "@/components/ui/progress";
 
 const provinces = [
   { value: "havana", label: "La Habana" },
@@ -67,16 +68,24 @@ export default function CreateListingPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 5;
+  
+  // Form state
   const [images, setImages] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
+  const [selectedPremiumFeatures, setSelectedPremiumFeatures] = useState<string[]>([]);
+  const [createdListingId, setCreatedListingId] = useState<string | null>(null);
+  const [noPriceSelected, setNoPriceSelected] = useState(false);
+  
+  // Dialog state
   const [rejectionData, setRejectionData] = useState<RejectionData | null>(null);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
   const [showAppealDialog, setShowAppealDialog] = useState(false);
   const [appealReason, setAppealReason] = useState("");
-  const [selectedPremiumFeatures, setSelectedPremiumFeatures] = useState<string[]>([]);
-  const [createdListingId, setCreatedListingId] = useState<string | null>(null);
-  const [noPriceSelected, setNoPriceSelected] = useState(false);
 
   // Fetch description min length setting
   const { data: descriptionMinLengthSetting } = useQuery<{ minLength: number }>({
@@ -114,24 +123,20 @@ export default function CreateListingPage() {
       description: "",
       price: "",
       currency: "CUP",
-      priceType: "fixed",
       categoryId: "",
       locationCity: "",
       locationRegion: "",
       images: [],
       condition: "used",
       contactPhone: "",
-      contactWhatsApp: "false",
+      contactWhatsApp: "true", // Default WhatsApp ON
     },
   });
 
-  // Watch form values outside of render to avoid infinite loops
-  const watchedCurrency = form.watch("currency");
-  const watchedPriceType = form.watch("priceType");
+  // Watch form values
   const watchedCategoryId = form.watch("categoryId");
   const watchedLocationRegion = form.watch("locationRegion");
   const watchedCondition = form.watch("condition");
-  const watchedContactWhatsApp = form.watch("contactWhatsApp");
   const watchedDescription = form.watch("description");
 
   // Update phone number when user data loads
@@ -140,6 +145,11 @@ export default function CreateListingPage() {
       form.setValue("contactPhone", user.phone, { shouldDirty: false });
     }
   }, [user?.phone]);
+
+  // Sync images with form
+  useEffect(() => {
+    form.setValue("images", images);
+  }, [images]);
 
   const purchasePremiumMutation = useMutation({
     mutationFn: async ({ listingId, featureIds }: { listingId: string; featureIds: string[] }) => {
@@ -158,10 +168,9 @@ export default function CreateListingPage() {
     onError: (error: any) => {
       toast({
         title: "Error al activar funciones premium",
-        description: error.message || "Hubo un problema al activar las funciones premium. Tu anuncio fue creado exitosamente, pero las funciones premium no pudieron ser activadas.",
+        description: error.message || "Hubo un problema al activar las funciones premium.",
         variant: "destructive"
       });
-      // Don't navigate away - keep user on page to retry or view their listing
     },
   });
 
@@ -171,10 +180,8 @@ export default function CreateListingPage() {
       return response.json();
     },
     onSuccess: (data: any) => {
-      // Store listing ID for premium features
       setCreatedListingId(data.id);
       
-      // If premium features selected, purchase them
       if (selectedPremiumFeatures.length > 0) {
         purchasePremiumMutation.mutate({
           listingId: data.id,
@@ -191,9 +198,6 @@ export default function CreateListingPage() {
       }
     },
     onError: (error: any) => {
-      console.log('Mutation error:', error);
-      
-      // Try to parse error message
       let errorData: RejectionData = {
         message: "Hubo un problema al crear tu anuncio",
         reasons: [],
@@ -205,12 +209,9 @@ export default function CreateListingPage() {
       
       if (error.message) {
         try {
-          // Try to extract JSON from error message
           const jsonMatch = error.message.match(/\{.*\}/);
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
-            
-            // Check if it's a validation error with details
             if (parsed.details) {
               errorData = {
                 message: parsed.message || "Error de validación",
@@ -240,128 +241,64 @@ export default function CreateListingPage() {
         }
       }
       
-      // Show rejection dialog instead of toast
       setRejectionData(errorData);
       setShowRejectionDialog(true);
     },
   });
 
   const appealMutation = useMutation({
-    mutationFn: async ({ reviewId, appealReason }: { reviewId: string; appealReason: string }) => {
-      const response = await apiRequest('POST', `/api/moderation/appeal/${reviewId}`, { appealReason });
+    mutationFn: async ({ reviewId, reason }: { reviewId: string; reason: string }) => {
+      const response = await apiRequest('POST', `/api/moderation/appeal/${reviewId}`, { reason });
       return response.json();
     },
     onSuccess: () => {
       toast({
         title: "Apelación enviada",
-        description: "Tu apelación ha sido enviada exitosamente. Un moderador la revisará pronto.",
+        description: "Tu apelación ha sido enviada. Un moderador la revisará pronto.",
       });
       setShowAppealDialog(false);
-      setShowRejectionDialog(false);
       setAppealReason("");
-      navigate('/');
+      navigate('/profile');
     },
     onError: (error: any) => {
       toast({
         title: "Error al enviar apelación",
         description: error.message || "Hubo un problema al enviar tu apelación",
-        variant: "destructive",
+        variant: "destructive"
       });
     },
   });
 
-  const addImageFromUpload = (imageUrl: string) => {
-    if (imageUrl) {
-      setImages(prev => {
-        // Check if image already exists or if we've reached the limit
-        if (prev.includes(imageUrl) || prev.length >= 8) {
-          return prev;
-        }
-        const updatedImages = [...prev, imageUrl];
-        form.setValue('images', updatedImages);
-        return updatedImages;
-      });
-    }
-  };
-
-  // Simple file upload handler
-  const handleFileUpload = async (files: FileList) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
     if (!files || files.length === 0) return;
-    
-    const file = files[0];
-    
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Tipo de archivo inválido",
-        description: "Solo se permiten archivos de imagen",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Validate file size (50MB)
-    if (file.size > 52428800) {
-      toast({
-        title: "Archivo demasiado grande",
-        description: "El archivo no puede superar los 50MB",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check if we've reached the image limit
-    if (images.length >= 10) {
-      toast({
-        title: "Límite de imágenes alcanzado",
-        description: "Solo puedes subir un máximo de 10 imágenes",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      // Upload file to local server
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      const response = await fetch('/api/listings/upload-image', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-      
-      const { objectPath } = await response.json();
-      
-      // Update images state
-      setImages(prev => {
-        const newImages = [...prev, objectPath];
-        form.setValue('images', newImages);
-        return newImages;
-      });
-      
-      toast({
-        title: "¡Imagen subida exitosamente!",
-        description: "La imagen se ha agregado a tu anuncio",
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error al subir imagen",
-        description: "Hubo un problema al subir la imagen. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-    }
-  };
 
-  const removeImage = (index: number) => {
-    const updatedImages = images.filter((_, i) => i !== index);
-    setImages(updatedImages);
-    form.setValue('images', updatedImages);
+    if (images.length + files.length > 10) {
+      toast({
+        title: "Límite de imágenes excedido",
+        description: "Puedes subir un máximo de 10 imágenes",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Archivo demasiado grande",
+          description: "El tamaño máximo permitido es 5MB",
+          variant: "destructive"
+        });
+        continue;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImages(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleDragStart = (index: number) => {
@@ -371,511 +308,582 @@ export default function CreateListingPage() {
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
-    
+
     const newImages = [...images];
-    const draggedItem = newImages[draggedIndex];
+    const draggedImage = newImages[draggedIndex];
     newImages.splice(draggedIndex, 1);
-    newImages.splice(index, 0, draggedItem);
+    newImages.splice(index, 0, draggedImage);
     
     setImages(newImages);
     setDraggedIndex(index);
-    form.setValue('images', newImages);
   };
 
   const handleDragEnd = () => {
     setDraggedIndex(null);
   };
 
-  const onSubmit = async (data: InsertListing) => {
-    console.log('Form submission data:', {
-      ...data,
-      images
-    });
-    console.log('Form errors:', form.formState.errors);
-    console.log('Form is valid:', form.formState.isValid);
-    console.log('Form state details:', {
-      isValidating: form.formState.isValidating,
-      isSubmitting: form.formState.isSubmitting,
-      touchedFields: form.formState.touchedFields,
-      dirtyFields: form.formState.dirtyFields,
-    });
-    
-    // Manually trigger validation to see what happens
-    const isValid = await form.trigger();
-    console.log('Manual validation result:', isValid);
-    console.log('Errors after manual validation:', form.formState.errors);
-    
-    if (!isValid) {
-      console.log('Form validation failed, not submitting');
-      return;
-    }
-    
-    createListingMutation.mutate({
-      ...data,
-      images
-    });
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate('/')}
-            data-testid="button-back-home"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-lg font-semibold text-foreground">Crear Anuncio</h1>
-          <div className="w-10" /> {/* Spacer */}
+  const validateStep = (step: number): boolean => {
+    const values = form.getValues();
+    
+    switch (step) {
+      case 1: // Category
+        if (!values.categoryId) {
+          toast({
+            title: "Categoría requerida",
+            description: "Por favor selecciona una subcategoría",
+            variant: "destructive"
+          });
+          return false;
+        }
+        return true;
+        
+      case 2: // Details
+        if (!values.title || values.title.trim().length === 0) {
+          toast({
+            title: "Título requerido",
+            description: "Por favor ingresa un título para tu anuncio",
+            variant: "destructive"
+          });
+          return false;
+        }
+        if (!values.description || values.description.length < descriptionMinLength) {
+          toast({
+            title: "Descripción requerida",
+            description: `La descripción debe tener al menos ${descriptionMinLength} caracteres`,
+            variant: "destructive"
+          });
+          return false;
+        }
+        if (!values.locationRegion) {
+          toast({
+            title: "Provincia requerida",
+            description: "Por favor selecciona tu provincia",
+            variant: "destructive"
+          });
+          return false;
+        }
+        return true;
+        
+      case 3: // Images
+        if (images.length === 0) {
+          toast({
+            title: "Al menos una imagen es requerida",
+            description: "Por favor sube al menos una imagen de tu producto",
+            variant: "destructive"
+          });
+          return false;
+        }
+        return true;
+        
+      case 4: // Price
+        if (!noPriceSelected) {
+          if (!values.price || values.price.trim() === "") {
+            toast({
+              title: "Precio requerido",
+              description: "Por favor ingresa un precio o selecciona 'Precio a consultar'",
+              variant: "destructive"
+            });
+            return false;
+          }
+        }
+        if (!values.contactPhone || values.contactPhone.trim() === "") {
+          toast({
+            title: "Teléfono requerido",
+            description: "Por favor ingresa tu número de teléfono",
+            variant: "destructive"
+          });
+          return false;
+        }
+        return true;
+        
+      case 5: // Premium (optional)
+        return true;
+        
+      default:
+        return true;
+    }
+  };
+
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+    }
+  };
+
+  const prevStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
+  const onSubmit = async (data: InsertListing) => {
+    const finalData = {
+      ...data,
+      images,
+      price: noPriceSelected ? null : data.price,
+      priceType: noPriceSelected ? "consult" as const : "fixed" as const,
+    };
+    createListingMutation.mutate(finalData as InsertListing);
+  };
+
+  const handleFinalSubmit = () => {
+    if (!validateStep(currentStep)) return;
+    form.handleSubmit(onSubmit)();
+  };
+
+  const renderStepIndicator = () => {
+    const steps = [
+      { number: 1, label: "Categoría" },
+      { number: 2, label: "Detalles" },
+      { number: 3, label: "Imágenes" },
+      { number: 4, label: "Precio" },
+      { number: 5, label: "Premium" },
+    ];
+
+    return (
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          {steps.map((step, index) => (
+            <div key={step.number} className="flex items-center flex-1">
+              <div className="flex flex-col items-center flex-1">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+                  currentStep === step.number 
+                    ? 'bg-blue-600 text-white' 
+                    : currentStep > step.number 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                }`}>
+                  {currentStep > step.number ? <CheckCircle className="w-6 h-6" /> : step.number}
+                </div>
+                <span className="text-xs mt-2 font-medium text-center hidden sm:block">
+                  {step.label}
+                </span>
+              </div>
+              {index < steps.length - 1 && (
+                <div className={`h-1 flex-1 mx-2 transition-colors ${
+                  currentStep > step.number ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
+                }`} />
+              )}
+            </div>
+          ))}
         </div>
+        <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
+      </div>
+    );
+  };
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return renderCategoryStep();
+      case 2:
+        return renderDetailsStep();
+      case 3:
+        return renderImagesStep();
+      case 4:
+        return renderPriceStep();
+      case 5:
+        return renderPremiumStep();
+      default:
+        return null;
+    }
+  };
+
+  const renderCategoryStep = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold mb-2">Selecciona una categoría</h2>
+        <p className="text-gray-600 dark:text-gray-400">Elige la categoría que mejor describa tu producto</p>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tag className="w-5 h-5 text-primary" />
-                Información Básica
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Título del anuncio *</Label>
-                <Input
-                  id="title"
-                  placeholder="Ej: iPhone 14 Pro en perfecto estado"
-                  {...form.register("title")}
-                  data-testid="input-title"
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="main-category">Categoría Principal *</Label>
+          <Select
+            value={selectedMainCategory}
+            onValueChange={(value) => {
+              setSelectedMainCategory(value);
+              form.setValue("categoryId", "");
+            }}
+          >
+            <SelectTrigger data-testid="select-main-category">
+              <SelectValue placeholder="Selecciona categoría principal" />
+            </SelectTrigger>
+            <SelectContent>
+              {mainCategories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.icon} {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {selectedMainCategory && availableSubcategories.length > 0 && (
+          <div>
+            <Label htmlFor="subcategory">Subcategoría *</Label>
+            <Select
+              value={watchedCategoryId || ""}
+              onValueChange={(value) => form.setValue("categoryId", value)}
+            >
+              <SelectTrigger data-testid="select-subcategory">
+                <SelectValue placeholder="Selecciona subcategoría" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSubcategories.map((subcategory) => (
+                  <SelectItem key={subcategory.id} value={subcategory.id}>
+                    {subcategory.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderDetailsStep = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold mb-2">Detalles del producto</h2>
+        <p className="text-gray-600 dark:text-gray-400">Describe tu producto con detalle</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="title">Título del anuncio *</Label>
+          <Input
+            id="title"
+            data-testid="input-title"
+            placeholder="Ej: iPhone 12 Pro Max 256GB"
+            {...form.register("title")}
+          />
+          {form.formState.errors.title && (
+            <p className="text-sm text-red-600 mt-1">{form.formState.errors.title.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="description">
+            Descripción * (mínimo {descriptionMinLength} caracteres)
+          </Label>
+          <Textarea
+            id="description"
+            data-testid="input-description"
+            placeholder="Describe tu producto: estado, características, motivo de venta, etc."
+            rows={6}
+            {...form.register("description")}
+          />
+          <div className="flex justify-between items-center mt-1">
+            {form.formState.errors.description && (
+              <p className="text-sm text-red-600">{form.formState.errors.description.message}</p>
+            )}
+            <p className="text-sm text-gray-500 ml-auto">
+              {watchedDescription?.length || 0} / {descriptionMinLength}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="locationRegion">Provincia *</Label>
+            <Select
+              value={watchedLocationRegion || ""}
+              onValueChange={(value) => form.setValue("locationRegion", value)}
+            >
+              <SelectTrigger data-testid="select-region">
+                <SelectValue placeholder="Selecciona provincia" />
+              </SelectTrigger>
+              <SelectContent>
+                {provinces.map((province) => (
+                  <SelectItem key={province.value} value={province.value}>
+                    {province.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="locationCity">Ciudad (opcional)</Label>
+            <Input
+              id="locationCity"
+              data-testid="input-city"
+              placeholder="Ej: Centro Habana"
+              {...form.register("locationCity")}
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="condition">Condición del producto *</Label>
+          <Select
+            value={watchedCondition || "used"}
+            onValueChange={(value) => form.setValue("condition", value as any)}
+          >
+            <SelectTrigger data-testid="select-condition">
+              <SelectValue placeholder="Selecciona condición" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new">Nuevo</SelectItem>
+              <SelectItem value="like-new">Como nuevo</SelectItem>
+              <SelectItem value="used">Usado</SelectItem>
+              <SelectItem value="refurbished">Reacondicionado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderImagesStep = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold mb-2">Imágenes del producto</h2>
+        <p className="text-gray-600 dark:text-gray-400">Sube hasta 10 imágenes (máx. 5MB cada una)</p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center">
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+            id="image-upload"
+            data-testid="input-image-upload"
+          />
+          <label htmlFor="image-upload" className="cursor-pointer">
+            <Camera className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-lg font-medium mb-2">Haz clic para subir imágenes</p>
+            <p className="text-sm text-gray-500">O arrastra y suelta tus archivos aquí</p>
+          </label>
+        </div>
+
+        {images.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {images.map((image, index) => (
+              <div
+                key={index}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragEnd={handleDragEnd}
+                className="relative group cursor-move"
+                data-testid={`image-preview-${index}`}
+              >
+                <img
+                  src={image}
+                  alt={`Preview ${index + 1}`}
+                  className="w-full h-32 object-cover rounded-lg"
                 />
-                {form.formState.errors.title && (
-                  <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+                {index === 0 && (
+                  <Badge className="absolute top-2 left-2 bg-blue-600">Principal</Badge>
                 )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripción *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe tu producto detalladamente..."
-                  className="min-h-24"
-                  {...form.register("description")}
-                  data-testid="textarea-description"
-                />
-                <div className="flex items-center justify-between text-sm">
-                  <p className={`${
-                    (watchedDescription?.length || 0) < descriptionMinLength 
-                      ? 'text-destructive' 
-                      : 'text-muted-foreground'
-                  }`} data-testid="text-description-counter">
-                    {watchedDescription?.length || 0} / {descriptionMinLength} caracteres mínimos
-                  </p>
-                </div>
-                {form.formState.errors.description && (
-                  <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="noPrice"
-                    checked={noPriceSelected}
-                    onChange={(e) => {
-                      setNoPriceSelected(e.target.checked);
-                      if (e.target.checked) {
-                        form.setValue("price", "");
-                      }
-                    }}
-                    className="h-4 w-4 rounded border-gray-300"
-                    data-testid="checkbox-no-price"
-                  />
-                  <Label htmlFor="noPrice" className="text-sm font-normal cursor-pointer">
-                    Sin precio (Precio a consultar)
-                  </Label>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Precio {!noPriceSelected && "*"}</Label>
-                    <div className="relative">
-                      <Euro className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        className="pl-10"
-                        disabled={noPriceSelected}
-                        {...form.register("price")}
-                        data-testid="input-price"
-                      />
-                    </div>
-                    {form.formState.errors.price && (
-                      <p className="text-sm text-destructive">{form.formState.errors.price.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Moneda *</Label>
-                    <Select 
-                      onValueChange={(value) => form.setValue("currency", value as "CUP" | "USD")}
-                      value={watchedCurrency || "CUP"}
-                      disabled={noPriceSelected}
-                    >
-                      <SelectTrigger data-testid="select-currency">
-                        <SelectValue placeholder="Selecciona moneda" />
-                      </SelectTrigger>
-                      <SelectContent translate="no">
-                        <SelectItem value="CUP">Peso Cubano (CUP)</SelectItem>
-                        <SelectItem value="USD">Dólar (USD)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="priceType">Tipo de precio *</Label>
-                  <Select 
-                    onValueChange={(value) => form.setValue("priceType", value as "fixed" | "negotiable")}
-                    value={watchedPriceType || ""}
-                  >
-                    <SelectTrigger data-testid="select-price-type">
-                      <SelectValue placeholder="Selecciona tipo" />
-                    </SelectTrigger>
-                    <SelectContent translate="no">
-                      <SelectItem value="fixed">Precio fijo</SelectItem>
-                      <SelectItem value="negotiable">Negociable</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Category and Location */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" />
-                Categoría y Ubicación
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="mainCategory">Categoría Principal *</Label>
-                <Select 
-                  onValueChange={(value) => {
-                    setSelectedMainCategory(value);
-                    form.setValue("categoryId", ""); // Reset subcategory when main category changes
-                  }}
-                  value={selectedMainCategory}
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  data-testid={`button-remove-image-${index}`}
                 >
-                  <SelectTrigger data-testid="select-main-category">
-                    <SelectValue placeholder="Selecciona categoría principal" />
-                  </SelectTrigger>
-                  <SelectContent translate="no">
-                    {mainCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <X className="w-4 h-4" />
+                </button>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
-              <div className="space-y-2">
-                <Label htmlFor="categoryId">Subcategoría *</Label>
-                <Select 
-                  onValueChange={(value) => form.setValue("categoryId", value)}
-                  value={watchedCategoryId || ""}
-                  disabled={!selectedMainCategory}
-                >
-                  <SelectTrigger data-testid="select-subcategory">
-                    <SelectValue placeholder={selectedMainCategory ? "Selecciona subcategoría" : "Primero selecciona una categoría principal"} />
-                  </SelectTrigger>
-                  <SelectContent translate="no">
-                    {availableSubcategories.map((subcategory) => (
-                      <SelectItem key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.categoryId && (
-                  <p className="text-sm text-destructive">{form.formState.errors.categoryId.message}</p>
-                )}
-              </div>
+  const renderPriceStep = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold mb-2">Precio y contacto</h2>
+        <p className="text-gray-600 dark:text-gray-400">Configura el precio y tus datos de contacto</p>
+      </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="locationCity">Ciudad *</Label>
-                  <Input
-                    id="locationCity"
-                    placeholder="Ej: Centro Habana"
-                    {...form.register("locationCity")}
-                    data-testid="input-city"
-                  />
-                  {form.formState.errors.locationCity && (
-                    <p className="text-sm text-destructive">{form.formState.errors.locationCity.message}</p>
-                  )}
-                </div>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-4">
+          <input
+            type="checkbox"
+            id="no-price"
+            checked={noPriceSelected}
+            onChange={(e) => {
+              setNoPriceSelected(e.target.checked);
+              if (e.target.checked) {
+                form.setValue("price", "");
+              }
+            }}
+            data-testid="checkbox-no-price"
+          />
+          <Label htmlFor="no-price" className="cursor-pointer">
+            Precio a consultar
+          </Label>
+        </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="locationRegion">Provincia *</Label>
-                  <Select 
-                    onValueChange={(value) => form.setValue("locationRegion", value)}
-                    value={watchedLocationRegion || ""}
-                  >
-                    <SelectTrigger data-testid="select-province">
-                      <SelectValue placeholder="Selecciona provincia" />
-                    </SelectTrigger>
-                    <SelectContent translate="no">
-                      {provinces.map((province) => (
-                        <SelectItem key={province.value} value={province.value}>
-                          {province.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.locationRegion && (
-                    <p className="text-sm text-destructive">{form.formState.errors.locationRegion.message}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="condition">Estado del artículo *</Label>
-                <Select 
-                  onValueChange={(value) => form.setValue("condition", value as "new" | "used" | "defective")}
-                  value={watchedCondition || ""}
-                >
-                  <SelectTrigger data-testid="select-condition">
-                    <SelectValue placeholder="Selecciona el estado" />
-                  </SelectTrigger>
-                  <SelectContent translate="no">
-                    <SelectItem value="new">Nuevo</SelectItem>
-                    <SelectItem value="used">Usado - Buen estado</SelectItem>
-                    <SelectItem value="defective">Usado - Con defectos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Images */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="w-5 h-5 text-primary" />
-                Imágenes (máximo 10)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 px-4">
-                  Sube hasta 10 imágenes para tu anuncio
-                </p>
-                
-                {/* Simple file upload input */}
-                <div className="px-4">
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      disabled={images.length >= 8}
-                      data-testid="input-image-upload"
-                    />
-                    <div className="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent flex flex-col items-center cursor-pointer">
-                      <Upload className="w-8 h-8 text-gray-400 mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400 mb-2 text-sm font-medium">
-                        Arrastra archivos aquí o haz clic para seleccionar
-                      </p>
-                      <p className="text-xs text-gray-400 px-4">
-                        PNG, JPG, JPEG hasta 50MB (máximo {8 - images.length} restantes)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Image Gallery */}
-              {images.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    Arrastra las imágenes para reordenarlas. La primera imagen será la principal.
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {images.map((image, index) => (
-                      <div 
-                        key={index} 
-                        className={`relative cursor-move transition-all ${
-                          draggedIndex === index ? 'opacity-50 scale-95' : 'opacity-100'
-                        }`}
-                        draggable
-                        onDragStart={() => handleDragStart(index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
-                      >
-                        <img 
-                          src={image} 
-                          alt={`Imagen ${index + 1}`}
-                          className="w-full h-40 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700"
-                          onError={(e) => {
-                            e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E";
-                          }}
-                        />
-                        {index === 0 && (
-                          <Badge className="absolute top-2 left-2 bg-primary text-white">
-                            Principal
-                          </Badge>
-                        )}
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="destructive"
-                          className="absolute top-2 right-2 h-7 w-7 shadow-lg"
-                          onClick={() => removeImage(index)}
-                          data-testid={`button-remove-image-${index}`}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <p className="text-sm text-muted-foreground">
-                Imágenes: {images.length}/8
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Contact Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="w-5 h-5 text-primary" />
-                Información de Contacto
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="contactPhone">Teléfono de contacto *</Label>
-                <Input
-                  id="contactPhone"
-                  type="tel"
-                  placeholder="+1 305 123456 o 54123456"
-                  {...form.register("contactPhone")}
-                  data-testid="input-contact-phone"
-                />
-                {form.formState.errors.contactPhone && (
-                  <p className="text-sm text-destructive">{form.formState.errors.contactPhone.message}</p>
-                )}
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="whatsapp"
-                  checked={watchedContactWhatsApp === "true"}
-                  onChange={(e) => form.setValue("contactWhatsApp", e.target.checked ? "true" : "false")}
-                  className="rounded"
-                  data-testid="checkbox-whatsapp"
-                />
-                <Label htmlFor="whatsapp" className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4 text-green-600" />
-                  También disponible en WhatsApp
-                </Label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Premium Features (Optional) */}
-          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                Funciones Premium (Opcional)
-              </CardTitle>
-              <CardDescription>
-                Destaca tu anuncio y llega a más personas con nuestras funciones premium
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PremiumFeaturesSelector
-                selectedFeatures={selectedPremiumFeatures}
-                onSelectionChange={setSelectedPremiumFeatures}
+        {!noPriceSelected && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <Label htmlFor="price">Precio *</Label>
+              <Input
+                id="price"
+                type="text"
+                placeholder="1000"
+                data-testid="input-price"
+                {...form.register("price")}
               />
-            </CardContent>
-          </Card>
+            </div>
+            <div>
+              <Label htmlFor="currency">Moneda *</Label>
+              <Select
+                value={form.watch("currency") || "CUP"}
+                onValueChange={(value) => form.setValue("currency", value as any)}
+              >
+                <SelectTrigger data-testid="select-currency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CUP">CUP (Pesos Cubanos)</SelectItem>
+                  <SelectItem value="USD">USD (Dólares)</SelectItem>
+                  <SelectItem value="EUR">EUR (Euros)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
 
-          {/* Submit Button */}
-          <div className="space-y-4">
-            <Button 
-              type="submit" 
-              className="w-full" 
-              size="lg"
+        <div>
+          <Label htmlFor="contactPhone">Teléfono de contacto *</Label>
+          <Input
+            id="contactPhone"
+            type="tel"
+            placeholder="+53 5 123 4567"
+            data-testid="input-phone"
+            {...form.register("contactPhone")}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="whatsapp"
+            checked={form.watch("contactWhatsApp") === "true"}
+            onChange={(e) => form.setValue("contactWhatsApp", e.target.checked ? "true" : "false")}
+            data-testid="checkbox-whatsapp"
+          />
+          <Label htmlFor="whatsapp" className="cursor-pointer flex items-center gap-2">
+            <MessageCircle className="w-4 h-4 text-green-600" />
+            Este número tiene WhatsApp
+          </Label>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPremiumStep = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold mb-2">Funciones Premium (Opcional)</h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Destaca tu anuncio con funciones premium para llegar a más personas
+        </p>
+      </div>
+
+      <PremiumFeaturesSelector
+        selectedFeatures={selectedPremiumFeatures}
+        onSelectionChange={setSelectedPremiumFeatures}
+      />
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+      <div className="container mx-auto px-4 max-w-4xl">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Volver
+          </button>
+          <h1 className="text-3xl font-bold">Crear Anuncio</h1>
+        </div>
+
+        {/* Step Indicator */}
+        {renderStepIndicator()}
+
+        {/* Step Content */}
+        <Card>
+          <CardContent className="p-6 min-h-[400px]">
+            {renderStep()}
+          </CardContent>
+        </Card>
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            data-testid="button-prev-step"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Anterior
+          </Button>
+
+          {currentStep < totalSteps ? (
+            <Button
+              type="button"
+              onClick={nextStep}
+              data-testid="button-next-step"
+            >
+              Siguiente
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleFinalSubmit}
               disabled={createListingMutation.isPending || purchasePremiumMutation.isPending}
               data-testid="button-submit"
             >
-              {(createListingMutation.isPending || purchasePremiumMutation.isPending) 
-                ? "Creando anuncio..." 
-                : selectedPremiumFeatures.length > 0 
-                  ? "Publicar con Premium" 
-                  : "Publicar Anuncio"
-              }
+              {createListingMutation.isPending ? "Creando..." : "Publicar Anuncio"}
             </Button>
-            
-            <p className="text-sm text-muted-foreground text-center">
-              Al publicar, aceptas nuestros términos y condiciones
-            </p>
-          </div>
-        </form>
+          )}
+        </div>
       </div>
 
-      {/* Rejection Dialog - PROMINENT WARNING */}
+      {/* Rejection Dialog */}
       <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto border-4 border-red-600 dark:border-red-500" data-testid="dialog-rejection">
-          <DialogHeader className="bg-red-600 dark:bg-red-700 text-white -mx-6 -mt-6 px-6 py-4 sm:py-6 mb-6">
-            <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2 sm:gap-3 leading-tight">
-              <AlertTriangle className="h-6 w-6 sm:h-7 sm:w-7 animate-pulse flex-shrink-0" />
-              <span className="break-words">⚠️ ANUNCIO RECHAZADO - VIOLACIÓN DE NORMAS ⚠️</span>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto" data-testid="dialog-rejection">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Ban className="h-6 w-6" />
+              Anuncio Rechazado
             </DialogTitle>
-            <DialogDescription className="text-red-50 text-sm sm:text-base font-medium mt-2">
-              {rejectionData?.message}
+            <DialogDescription>
+              Tu anuncio no cumple con nuestras políticas de contenido
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 my-4">
-            {/* General Reasons */}
-            {rejectionData && rejectionData.reasons.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Motivos Generales:
-                </h4>
-                <div className="space-y-1">
-                  {rejectionData.reasons.map((reason, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-sm">
-                      <span className="text-red-500">•</span>
-                      <span>{reason}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {rejectionData && rejectionData.message && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Mensaje:</AlertTitle>
+                <AlertDescription>{rejectionData.message}</AlertDescription>
+              </Alert>
             )}
 
-            {/* Problematic Words */}
             {rejectionData && rejectionData.problematicWords && rejectionData.problematicWords.length > 0 && (
               <Alert variant="destructive" className="bg-red-50 dark:bg-red-950">
                 <Ban className="h-5 w-5" />
@@ -888,30 +896,23 @@ export default function CreateListingPage() {
                       </Badge>
                     ))}
                   </div>
-                  <p className="mt-3 text-sm font-semibold">
-                    Estas palabras o frases violan nuestras normas de contenido.
-                  </p>
                 </AlertDescription>
               </Alert>
             )}
 
-            {/* AI Explanation */}
             {rejectionData && rejectionData.aiExplanation && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Explicación de la IA:</AlertTitle>
-                <AlertDescription>
-                  {rejectionData.aiExplanation}
-                </AlertDescription>
+                <AlertDescription>{rejectionData.aiExplanation}</AlertDescription>
               </Alert>
             )}
 
-            {/* Warning - POLICE WARNING */}
             {rejectionData && rejectionData.warning && (
-              <Alert variant="destructive" className="border-yellow-600 dark:border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
-                <AlertTriangle className="h-5 w-5 text-yellow-700 dark:text-yellow-400" />
-                <AlertTitle className="text-yellow-800 dark:text-yellow-300 font-bold">🚨 ADVERTENCIA POLICIAL 🚨</AlertTitle>
-                <AlertDescription className="text-sm text-yellow-900 dark:text-yellow-200 font-semibold">
+              <Alert variant="destructive" className="border-red-600 dark:border-red-500 bg-red-50 dark:bg-red-950">
+                <AlertTriangle className="h-5 w-5 text-red-700 dark:text-red-400" />
+                <AlertTitle className="text-red-800 dark:text-red-300 font-bold">⚠️ ADVERTENCIA IMPORTANTE</AlertTitle>
+                <AlertDescription className="text-sm text-red-900 dark:text-red-200 font-semibold">
                   {rejectionData.warning}
                 </AlertDescription>
               </Alert>
@@ -924,22 +925,15 @@ export default function CreateListingPage() {
               onClick={() => {
                 if (rejectionData?.reviewId) {
                   setShowRejectionDialog(false);
-                  // Small delay to prevent removeChild error
                   setTimeout(() => {
                     setShowAppealDialog(true);
                   }, 100);
-                } else {
-                  toast({
-                    title: "Error",
-                    description: "No se puede apelar esta decisión en este momento",
-                    variant: "destructive"
-                  });
                 }
               }}
               data-testid="button-appeal"
               disabled={!rejectionData?.reviewId}
               size="lg"
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
             >
               📋 Presentar Apelación
             </Button>
@@ -948,7 +942,7 @@ export default function CreateListingPage() {
               onClick={() => setShowRejectionDialog(false)}
               data-testid="button-accept-rejection"
               size="lg"
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
             >
               ✓ Aceptar
             </Button>
@@ -962,7 +956,7 @@ export default function CreateListingPage() {
           <DialogHeader>
             <DialogTitle>Presentar Apelación</DialogTitle>
             <DialogDescription>
-              Explica por qué crees que tu anuncio no debería haber sido rechazado. Un moderador revisará tu caso.
+              Explica por qué crees que tu anuncio no debería haber sido rechazado.
             </DialogDescription>
           </DialogHeader>
 
@@ -973,19 +967,16 @@ export default function CreateListingPage() {
               </Label>
               <Textarea
                 id="appeal-reason"
-                placeholder="Explica detalladamente por qué tu anuncio cumple con las normas..."
                 value={appealReason}
                 onChange={(e) => setAppealReason(e.target.value)}
-                rows={6}
+                placeholder="Explica detalladamente por qué tu anuncio debería ser aprobado..."
+                rows={5}
                 data-testid="textarea-appeal-reason"
               />
-              <p className="text-xs text-muted-foreground">
-                {appealReason.length}/10 caracteres mínimos
-              </p>
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
@@ -998,20 +989,22 @@ export default function CreateListingPage() {
             </Button>
             <Button
               onClick={() => {
-                if (rejectionData?.reviewId && appealReason.trim().length >= 10) {
+                if (appealReason.length < 10) {
+                  toast({
+                    title: "Motivo muy corto",
+                    description: "El motivo debe tener al menos 10 caracteres",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                if (rejectionData?.reviewId) {
                   appealMutation.mutate({
                     reviewId: rejectionData.reviewId,
-                    appealReason: appealReason.trim()
-                  });
-                } else {
-                  toast({
-                    title: "Error",
-                    description: "La razón debe tener al menos 10 caracteres",
-                    variant: "destructive"
+                    reason: appealReason
                   });
                 }
               }}
-              disabled={appealMutation.isPending || appealReason.trim().length < 10}
+              disabled={appealMutation.isPending || appealReason.length < 10}
               data-testid="button-submit-appeal"
             >
               {appealMutation.isPending ? "Enviando..." : "Enviar Apelación"}

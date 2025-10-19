@@ -106,7 +106,7 @@ export const listings = pgTable("listings", {
   description: text("description").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }), // Optional - can be null for "Precio a consultar"
   currency: text("currency").notNull().default("CUP"), // "CUP" | "USD"
-  priceType: text("price_type").notNull().default("fixed"), // "fixed" | "negotiable"
+  priceType: text("price_type").notNull().default("fixed"), // "fixed" | "consult"
   categoryId: varchar("category_id").references(() => categories.id, { onDelete: "set null" }),
   sellerId: varchar("seller_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   locationCity: text("location_city").notNull(),
@@ -325,7 +325,7 @@ export const insertListingSchema = createInsertSchema(listings, {
     z.null()
   ]),
   currency: z.enum(["CUP", "USD"], { message: "Moneda inválida" }),
-  priceType: z.enum(["fixed", "negotiable"], { message: "Tipo de precio inválido" }),
+  priceType: z.enum(["fixed", "consult"], { message: "Tipo de precio inválido" }),
   locationCity: z.string().min(2, "La ciudad es requerida"),
   locationRegion: z.string().min(1, "La región es requerida"),
   images: z.array(z.string().min(1, "Imagen inválida")).max(10, "Máximo 10 imágenes permitidas").default([]),

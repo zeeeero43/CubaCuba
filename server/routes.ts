@@ -357,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user?.isBanned === "true") {
         return res.status(403).json({ 
           message: "Su cuenta ha sido suspendida permanentemente por violaciones graves a nuestras políticas de contenido",
-          warning: "Las actividades que violan las leyes cubanas pueden ser reportadas a las autoridades competentes",
+          warning: "Las violaciones repetidas de nuestras políticas resultan en la suspensión permanente de la cuenta",
           reason: user.banReason || "Múltiples violaciones a las políticas de contenido"
         });
       }
@@ -464,7 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           problematicWords: problematicWords,
           aiExplanation: aiExplanation,
           confidence: moderationResult.confidence,
-          warning: "⚠️ ADVERTENCIA LEGAL: Violaciones repetidas a las políticas de contenido serán reportadas a las autoridades cubanas competentes.",
+          warning: "⚠️ ADVERTENCIA: Violaciones repetidas de nuestras políticas pueden resultar en la suspensión permanente de su cuenta.",
           reviewId: review.id, // Include review ID for appeals
           listingId: listing.id
         });
