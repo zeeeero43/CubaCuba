@@ -668,6 +668,7 @@ export default function CreateListingPage() {
             id="title"
             data-testid="input-title"
             placeholder="Ej: iPhone 12 Pro Max 256GB"
+            className={form.formState.errors.title ? "border-red-500 focus-visible:ring-red-500" : ""}
             {...form.register("title")}
           />
           {form.formState.errors.title && (
@@ -684,6 +685,7 @@ export default function CreateListingPage() {
             data-testid="input-description"
             placeholder="Describe tu producto: estado, características, motivo de venta, etc."
             rows={6}
+            className={form.formState.errors.description ? "border-red-500 focus-visible:ring-red-500" : ""}
             {...form.register("description")}
           />
           <div className="flex justify-between items-center mt-1">
@@ -703,7 +705,10 @@ export default function CreateListingPage() {
               value={watchedLocationRegion || ""}
               onValueChange={(value) => form.setValue("locationRegion", value)}
             >
-              <SelectTrigger data-testid="select-region">
+              <SelectTrigger 
+                data-testid="select-region"
+                className={form.formState.errors.locationRegion ? "border-red-500 focus:ring-red-500" : ""}
+              >
                 <SelectValue placeholder="Selecciona provincia" />
               </SelectTrigger>
               <SelectContent>
@@ -714,6 +719,9 @@ export default function CreateListingPage() {
                 ))}
               </SelectContent>
             </Select>
+            {form.formState.errors.locationRegion && (
+              <p className="text-sm text-red-600 mt-1">{form.formState.errors.locationRegion.message}</p>
+            )}
           </div>
 
           <div>
@@ -857,8 +865,12 @@ export default function CreateListingPage() {
                 type="text"
                 placeholder="1000"
                 data-testid="input-price"
+                className={form.formState.errors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
                 {...form.register("price")}
               />
+              {form.formState.errors.price && (
+                <p className="text-sm text-red-600 mt-1">{form.formState.errors.price.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="currency">Moneda *</Label>
@@ -885,8 +897,12 @@ export default function CreateListingPage() {
             type="tel"
             placeholder="+53 5 123 4567"
             data-testid="input-phone"
+            className={form.formState.errors.contactPhone ? "border-red-500 focus-visible:ring-red-500" : ""}
             {...form.register("contactPhone")}
           />
+          {form.formState.errors.contactPhone && (
+            <p className="text-sm text-red-600 mt-1">{form.formState.errors.contactPhone.message}</p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
