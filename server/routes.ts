@@ -1924,6 +1924,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update multiple moderation settings
+  app.put("/api/admin/settings", requireAdmin, async (req, res) => {
+    try {
+      const { settings } = req.body;
+
+      if (!settings || typeof settings !== 'object') {
+        return res.status(400).json({ message: "Se requieren configuraciones válidas" });
+      }
+
+      const updates = [];
+      for (const [key, value] of Object.entries(settings)) {
+        const setting = await storage.setModerationSetting(key, value as string);
+        updates.push(setting);
+
+        await storage.createModerationLog({
+          action: "setting_updated",
+          targetType: "setting",
+          targetId: setting.id,
+          performedBy: req.user!.id,
+          details: JSON.stringify({ key, value })
+        });
+      }
+
+      res.json({ success: true, updated: updates.length });
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Get all users (for admin panel)
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {

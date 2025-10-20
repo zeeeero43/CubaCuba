@@ -42,6 +42,7 @@ export default function AdminSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/description-min-length"] });
       toast({
         title: "Einstellungen gespeichert",
         description: "Die Änderungen wurden erfolgreich gespeichert",
