@@ -985,34 +985,34 @@ export default function CreateListingPage() {
 
       {/* Rejection Dialog */}
       <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto" data-testid="dialog-rejection">
+        <DialogContent className="sm:max-w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden" data-testid="dialog-rejection">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <Ban className="h-6 w-6" />
-              Anuncio Rechazado
+            <DialogTitle className="flex items-center gap-2 text-red-600 break-words">
+              <Ban className="h-6 w-6 flex-shrink-0" />
+              <span className="break-words">Anuncio Rechazado</span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="break-words">
               Tu anuncio no cumple con nuestras políticas de contenido
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 my-4">
+          <div className="space-y-4 my-4 overflow-x-hidden">
             {rejectionData && rejectionData.message && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Mensaje:</AlertTitle>
-                <AlertDescription>{rejectionData.message}</AlertDescription>
+              <Alert variant="destructive" className="overflow-x-hidden">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                <AlertTitle className="break-words">Mensaje:</AlertTitle>
+                <AlertDescription className="break-words overflow-wrap-anywhere">{rejectionData.message}</AlertDescription>
               </Alert>
             )}
 
             {rejectionData && rejectionData.problematicWords && rejectionData.problematicWords.length > 0 && (
-              <Alert variant="destructive" className="bg-red-50 dark:bg-red-950">
-                <Ban className="h-5 w-5" />
-                <AlertTitle className="font-bold">Palabras/Frases Problemáticas Detectadas:</AlertTitle>
-                <AlertDescription>
-                  <div className="mt-2 flex flex-wrap gap-2">
+              <Alert variant="destructive" className="bg-red-50 dark:bg-red-950 overflow-x-hidden">
+                <Ban className="h-5 w-5 flex-shrink-0" />
+                <AlertTitle className="font-bold break-words">Palabras/Frases Problemáticas Detectadas:</AlertTitle>
+                <AlertDescription className="overflow-x-hidden">
+                  <div className="mt-2 flex flex-wrap gap-2 break-words">
                     {rejectionData.problematicWords.map((word, idx) => (
-                      <Badge key={idx} variant="destructive" className="text-base px-3 py-1 font-bold">
+                      <Badge key={idx} variant="destructive" className="text-sm sm:text-base px-2 sm:px-3 py-1 font-bold break-all max-w-full">
                         "{word}"
                       </Badge>
                     ))}
@@ -1022,18 +1022,18 @@ export default function CreateListingPage() {
             )}
 
             {rejectionData && rejectionData.aiExplanation && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Explicación de la IA:</AlertTitle>
-                <AlertDescription>{rejectionData.aiExplanation}</AlertDescription>
+              <Alert variant="destructive" className="overflow-x-hidden">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                <AlertTitle className="break-words">Explicación de la IA:</AlertTitle>
+                <AlertDescription className="break-words overflow-wrap-anywhere whitespace-pre-wrap">{rejectionData.aiExplanation}</AlertDescription>
               </Alert>
             )}
 
             {rejectionData && rejectionData.warning && (
-              <Alert variant="destructive" className="border-red-600 dark:border-red-500 bg-red-50 dark:bg-red-950">
-                <AlertTriangle className="h-5 w-5 text-red-700 dark:text-red-400" />
-                <AlertTitle className="text-red-800 dark:text-red-300 font-bold">⚠️ ADVERTENCIA IMPORTANTE</AlertTitle>
-                <AlertDescription className="text-sm text-red-900 dark:text-red-200 font-semibold">
+              <Alert variant="destructive" className="border-red-600 dark:border-red-500 bg-red-50 dark:bg-red-950 overflow-x-hidden">
+                <AlertTriangle className="h-5 w-5 text-red-700 dark:text-red-400 flex-shrink-0" />
+                <AlertTitle className="text-red-800 dark:text-red-300 font-bold break-words">⚠️ ADVERTENCIA IMPORTANTE</AlertTitle>
+                <AlertDescription className="text-sm text-red-900 dark:text-red-200 font-semibold break-words overflow-wrap-anywhere">
                   {rejectionData.warning}
                 </AlertDescription>
               </Alert>

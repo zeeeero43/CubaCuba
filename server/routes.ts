@@ -321,8 +321,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      console.log('Received request body:', JSON.stringify(req.body, null, 2));
-      
       // Convert empty strings to null for numeric fields
       const cleanedBody = {
         ...req.body,
@@ -330,7 +328,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const validatedData = insertListingSchema.parse(cleanedBody);
-      console.log('Validated data:', JSON.stringify(validatedData, null, 2));
       
       // Validate that categoryId refers to a subcategory (not a main category)
       if (validatedData.categoryId) {
@@ -356,8 +353,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserById(req.user!.id);
       if (user?.isBanned === "true") {
         return res.status(403).json({ 
-          message: "Su cuenta ha sido suspendida permanentemente por violaciones graves a nuestras políticas de contenido",
-          warning: "Las violaciones repetidas de nuestras políticas resultan en la suspensión permanente de la cuenta",
+          message: "Su cuenta ha sido excluida permanentemente de la plataforma por violaciones graves a nuestras políticas de contenido",
+          warning: "Las violaciones repetidas de nuestras políticas resultan en la exclusión permanente de la plataforma",
           reason: user.banReason || "Múltiples violaciones a las políticas de contenido"
         });
       }
@@ -376,7 +373,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.id,
         listingId: "temp-id" // temporary, will be replaced
       });
-      console.log("✅ Moderation complete. Decision:", moderationResult.decision);
 
       // If REJECTED: Create draft listing + review for appeal, add strike
       if (moderationResult.decision === "rejected") {
@@ -464,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           problematicWords: problematicWords,
           aiExplanation: aiExplanation,
           confidence: moderationResult.confidence,
-          warning: "⚠️ ADVERTENCIA: Violaciones repetidas de nuestras políticas pueden resultar en la suspensión permanente de su cuenta.",
+          warning: "⚠️ ADVERTENCIA: Violaciones repetidas de nuestras políticas pueden resultar en la exclusión permanente de la plataforma.",
           reviewId: review.id, // Include review ID for appeals
           listingId: listing.id
         });
@@ -505,8 +501,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       if (error.name === "ZodError") {
-        console.error('Zod validation error:', error.errors);
-        console.error('Request body that failed:', JSON.stringify(req.body, null, 2));
         const validationError = fromZodError(error);
         return res.status(400).json({ 
           message: "Error de validación", 
