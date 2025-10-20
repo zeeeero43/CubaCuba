@@ -44,7 +44,6 @@ export default function EditListingPage() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
   const [noPriceSelected, setNoPriceSelected] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   // Extract listing ID from URL
   const urlParts = window.location.pathname.split('/');
@@ -135,103 +134,75 @@ export default function EditListingPage() {
     },
   });
 
-  // Image upload handler
+  // Image upload handler (using Base64 like create-listing-page)
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    if (images.length + files.length > 10) {
+      toast({
+        title: "Límite de imágenes excedido",
+        description: "Puedes subir un máximo de 10 imágenes",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate individual file size
+    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB per image
+    const filesToUpload: File[] = [];
+    let totalSize = 0;
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
+      
+      if (file.size > MAX_FILE_SIZE) {
         toast({
-          title: "Tipo de archivo inválido",
-          description: "Solo se permiten archivos de imagen",
-          variant: "destructive",
+          title: "Imagen demasiado grande",
+          description: `"${file.name}" supera los 3MB. Por favor, comprime la imagen antes de subirla.`,
+          variant: "destructive"
         });
         continue;
       }
 
-      // Validate file size (5MB)
-      if (file.size > 5242880) {
-        toast({
-          title: "Archivo demasiado grande",
-          description: "El archivo no puede superar los 5MB",
-          variant: "destructive",
-        });
-        continue;
-      }
+      totalSize += file.size;
+      filesToUpload.push(file);
+    }
 
-      // Check if we've reached the image limit
-      if (images.length >= 10) {
-        toast({
-          title: "Límite de imágenes alcanzado",
-          description: "Solo puedes subir un máximo de 10 imágenes",
-          variant: "destructive",
-        });
-        break;
-      }
+    // Validate total size (Base64 images are ~33% larger)
+    const estimatedBase64Size = totalSize * 1.33;
+    if (estimatedBase64Size > 45 * 1024 * 1024) { // 45MB limit to be safe
+      toast({
+        title: "Demasiadas imágenes grandes",
+        description: "El tamaño total de las imágenes es demasiado grande. Por favor, sube menos imágenes o comprime las imágenes.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-      try {
-        setUploading(true);
-        
-        // Step 1: Get upload URL
-        const uploadResponse = await fetch('/api/listings/upload-image', {
-          method: 'POST',
-        });
-        const { uploadURL, objectId } = await uploadResponse.json();
-
-        // Step 2: Upload file directly to storage
-        const uploadFileResponse = await fetch(uploadURL, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type,
-          },
-        });
-
-        if (!uploadFileResponse.ok) {
-          throw new Error('Failed to upload file');
-        }
-
-        // Step 3: Finalize upload and get object path
-        const finalizeResponse = await fetch('/api/listings/finalize-upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ objectId }),
-        });
-
-        const { objectPath } = await finalizeResponse.json();
-
-        // Update images state
+    // Upload valid images
+    for (const file of filesToUpload) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
         setImages(prev => {
-          const newImages = [...prev, objectPath];
+          const newImages = [...prev, reader.result as string];
           form.setValue('images', newImages);
           return newImages;
         });
-      } catch (error) {
-        console.error('Error uploading image:', error);
-        toast({
-          title: "Error al subir imagen",
-          description: "Hubo un problema al subir la imagen. Inténtalo de nuevo.",
-          variant: "destructive",
-        });
-      } finally {
-        setUploading(false);
-      }
+      };
+      reader.readAsDataURL(file);
     }
-    
-    // Reset input
+
+    // Reset input to allow selecting the same file again
     e.target.value = '';
   };
 
   const removeImage = (index: number) => {
-    const updatedImages = images.filter((_, i) => i !== index);
-    setImages(updatedImages);
-    form.setValue('images', updatedImages);
+    setImages(prev => {
+      const updatedImages = prev.filter((_, i) => i !== index);
+      form.setValue('images', updatedImages);
+      return updatedImages;
+    });
   };
 
   const handleDragStart = (index: number) => {
@@ -257,6 +228,16 @@ export default function EditListingPage() {
   };
 
   const onSubmit = async (data: InsertListing) => {
+    // Validate images
+    if (images.length === 0) {
+      toast({
+        title: "Faltan imágenes",
+        description: "Debes subir al menos una imagen",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const finalData = {
       ...data,
       images,
@@ -267,11 +248,16 @@ export default function EditListingPage() {
     updateListingMutation.mutate(finalData as InsertListing);
   };
 
-  // Load existing listing data into form
+  // Load existing listing data into form AND set category selection
   useEffect(() => {
-    if (existingListing) {
+    if (existingListing && existingCategory) {
       const hasPrice = existingListing.price !== null && existingListing.price !== undefined;
       setNoPriceSelected(!hasPrice);
+
+      // Set main category if this is a subcategory
+      if (existingCategory.parentId) {
+        setSelectedMainCategory(existingCategory.parentId);
+      }
 
       form.reset({
         title: existingListing.title,
@@ -289,14 +275,7 @@ export default function EditListingPage() {
       });
       setImages(existingListing.images || []);
     }
-  }, [existingListing]);
-
-  // Set main category when existing category is loaded
-  useEffect(() => {
-    if (existingCategory && existingCategory.parentId) {
-      setSelectedMainCategory(existingCategory.parentId);
-    }
-  }, [existingCategory]);
+  }, [existingListing, existingCategory]);
 
   if (listingLoading) {
     return (
@@ -482,12 +461,12 @@ export default function EditListingPage() {
                   className="hidden"
                   id="image-upload"
                   data-testid="input-image-upload"
-                  disabled={uploading || images.length >= 10}
+                  disabled={images.length >= 10}
                 />
-                <label htmlFor="image-upload" className={`cursor-pointer ${uploading || images.length >= 10 ? 'opacity-50 pointer-events-none' : ''}`}>
+                <label htmlFor="image-upload" className={`cursor-pointer ${images.length >= 10 ? 'opacity-50 pointer-events-none' : ''}`}>
                   <Camera className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                   <p className="text-lg font-medium mb-2">
-                    {uploading ? "Subiendo..." : "Haz clic para subir imágenes"}
+                    Haz clic para subir imágenes
                   </p>
                   <p className="text-sm text-gray-500">Hasta 10 imágenes (máx. 5MB cada una)</p>
                 </label>
