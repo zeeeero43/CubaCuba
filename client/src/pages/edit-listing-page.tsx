@@ -123,7 +123,7 @@ export default function EditListingPage() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/listings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
-      navigate('/profile');
+      navigate(`/listing/${id}`);
     },
     onError: (error: any) => {
       toast({
@@ -149,7 +149,7 @@ export default function EditListingPage() {
     }
 
     // Validate individual file size
-    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB per image
+    const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB per image
     const filesToUpload: File[] = [];
     let totalSize = 0;
 
@@ -159,7 +159,7 @@ export default function EditListingPage() {
       if (file.size > MAX_FILE_SIZE) {
         toast({
           title: "Imagen demasiado grande",
-          description: `"${file.name}" supera los 3MB. Por favor, comprime la imagen antes de subirla.`,
+          description: `"${file.name}" supera los 15MB. Por favor, comprime la imagen antes de subirla.`,
           variant: "destructive"
         });
         continue;

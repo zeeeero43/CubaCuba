@@ -298,7 +298,7 @@ export default function CreateListingPage() {
     }
 
     // Validar tamaño individual de cada archivo
-    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB por imagen
+    const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB por imagen
     const filesToUpload: File[] = [];
     let totalSize = 0;
 
@@ -308,7 +308,7 @@ export default function CreateListingPage() {
       if (file.size > MAX_FILE_SIZE) {
         toast({
           title: "Imagen demasiado grande",
-          description: `"${file.name}" supera los 3MB. Por favor, comprime la imagen antes de subirla.`,
+          description: `"${file.name}" supera los 15MB. Por favor, comprime la imagen antes de subirla.`,
           variant: "destructive"
         });
         continue;

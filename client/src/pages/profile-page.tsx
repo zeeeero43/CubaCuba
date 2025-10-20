@@ -199,11 +199,16 @@ export default function ProfilePage() {
               <Calendar className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  {new Date(user.createdAt!).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  {(() => {
+                    if (!user.createdAt) return 'Fecha no disponible';
+                    const parsed = new Date(user.createdAt);
+                    if (Number.isNaN(parsed.getTime())) return 'Fecha no disponible';
+                    return parsed.toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                  })()}
                 </p>
                 <p className="text-xs text-muted-foreground">Miembro desde</p>
               </div>

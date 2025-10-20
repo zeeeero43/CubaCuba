@@ -720,7 +720,7 @@ export default function ListingDetailPage() {
 
     const safeTitle = escapeHtml(listing.title);
     const safeDescription = escapeHtml(listing.description);
-    const safeCity = escapeHtml(listing.locationCity);
+    const safeCity = escapeHtml(listing.locationCity || '');
     const safeRegion = escapeHtml(listing.locationRegion);
     const safePhone = escapeHtml(listing.contactPhone);
     const priceDisplay = formatPrice(listing);
@@ -964,11 +964,11 @@ export default function ListingDetailPage() {
           <div className="md:col-span-2 space-y-6">
             {/* Title and Price */}
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="text-title">
+              <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="text-title">
                 {listing.title}
               </h1>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-3xl font-bold text-primary" data-testid="text-price">
+                <span className="text-2xl font-bold text-primary" data-testid="text-price">
                   {formatPrice(listing)}
                 </span>
                 {listing.price && (

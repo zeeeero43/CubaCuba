@@ -138,7 +138,7 @@ export function ListingCard({ listing, isSponsored = false, isFavorite = false, 
 
         {/* Price */}
         <p 
-          className={`font-bold text-primary ${!listing.price ? 'text-sm' : 'text-lg'}`}
+          className="font-bold text-primary text-lg"
           data-testid={`text-price-${listing.id}`}
         >
           {formatPrice(listing)}
