@@ -399,16 +399,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         await storage.updateListingModeration(listing.id, "rejected", review.id);
 
-        // Add strike to user
-        const currentStrikes = (user?.moderationStrikes || 0) + 1;
-        await storage.updateUserStrikes(req.user!.id, currentStrikes);
-        
-        // Check if user should be banned
-        const maxStrikesSetting = await storage.getModerationSetting("max_strikes_before_ban");
-        const maxStrikes = parseInt(maxStrikesSetting?.value || "5");
-        
-        if (currentStrikes >= maxStrikes) {
-          await storage.banUser(req.user!.id, `Cuenta suspendida automáticamente por ${currentStrikes} violaciones de moderación`);
+        // Add strike to user (but not for admins)
+        let currentStrikes = 0;
+        if (user?.role !== "admin") {
+          currentStrikes = (user?.moderationStrikes || 0) + 1;
+          await storage.updateUserStrikes(req.user!.id, currentStrikes);
+          
+          // Check if user should be banned
+          const maxStrikesSetting = await storage.getModerationSetting("max_strikes_before_ban");
+          const maxStrikes = parseInt(maxStrikesSetting?.value || "5");
+          
+          if (currentStrikes >= maxStrikes) {
+            await storage.banUser(req.user!.id, `Cuenta suspendida automáticamente por ${currentStrikes} violaciones de moderación`);
+          }
         }
 
         // Create rejection log

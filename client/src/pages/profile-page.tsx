@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { User, Phone, MapPin, Calendar, Settings, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart, Star, Users } from "lucide-react";
+import { User, Phone, MapPin, Calendar, Settings, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart, Star, Users, AlertTriangle, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -208,6 +208,28 @@ export default function ProfilePage() {
                 <p className="text-xs text-muted-foreground">Miembro desde</p>
               </div>
             </div>
+            
+            {user.role === "admin" ? (
+              <div className="flex items-center space-x-3">
+                <ShieldCheck className="w-5 h-5 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium text-green-600">
+                    Administrador
+                  </p>
+                  <p className="text-xs text-muted-foreground">Sin límite de strikes</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <AlertTriangle className={`w-5 h-5 ${(user.moderationStrikes || 0) >= 3 ? 'text-red-600' : 'text-muted-foreground'}`} />
+                <div>
+                  <p className={`text-sm font-medium ${(user.moderationStrikes || 0) >= 3 ? 'text-red-600' : 'text-foreground'}`}>
+                    {user.moderationStrikes || 0} strikes
+                  </p>
+                  <p className="text-xs text-muted-foreground">Estado de moderación</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
