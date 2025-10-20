@@ -130,7 +130,7 @@ export function ListingCard({ listing, isSponsored = false, isFavorite = false, 
 
         {/* Title */}
         <h3 
-          className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2 mb-2"
+          className="text-base font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 mb-2"
           data-testid={`text-title-${listing.id}`}
         >
           {listing.title}
@@ -138,7 +138,7 @@ export function ListingCard({ listing, isSponsored = false, isFavorite = false, 
 
         {/* Price */}
         <p 
-          className="text-lg font-bold text-primary"
+          className={`font-bold text-primary ${!listing.price ? 'text-sm' : 'text-lg'}`}
           data-testid={`text-price-${listing.id}`}
         >
           {formatPrice(listing)}

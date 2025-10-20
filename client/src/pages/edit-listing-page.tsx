@@ -13,8 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Plus, X, Upload, MapPin, Euro, Tag, Phone, MessageCircle, Camera } from "lucide-react";
+import { ArrowLeft, X, Camera, Save, ChevronRight } from "lucide-react";
 import type { Category } from "@shared/schema";
+import { PageHeader } from "@/components/PageHeader";
 
 const provinces = [
   { value: "havana", label: "La Habana" },
@@ -41,9 +42,9 @@ export default function EditListingPage() {
   const queryClient = useQueryClient();
   const [images, setImages] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [listingId, setListingId] = useState<string>("");
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
   const [noPriceSelected, setNoPriceSelected] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // Extract listing ID from URL
   const urlParts = window.location.pathname.split('/');
@@ -108,10 +109,7 @@ export default function EditListingPage() {
     },
   });
 
-  // Watch form values outside of render to avoid infinite loops
   const watchedDescription = form.watch("description");
-  const watchedCurrency = form.watch("currency");
-  const watchedPriceType = form.watch("priceType");
   const watchedCategoryId = form.watch("categoryId");
   const watchedLocationRegion = form.watch("locationRegion");
   const watchedCondition = form.watch("condition");
@@ -126,10 +124,9 @@ export default function EditListingPage() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/listings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
-      navigate('/my-listings');
+      navigate('/profile');
     },
     onError: (error: any) => {
-      console.log('Mutation error:', error);
       toast({
         title: "Error al actualizar",
         description: error.message || "Hubo un problema al actualizar tu anuncio",
@@ -138,98 +135,97 @@ export default function EditListingPage() {
     },
   });
 
-  const addImageFromUpload = (imageUrl: string) => {
-    if (imageUrl) {
-      setImages(prev => {
-        // Check if image already exists or if we've reached the limit
-        if (prev.includes(imageUrl) || prev.length >= 10) {
-          return prev;
-        }
-        const updatedImages = [...prev, imageUrl];
-        form.setValue('images', updatedImages);
-        return updatedImages;
-      });
-    }
-  };
-
-  // Simple file upload handler
-  const handleFileUpload = async (files: FileList) => {
+  // Image upload handler
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
     if (!files || files.length === 0) return;
-    
-    const file = files[0];
-    
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Tipo de archivo inválido",
-        description: "Solo se permiten archivos de imagen",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Validate file size (50MB)
-    if (file.size > 52428800) {
-      toast({
-        title: "Archivo demasiado grande",
-        description: "El archivo no puede superar los 50MB",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Check if we've reached the image limit
-    if (images.length >= 10) {
-      toast({
-        title: "Límite de imágenes alcanzado",
-        description: "Solo puedes subir un máximo de 10 imágenes",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      // Step 1: Get upload URL
-      const uploadResponse = await apiRequest('POST', '/api/listings/upload-image');
-      const { uploadURL, objectId } = await uploadResponse.json();
-      
-      // Step 2: Upload file directly to storage
-      const uploadFileResponse = await fetch(uploadURL, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-      
-      if (!uploadFileResponse.ok) {
-        throw new Error('Failed to upload file');
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Tipo de archivo inválido",
+          description: "Solo se permiten archivos de imagen",
+          variant: "destructive",
+        });
+        continue;
       }
-      
-      // Step 3: Finalize upload and get object path
-      const finalizeResponse = await apiRequest('POST', '/api/listings/finalize-upload', { objectId });
-      
-      const { objectPath } = await finalizeResponse.json();
-      
-      // Update images state
-      setImages(prev => {
-        const newImages = [...prev, objectPath];
-        form.setValue('images', newImages);
-        return newImages;
-      });
-      
-      toast({
-        title: "¡Imagen subida exitosamente!",
-        description: "La imagen se ha agregado a tu anuncio",
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error al subir imagen",
-        description: "Hubo un problema al subir la imagen. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
+
+      // Validate file size (5MB)
+      if (file.size > 5242880) {
+        toast({
+          title: "Archivo demasiado grande",
+          description: "El archivo no puede superar los 5MB",
+          variant: "destructive",
+        });
+        continue;
+      }
+
+      // Check if we've reached the image limit
+      if (images.length >= 10) {
+        toast({
+          title: "Límite de imágenes alcanzado",
+          description: "Solo puedes subir un máximo de 10 imágenes",
+          variant: "destructive",
+        });
+        break;
+      }
+
+      try {
+        setUploading(true);
+        
+        // Step 1: Get upload URL
+        const uploadResponse = await fetch('/api/listings/upload-image', {
+          method: 'POST',
+        });
+        const { uploadURL, objectId } = await uploadResponse.json();
+
+        // Step 2: Upload file directly to storage
+        const uploadFileResponse = await fetch(uploadURL, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+
+        if (!uploadFileResponse.ok) {
+          throw new Error('Failed to upload file');
+        }
+
+        // Step 3: Finalize upload and get object path
+        const finalizeResponse = await fetch('/api/listings/finalize-upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ objectId }),
+        });
+
+        const { objectPath } = await finalizeResponse.json();
+
+        // Update images state
+        setImages(prev => {
+          const newImages = [...prev, objectPath];
+          form.setValue('images', newImages);
+          return newImages;
+        });
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast({
+          title: "Error al subir imagen",
+          description: "Hubo un problema al subir la imagen. Inténtalo de nuevo.",
+          variant: "destructive",
+        });
+      } finally {
+        setUploading(false);
+      }
     }
+    
+    // Reset input
+    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
@@ -245,12 +241,12 @@ export default function EditListingPage() {
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
-    
+
     const newImages = [...images];
     const draggedItem = newImages[draggedIndex];
     newImages.splice(draggedIndex, 1);
     newImages.splice(index, 0, draggedItem);
-    
+
     setImages(newImages);
     setDraggedIndex(index);
     form.setValue('images', newImages);
@@ -261,33 +257,14 @@ export default function EditListingPage() {
   };
 
   const onSubmit = async (data: InsertListing) => {
-    console.log('Form submission data:', {
+    const finalData = {
       ...data,
-      images
-    });
-    console.log('Form errors:', form.formState.errors);
-    console.log('Form is valid:', form.formState.isValid);
-    console.log('Form state details:', {
-      isValidating: form.formState.isValidating,
-      isSubmitting: form.formState.isSubmitting,
-      touchedFields: form.formState.touchedFields,
-      dirtyFields: form.formState.dirtyFields,
-    });
+      images,
+      price: noPriceSelected ? null : data.price,
+      priceType: noPriceSelected ? "consult" as const : "fixed" as const,
+    };
     
-    // Manually trigger validation to see what happens
-    const isValid = await form.trigger();
-    console.log('Manual validation result:', isValid);
-    console.log('Errors after manual validation:', form.formState.errors);
-    
-    if (!isValid) {
-      console.log('Form validation failed, not submitting');
-      return;
-    }
-    
-    updateListingMutation.mutate({
-      ...data,
-      images
-    });
+    updateListingMutation.mutate(finalData as InsertListing);
   };
 
   // Load existing listing data into form
@@ -295,13 +272,13 @@ export default function EditListingPage() {
     if (existingListing) {
       const hasPrice = existingListing.price !== null && existingListing.price !== undefined;
       setNoPriceSelected(!hasPrice);
-      
+
       form.reset({
         title: existingListing.title,
         description: existingListing.description,
         price: hasPrice && existingListing.price ? existingListing.price.toString() : "",
         currency: (existingListing.currency as "CUP" | "USD") || "CUP",
-        priceType: existingListing.priceType as "fixed" | "negotiable",
+        priceType: (existingListing.priceType as "fixed" | "consult") || "fixed",
         categoryId: existingListing.categoryId || "",
         locationCity: existingListing.locationCity,
         locationRegion: existingListing.locationRegion,
@@ -321,171 +298,42 @@ export default function EditListingPage() {
     }
   }, [existingCategory]);
 
+  if (listingLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <p className="text-lg">Cargando...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate('/')}
-            data-testid="button-back-home"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-lg font-semibold text-foreground">Editar Anuncio</h1>
-          <div className="w-10" /> {/* Spacer */}
-        </div>
-      </div>
+      <PageHeader 
+        title="Editar Anuncio" 
+        backTo="/profile"
+      />
 
       <div className="max-w-2xl mx-auto px-4 py-6">
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Basic Information */}
+          {/* Category Selection */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tag className="w-5 h-5 text-primary" />
-                Información Básica
-              </CardTitle>
+              <CardTitle>Categoría</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Título del anuncio *</Label>
-                <Input
-                  id="title"
-                  placeholder="Ej: iPhone 14 Pro en perfecto estado"
-                  {...form.register("title")}
-                  data-testid="input-title"
-                />
-                {form.formState.errors.title && (
-                  <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripción *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe tu producto detalladamente..."
-                  className="min-h-24"
-                  {...form.register("description")}
-                  data-testid="textarea-description"
-                />
-                <div className="flex items-center justify-between text-sm">
-                  <p className={`${
-                    (watchedDescription?.length || 0) < descriptionMinLength 
-                      ? 'text-destructive' 
-                      : 'text-muted-foreground'
-                  }`} data-testid="text-description-counter">
-                    {watchedDescription?.length || 0} / {descriptionMinLength} caracteres mínimos
-                  </p>
-                </div>
-                {form.formState.errors.description && (
-                  <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="noPrice"
-                    checked={noPriceSelected}
-                    onChange={(e) => {
-                      setNoPriceSelected(e.target.checked);
-                      if (e.target.checked) {
-                        form.setValue("price", "");
-                      }
-                    }}
-                    className="h-4 w-4 rounded border-gray-300"
-                    data-testid="checkbox-no-price"
-                  />
-                  <Label htmlFor="noPrice" className="text-sm font-normal cursor-pointer">
-                    Sin precio (Precio a consultar)
-                  </Label>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Precio {!noPriceSelected && "*"}</Label>
-                    <div className="relative">
-                      <Euro className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        className="pl-10"
-                        disabled={noPriceSelected}
-                        {...form.register("price")}
-                        data-testid="input-price"
-                      />
-                    </div>
-                    {form.formState.errors.price && (
-                      <p className="text-sm text-destructive">{form.formState.errors.price.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Moneda *</Label>
-                    <Select 
-                      onValueChange={(value) => form.setValue("currency", value as "CUP" | "USD")}
-                      value={watchedCurrency || "CUP"}
-                      disabled={noPriceSelected}
-                    >
-                      <SelectTrigger data-testid="select-currency">
-                        <SelectValue placeholder="Selecciona moneda" />
-                      </SelectTrigger>
-                      <SelectContent translate="no">
-                        <SelectItem value="CUP">Peso Cubano (CUP)</SelectItem>
-                        <SelectItem value="USD">Dólar (USD)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="priceType">Tipo de precio *</Label>
-                  <Select 
-                    onValueChange={(value) => form.setValue("priceType", value as "fixed" | "negotiable")}
-                    value={watchedPriceType || ""}
-                  >
-                    <SelectTrigger data-testid="select-price-type">
-                      <SelectValue placeholder="Selecciona tipo" />
-                    </SelectTrigger>
-                    <SelectContent translate="no">
-                      <SelectItem value="fixed">Precio fijo</SelectItem>
-                      <SelectItem value="negotiable">Negociable</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Category and Location */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" />
-                Categoría y Ubicación
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="mainCategory">Categoría Principal *</Label>
-                <Select 
+              <div>
+                <Label>Categoría Principal</Label>
+                <Select
+                  value={selectedMainCategory}
                   onValueChange={(value) => {
                     setSelectedMainCategory(value);
-                    form.setValue("categoryId", ""); // Reset subcategory when main category changes
+                    form.setValue("categoryId", "");
                   }}
-                  value={selectedMainCategory}
                 >
                   <SelectTrigger data-testid="select-main-category">
                     <SelectValue placeholder="Selecciona categoría principal" />
                   </SelectTrigger>
-                  <SelectContent translate="no">
+                  <SelectContent>
                     {mainCategories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -495,53 +343,108 @@ export default function EditListingPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="categoryId">Subcategoría *</Label>
-                <Select 
-                  onValueChange={(value) => form.setValue("categoryId", value)}
-                  value={watchedCategoryId || ""}
-                  disabled={!selectedMainCategory}
-                >
-                  <SelectTrigger data-testid="select-subcategory">
-                    <SelectValue placeholder={selectedMainCategory ? "Selecciona subcategoría" : "Primero selecciona una categoría principal"} />
-                  </SelectTrigger>
-                  <SelectContent translate="no">
-                    {availableSubcategories.map((subcategory) => (
-                      <SelectItem key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.categoryId && (
-                  <p className="text-sm text-destructive">{form.formState.errors.categoryId.message}</p>
+              {selectedMainCategory && availableSubcategories.length > 0 && (
+                <div>
+                  <Label>Subcategoría *</Label>
+                  <Select
+                    value={watchedCategoryId || ""}
+                    onValueChange={(value) => form.setValue("categoryId", value)}
+                  >
+                    <SelectTrigger data-testid="select-subcategory">
+                      <SelectValue placeholder="Selecciona subcategoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSubcategories.map((subcategory) => (
+                        <SelectItem key={subcategory.id} value={subcategory.id}>
+                          {subcategory.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.categoryId && (
+                    <p className="text-sm text-red-600 mt-1">{form.formState.errors.categoryId.message}</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Basic Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Información Básica</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="title">Título del anuncio *</Label>
+                <Input
+                  id="title"
+                  data-testid="input-title"
+                  placeholder="Ej: iPhone 12 Pro Max 256GB"
+                  {...form.register("title")}
+                />
+                {form.formState.errors.title && (
+                  <p className="text-sm text-red-600 mt-1">{form.formState.errors.title.message}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="locationCity">Ciudad *</Label>
-                  <Input
-                    id="locationCity"
-                    placeholder="Ej: Centro Habana"
-                    {...form.register("locationCity")}
-                    data-testid="input-city"
-                  />
-                  {form.formState.errors.locationCity && (
-                    <p className="text-sm text-destructive">{form.formState.errors.locationCity.message}</p>
+              <div>
+                <Label htmlFor="description">
+                  Descripción * (mínimo {descriptionMinLength} caracteres)
+                </Label>
+                <Textarea
+                  id="description"
+                  data-testid="input-description"
+                  placeholder="Describe tu producto: estado, características, motivo de venta, etc."
+                  rows={6}
+                  {...form.register("description")}
+                />
+                <div className="flex justify-between items-center mt-1">
+                  {form.formState.errors.description && (
+                    <p className="text-sm text-red-600">{form.formState.errors.description.message}</p>
                   )}
+                  <p className="text-sm text-gray-500 ml-auto">
+                    {watchedDescription?.length || 0} / {descriptionMinLength}
+                  </p>
                 </div>
+              </div>
 
-                <div className="space-y-2">
+              <div>
+                <Label htmlFor="condition">Condición del producto *</Label>
+                <Select
+                  value={watchedCondition || "used"}
+                  onValueChange={(value) => form.setValue("condition", value as any)}
+                >
+                  <SelectTrigger data-testid="select-condition">
+                    <SelectValue placeholder="Selecciona condición" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">Nuevo</SelectItem>
+                    <SelectItem value="used">Usado</SelectItem>
+                    <SelectItem value="defective">Defectuoso</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Location */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ubicación</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <Label htmlFor="locationRegion">Provincia *</Label>
-                  <Select 
-                    onValueChange={(value) => form.setValue("locationRegion", value)}
+                  <Select
                     value={watchedLocationRegion || ""}
+                    onValueChange={(value) => form.setValue("locationRegion", value)}
                   >
-                    <SelectTrigger data-testid="select-province">
+                    <SelectTrigger data-testid="select-region">
                       <SelectValue placeholder="Selecciona provincia" />
                     </SelectTrigger>
-                    <SelectContent translate="no">
+                    <SelectContent>
                       {provinces.map((province) => (
                         <SelectItem key={province.value} value={province.value}>
                           {province.label}
@@ -549,27 +452,17 @@ export default function EditListingPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {form.formState.errors.locationRegion && (
-                    <p className="text-sm text-destructive">{form.formState.errors.locationRegion.message}</p>
-                  )}
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="condition">Estado del artículo *</Label>
-                <Select 
-                  onValueChange={(value) => form.setValue("condition", value as "new" | "used" | "defective")}
-                  value={watchedCondition || ""}
-                >
-                  <SelectTrigger data-testid="select-condition">
-                    <SelectValue placeholder="Selecciona el estado" />
-                  </SelectTrigger>
-                  <SelectContent translate="no">
-                    <SelectItem value="new">Nuevo</SelectItem>
-                    <SelectItem value="used">Usado - Buen estado</SelectItem>
-                    <SelectItem value="defective">Usado - Con defectos</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div>
+                  <Label htmlFor="locationCity">Ciudad (opcional)</Label>
+                  <Input
+                    id="locationCity"
+                    data-testid="input-city"
+                    placeholder="Ej: Centro Habana"
+                    {...form.register("locationCity")}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -577,150 +470,170 @@ export default function EditListingPage() {
           {/* Images */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="w-5 h-5 text-primary" />
-                Imágenes (máximo 10)
-              </CardTitle>
+              <CardTitle>Imágenes ({images.length}/10)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 px-4">
-                  Sube hasta 10 imágenes para tu anuncio
-                </p>
-                
-                {/* Simple file upload input */}
-                <div className="px-4">
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      disabled={images.length >= 10}
-                      data-testid="input-image-upload"
-                    />
-                    <div className="w-full py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary transition-colors bg-transparent flex flex-col items-center cursor-pointer">
-                      <Upload className="w-8 h-8 text-gray-400 mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400 mb-2 text-sm font-medium">
-                        Arrastra archivos aquí o haz clic para seleccionar
-                      </p>
-                      <p className="text-xs text-gray-400 px-4">
-                        PNG, JPG, JPEG hasta 50MB (máximo {8 - images.length} restantes)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Image Gallery */}
-              {images.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    Arrastra las imágenes para reordenarlas. La primera imagen será la principal.
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="image-upload"
+                  data-testid="input-image-upload"
+                  disabled={uploading || images.length >= 10}
+                />
+                <label htmlFor="image-upload" className={`cursor-pointer ${uploading || images.length >= 10 ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <Camera className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-lg font-medium mb-2">
+                    {uploading ? "Subiendo..." : "Haz clic para subir imágenes"}
                   </p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <p className="text-sm text-gray-500">Hasta 10 imágenes (máx. 5MB cada una)</p>
+                </label>
+              </div>
+
+              {images.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    Arrastra las imágenes para cambiar su orden. La primera imagen será la principal.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {images.map((image, index) => (
-                      <div 
-                        key={index} 
-                        className={`relative cursor-move transition-all ${
-                          draggedIndex === index ? 'opacity-50 scale-95' : 'opacity-100'
-                        }`}
+                      <div
+                        key={index}
                         draggable
                         onDragStart={() => handleDragStart(index)}
                         onDragOver={(e) => handleDragOver(e, index)}
                         onDragEnd={handleDragEnd}
+                        className={`relative group cursor-move transition-all ${
+                          draggedIndex === index ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
+                        }`}
+                        data-testid={`image-preview-${index}`}
                       >
-                        <img 
-                          src={image} 
-                          alt={`Imagen ${index + 1}`}
-                          className="w-full h-40 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700"
-                          onError={(e) => {
-                            e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E";
-                          }}
-                        />
-                        {index === 0 && (
-                          <Badge className="absolute top-2 left-2 bg-primary text-white">
-                            Principal
-                          </Badge>
-                        )}
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="destructive"
-                          className="absolute top-2 right-2 h-7 w-7 shadow-lg"
-                          onClick={() => removeImage(index)}
-                          data-testid={`button-remove-image-${index}`}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                        <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-green-400 transition-colors">
+                          <img
+                            src={image}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-32 object-cover"
+                          />
+                          {index === 0 && (
+                            <Badge className="absolute top-2 left-2 bg-green-600 shadow-lg">
+                              📸 Principal
+                            </Badge>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
+                            data-testid={`button-remove-image-${index}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <p className="text-xs text-center mt-1 text-gray-500">Imagen {index + 1}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              
-              <p className="text-sm text-muted-foreground">
-                Imágenes: {images.length}/8
-              </p>
             </CardContent>
           </Card>
 
-          {/* Contact Information */}
+          {/* Price and Contact */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="w-5 h-5 text-primary" />
-                Información de Contacto
-              </CardTitle>
+              <CardTitle>Precio y Contacto</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="no-price"
+                  checked={noPriceSelected}
+                  onChange={(e) => {
+                    setNoPriceSelected(e.target.checked);
+                    if (e.target.checked) {
+                      form.setValue("price", "");
+                    }
+                  }}
+                  data-testid="checkbox-no-price"
+                />
+                <Label htmlFor="no-price" className="cursor-pointer">
+                  Precio a consultar
+                </Label>
+              </div>
+
+              {!noPriceSelected && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="price">Precio *</Label>
+                    <Input
+                      id="price"
+                      type="text"
+                      placeholder="1000"
+                      data-testid="input-price"
+                      {...form.register("price")}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="currency">Moneda *</Label>
+                    <Select
+                      value={form.watch("currency") || "CUP"}
+                      onValueChange={(value) => form.setValue("currency", value as any)}
+                    >
+                      <SelectTrigger data-testid="select-currency">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CUP">CUP</SelectItem>
+                        <SelectItem value="USD">USD</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              <div>
                 <Label htmlFor="contactPhone">Teléfono de contacto *</Label>
                 <Input
                   id="contactPhone"
                   type="tel"
-                  placeholder="+1 305 123456 o 54123456"
-                  {...form.register("contactPhone")}
+                  placeholder="+53 5555 5555"
                   data-testid="input-contact-phone"
+                  {...form.register("contactPhone")}
                 />
                 {form.formState.errors.contactPhone && (
-                  <p className="text-sm text-destructive">{form.formState.errors.contactPhone.message}</p>
+                  <p className="text-sm text-red-600 mt-1">{form.formState.errors.contactPhone.message}</p>
                 )}
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="whatsapp"
                   checked={watchedContactWhatsApp === "true"}
                   onChange={(e) => form.setValue("contactWhatsApp", e.target.checked ? "true" : "false")}
-                  className="rounded"
                   data-testid="checkbox-whatsapp"
                 />
-                <Label htmlFor="whatsapp" className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4 text-green-600" />
-                  También disponible en WhatsApp
+                <Label htmlFor="whatsapp" className="cursor-pointer">
+                  Este número tiene WhatsApp
                 </Label>
               </div>
             </CardContent>
           </Card>
 
           {/* Submit Button */}
-          <div className="space-y-4">
-            <Button 
-              type="submit" 
-              className="w-full" 
-              size="lg"
-              disabled={updateListingMutation.isPending}
-              data-testid="button-submit"
-            >
-              {updateListingMutation.isPending ? "Guardando cambios..." : "Guardar Cambios"}
-            </Button>
-            
-            <p className="text-sm text-muted-foreground text-center">
-              Al publicar, aceptas nuestros términos y condiciones
-            </p>
-          </div>
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            disabled={updateListingMutation.isPending}
+            data-testid="button-save"
+          >
+            <Save className="w-5 h-5 mr-2" />
+            {updateListingMutation.isPending ? "Guardando..." : "Guardar Cambios"}
+          </Button>
         </form>
       </div>
     </div>
