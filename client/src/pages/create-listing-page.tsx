@@ -193,6 +193,9 @@ export default function CreateListingPage() {
             // Found the parent category
             setSelectedMainCategory(mainCat.id);
             form.setValue("categoryId", categoryIdParam);
+            
+            // Skip category step and go directly to step 2 (details)
+            setCurrentStep(2);
             break;
           }
         }

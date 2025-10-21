@@ -194,73 +194,77 @@ export default function CategoryPage() {
           </div>
         ) : null}
 
-        {/* Listings Grid */}
-        {listingsLoading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <Card key={i}>
-                <Skeleton className="w-full h-40" />
-                <CardContent className="p-3">
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-20" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : listings.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400 text-lg">
-              No hay anuncios en esta categoría
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {listings.map((listing) => (
-              <Card
-                key={listing.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
-                onClick={() => navigate(`/listing/${listing.id}`)}
-                data-testid={`card-listing-${listing.id}`}
-              >
-                <div className="relative">
-                  {listing.images && listing.images.length > 0 ? (
-                    <OptimizedImage
-                      src={listing.images[0]}
-                      alt={listing.title}
-                      className="w-full h-40 object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-40 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                      <span className="text-gray-400">Sin imagen</span>
+        {/* Listings Grid - Only show when activeCategory is set (subcategory selected) */}
+        {activeCategory && (
+          <>
+            {listingsLoading ? (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <Card key={i}>
+                    <Skeleton className="w-full h-40" />
+                    <CardContent className="p-3">
+                      <Skeleton className="h-4 w-full mb-2" />
+                      <Skeleton className="h-4 w-20" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500 dark:text-gray-400 text-lg">
+                  No hay anuncios en esta categoría
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {listings.map((listing) => (
+                  <Card
+                    key={listing.id}
+                    className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
+                    onClick={() => navigate(`/listing/${listing.id}`)}
+                    data-testid={`card-listing-${listing.id}`}
+                  >
+                    <div className="relative">
+                      {listing.images && listing.images.length > 0 ? (
+                        <OptimizedImage
+                          src={listing.images[0]}
+                          alt={listing.title}
+                          className="w-full h-40 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-40 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <span className="text-gray-400">Sin imagen</span>
+                        </div>
+                      )}
+                      {listing.featured === "true" && (
+                        <Badge className="absolute top-2 left-2 bg-yellow-500 text-white">
+                          Destacado
+                        </Badge>
+                      )}
                     </div>
-                  )}
-                  {listing.featured === "true" && (
-                    <Badge className="absolute top-2 left-2 bg-yellow-500 text-white">
-                      Destacado
-                    </Badge>
-                  )}
-                </div>
-                <CardContent className="p-3">
-                  <h3 className="font-semibold text-sm mb-1 line-clamp-2 text-gray-900 dark:text-gray-100">
-                    {listing.title}
-                  </h3>
-                  <p className="text-lg font-bold text-primary mb-2">
-                    ${listing.price} {listing.currency}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      <span>{listing.locationCity}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      <span>{listing.views}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <CardContent className="p-3">
+                      <h3 className="font-semibold text-sm mb-1 line-clamp-2 text-gray-900 dark:text-gray-100">
+                        {listing.title}
+                      </h3>
+                      <p className="text-lg font-bold text-primary mb-2">
+                        ${listing.price} {listing.currency}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{listing.locationCity}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Eye className="w-3 h-3" />
+                          <span>{listing.views}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
