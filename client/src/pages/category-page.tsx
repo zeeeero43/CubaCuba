@@ -32,7 +32,27 @@ export default function CategoryPage() {
   // Fetch listings only if it's a subcategory OR if a subcategory is selected
   const activeCategory = selectedSubcategory || (!isMainCategory ? categoryId : null);
   const { data: listingsData, isLoading: listingsLoading } = useQuery<{ listings: Listing[]; total: number }>({
-    queryKey: ['/api/listings', { categoryId: activeCategory, page: 1, pageSize: 20 }],
+    queryKey: ['/api/listings', activeCategory],
+    queryFn: async () => {
+      if (!activeCategory) return { listings: [], total: 0 };
+      
+      const params = new URLSearchParams({
+        categoryId: activeCategory,
+        status: 'active',
+        page: '1',
+        pageSize: '20'
+      });
+      
+      const response = await fetch(`/api/listings?${params.toString()}`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch listings');
+      }
+      
+      return response.json();
+    },
     enabled: !!activeCategory,
   });
 
