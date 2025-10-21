@@ -169,6 +169,37 @@ export default function CreateListingPage() {
     form.setValue("images", images);
   }, [images]);
 
+  // Pre-fill category from URL parameter
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryIdParam = urlParams.get('categoryId');
+    
+    if (categoryIdParam && categoriesTree) {
+      // Find if this is a main category or subcategory
+      const isMainCategory = mainCategories.some(cat => cat.id === categoryIdParam);
+      
+      if (isMainCategory) {
+        // It's a main category - set it as selected main category
+        setSelectedMainCategory(categoryIdParam);
+      } else {
+        // It's a subcategory - find its parent and pre-select both
+        for (const mainCat of mainCategories) {
+          const subcats = subcategories[mainCat.id] || [];
+          const foundSubcat = subcats.find(sub => sub.id === categoryIdParam);
+          
+          if (foundSubcat) {
+            // Found the parent category
+            setSelectedMainCategory(mainCat.id);
+            form.setValue("categoryId", categoryIdParam);
+            break;
+          }
+        }
+      }
+    }
+  }, [categoriesTree, mainCategories, subcategories]);
+
   const purchasePremiumMutation = useMutation({
     mutationFn: async ({ listingId, featureIds }: { listingId: string; featureIds: string[] }) => {
       const response = await apiRequest('POST', `/api/listings/${listingId}/premium`, { featureIds });

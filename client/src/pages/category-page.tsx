@@ -121,6 +121,20 @@ export default function CategoryPage() {
       </div>
 
       <div className="max-w-md lg:max-w-6xl mx-auto px-4 py-6">
+        {/* Create Listing Button - Only show when viewing a subcategory */}
+        {activeCategory && (
+          <div className="mb-6 flex justify-center">
+            <Button
+              onClick={() => navigate(`/create-listing?categoryId=${activeCategory}`)}
+              className="bg-green-600 hover:bg-green-700 text-white shadow-md"
+              data-testid="button-create-listing-category"
+            >
+              <span className="mr-2">+</span>
+              Publicar anuncio en esta categoría
+            </Button>
+          </div>
+        )}
+
         {/* Subcategories - Show as list for main categories */}
         {isMainCategory && !selectedSubcategory ? (
           <div className="mb-6">
