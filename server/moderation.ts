@@ -1,5 +1,7 @@
 import type { InsertListing } from "@shared/schema";
 import type { IStorage } from "./storage";
+import { readFileSync } from 'fs';
+import path from 'path';
 
 interface CubaContentRules {
   prohibitedKeywords: string[];
@@ -297,6 +299,11 @@ Respond ONLY with JSON:
   }
 
   private async analyzeImages(imageUrls: string[]): Promise<{ scores: number[]; issues: string[] }> {
+    if (!this.apiKey) {
+      console.log("⚠️ DEEPSEEK_API_KEY not set - skipping image analysis");
+      return { scores: [], issues: [] };
+    }
+
     if (imageUrls.length === 0) {
       return { scores: [], issues: [] };
     }
@@ -304,31 +311,147 @@ Respond ONLY with JSON:
     const scores: number[] = [];
     const issues: string[] = [];
 
-    console.log("⚠️  Image content analysis is currently disabled.");
-    console.log("ℹ️  Images are validated for format/structure during upload using magic bytes and Sharp library.");
-    console.log("ℹ️  To enable AI-based image content analysis, integrate a vision API (e.g., OpenAI GPT-4 Vision, Google Vision API).");
-    
-    // Note: The previous implementation was broken - it sent image URLs as text to a chat model
-    // which cannot actually "see" or analyze image content. This is why ANY image could pass through.
-    //
-    // Proper image content analysis requires:
-    // 1. A vision model API (e.g., OpenAI GPT-4 Vision, Google Cloud Vision, AWS Rekognition)
-    // 2. Either sending the image as base64 data or providing a publicly accessible URL
-    // 3. The model must support vision/image understanding capabilities
-    //
-    // For now, we rely on:
-    // - Magic byte validation (ensures files are real images, not malware)
-    // - Sharp library validation (ensures images can be decoded)
-    // - File type and size restrictions
-    //
-    // This prevents malicious files but does NOT analyze image CONTENT for inappropriate material.
-    
-    // Return neutral scores since we can't actually analyze image content
-    // Images pass through if they are valid image files (validated during upload)
-    for (let i = 0; i < imageUrls.length && i < 8; i++) {
-      scores.push(85); // Neutral score - file format was validated during upload
+    console.log(`🖼️  Analyzing ${imageUrls.length} images with DeepSeek Vision...`);
+
+    // Process up to 8 images
+    for (const imageUrl of imageUrls.slice(0, 8)) {
+      try {
+        // Validate image URL to prevent path traversal attacks
+        if (!imageUrl.startsWith('/uploads/')) {
+          console.error(`❌ Invalid image URL (must start with /uploads/): ${imageUrl}`);
+          scores.push(0); // Reject invalid URLs
+          issues.push('invalid_image_url');
+          continue;
+        }
+        
+        // Check for path traversal attempts (..)
+        if (imageUrl.includes('..')) {
+          console.error(`❌ Path traversal attempt detected in image URL: ${imageUrl}`);
+          scores.push(0); // Reject path traversal
+          issues.push('path_traversal_attempt');
+          continue;
+        }
+        
+        // Convert image to base64
+        // Remove leading slash and join with process.cwd()
+        const relativePath = imageUrl.replace(/^\//, '');
+        const imagePath = path.join(process.cwd(), relativePath);
+        
+        // Verify the resolved path is still within uploads directory
+        const uploadsDir = path.join(process.cwd(), 'uploads');
+        const resolvedPath = path.resolve(imagePath);
+        if (!resolvedPath.startsWith(uploadsDir)) {
+          console.error(`❌ Resolved path outside uploads directory: ${resolvedPath}`);
+          scores.push(0);
+          issues.push('invalid_image_path');
+          continue;
+        }
+        
+        const imageBuffer = readFileSync(imagePath);
+        const base64Image = imageBuffer.toString('base64');
+        
+        // Determine MIME type from file extension
+        const ext = path.extname(imageUrl).toLowerCase();
+        const mimeTypes: Record<string, string> = {
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.png': 'image/png',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp'
+        };
+        const mimeType = mimeTypes[ext] || 'image/jpeg';
+
+        const systemPrompt = `Eres un moderador de contenido visual ULTRA-ESTRICTO para una plataforma cubana. 
+Analiza la imagen y determina si es apropiada.
+
+⛔ RECHAZA SI LA IMAGEN CONTIENE:
+- Contenido sexual explícito o desnudez
+- Violencia gráfica o sangre
+- Símbolos políticos anti-gobierno o propaganda opositora
+- Banderas o símbolos de oposición política
+- Contenido que incita al odio o discriminación
+- Armas, drogas o productos ilegales visibles
+- Contenido pornográfico o de adultos
+- Símbolos satánicos o de cultos
+
+✅ APRUEBA SOLO:
+- Imágenes de productos legales (ropa, electrónica, vehículos, etc.)
+- Imágenes de inmuebles (casas, apartamentos)
+- Imágenes de servicios legales
+- Fotos de identificación de productos
+
+⚠️ EN CASO DE DUDA → RECHAZA
+
+Responde SOLO con un JSON:
+{
+  "score": <0-100, donde 100 es completamente apropiado, <70 = rechazar>,
+  "issues": [<lista de problemas encontrados>],
+  "explanation": "<breve explicación>"
+}`;
+
+        const response = await fetch(this.apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${this.apiKey}`
+          },
+          body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: [
+              { 
+                role: "system", 
+                content: systemPrompt 
+              },
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:${mimeType};base64,${base64Image}`
+                    }
+                  },
+                  {
+                    type: "text",
+                    text: "Analiza esta imagen según las reglas de moderación."
+                  }
+                ]
+              }
+            ],
+            temperature: 0.2,
+            max_tokens: 400
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const content = data.choices[0].message.content;
+          
+          console.log(`📊 Image analysis result: ${content.substring(0, 100)}...`);
+          
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const result = JSON.parse(jsonMatch[0]);
+            scores.push(result.score || 50);
+            if (result.issues && result.issues.length > 0) {
+              issues.push(...result.issues);
+              console.log(`⚠️ Image issues found: ${result.issues.join(', ')}`);
+            }
+          } else {
+            console.log("⚠️ Could not parse AI response, using default score");
+            scores.push(70);
+          }
+        } else {
+          console.error(`❌ DeepSeek Vision API error: ${response.statusText}`);
+          scores.push(70);
+        }
+      } catch (error) {
+        console.error("❌ Image analysis error:", error);
+        scores.push(70);
+      }
     }
 
+    console.log(`✅ Image analysis complete. Scores: ${scores.join(', ')}`);
     return { scores, issues };
   }
 

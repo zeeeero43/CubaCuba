@@ -1,77 +1,133 @@
 # Rico-Cuba E-commerce Platform
 
 ## Overview
-Rico-Cuba is a full-stack e-commerce platform designed for the Cuban market. It features a modern React frontend and an Express.js backend, providing user authentication, product catalog management, a mobile-responsive shopping experience, and a comprehensive AI-powered moderation system. The platform is localized in Spanish, supports Cuban phone number formats, and uses Cuban provinces for user registration. Key ambitions include strict content moderation aligned with Cuban regulations, a robust administrative panel, and a flexible e-commerce experience tailored for the local market.
+Rico-Cuba is a full-stack e-commerce platform designed for the Cuban market. It features a modern React frontend and an Express.js backend, providing user authentication, product catalog management, a mobile-responsive shopping experience, and a comprehensive AI-powered moderation system. The platform is localized in Spanish, supports Cuban phone number formats, and uses Cuban provinces for user registration.
+
+## Recent Changes (October 21, 2025)
+
+### DeepSeek Vision Integration ✅
+**Implemented AI-powered image content moderation** using DeepSeek Vision API:
+- **Base64 Conversion**: Images are read from uploads directory and converted to Base64
+- **Multimodal Analysis**: DeepSeek analyzes each image for inappropriate content
+- **Ultra-Strict Rules**: Rejects nudity, violence, political symbols, illegal content
+- **Security**: Path traversal prevention with triple-layer validation
+- **Performance**: Analyzes up to 8 images per listing sequentially
+
+**Security Features:**
+- Validates image URLs start with `/uploads/`
+- Blocks paths containing `..` segments  
+- Verifies resolved paths stay within uploads directory
+- Invalid images automatically rejected (score = 0)
+
+### Image Upload Security
+**Multi-layer validation system** for uploaded files:
+- **Magic Byte Validation**: Checks JPEG, PNG, GIF headers
+- **WebP Security**: RIFF header + WEBP FourCC + VP8/VP8L/VP8X chunk validation
+- **Memory Efficient**: Reads only first 32 bytes for header validation
+- **Sharp Integration**: Verifies decodability and dimensions (max 50000px)
+- **Resource Safety**: Proper file descriptor cleanup
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### UI/UX Decisions
-- Modern React frontend using functional components.
-- shadcn/ui components with Radix UI primitives for accessible and customizable UI.
-- Tailwind CSS for styling with a custom design system.
-- Mobile-first approach with responsive design, including a mobile-only bottom navigation.
-- Dynamic icon system using Lucide React components for consistent iconography.
-- Admin panel uses a unified `AdminLayout` with a consistent sidebar navigation.
-- Hierarchical category management in the admin panel with drag & drop reordering.
+### Frontend
+- React with TypeScript, Vite build system
+- Wouter for routing, TanStack Query for state management
+- shadcn/ui + Radix UI for accessible components
+- Tailwind CSS with custom design system
+- React Hook Form with Zod validation
 
-### Technical Implementations
-- **Frontend**: React with TypeScript, Vite build system, Wouter for routing, TanStack Query for server state management, React Hook Form with Zod for form handling.
-- **Backend**: Express.js with TypeScript, Passport.js for local authentication and role-based access control, Express sessions with PostgreSQL storage, Helmet.js for security, rate limiting, and CSRF protection.
-- **AI Integration**: DeepSeek AI for automated content moderation.
-- **Image Upload Security**: Multi-layer validation including magic byte validation (JPEG, PNG, GIF, WebP with RIFF/WEBP/chunk checks), memory-efficient header reading (first 32 bytes), and Sharp library integration for decodability and dimension validation.
-- **Category Structure**: Complete overhaul based on client specifications, including 7 main categories (e.g., "Comprar & Vender", "Autos/Vehículos", "Empleos") with hierarchical subcategories, all in Spanish.
-- **Flexible Pricing**: Supports CUP/USD currency selection and "Precio a consultar" option.
-- **Banner Advertisement System**: 5 predefined banner positions with admin management.
+### Backend
+- Express.js with TypeScript
+- Passport.js for authentication (local strategy)
+- PostgreSQL sessions with connect-pg-simple
+- Helmet.js, rate limiting, CSRF protection
+- DeepSeek AI for content & image moderation
 
-### Feature Specifications
-- **AI-Powered Moderation System**: Ultra-strict content moderation using DeepSeek AI, automated review system with confidence-based auto-approval/rejection, appeal system, and dynamic blacklist management.
-- **Admin Panel**: Comprehensive interface for content moderation, user management, system configuration, and category management.
-- **User Profiles**: Enhanced profile editing, password changes, and always-visible statistics.
-- **Listing Creation UX**: Auto-navigation, province auto-filling from user profile, strengthened validation.
+### Database
+- PostgreSQL (Neon serverless hosting)
+- Drizzle ORM for type-safe operations
+- Comprehensive schema: Users, Categories, Listings, Moderation System (6 tables)
 
-### System Design Choices
-- **Database**: PostgreSQL hosted on Neon (serverless) with Drizzle ORM for type-safe operations.
-- **Schema**: Comprehensive design including Users, Categories, Products, and 6 dedicated tables for the Moderation System.
-- **Authentication**: Local username/password (phone number as identifier), secure password hashing (scrypt), SMS verification, and secure session management with PostgreSQL persistence.
-- **Security**: Rate limiting, Content Security Policy (CSP), input validation with Zod, secure headers, and HTTPS enforcement.
-- **Internationalization**: Full localization in Spanish, Cuban phone number format validation, and Cuban province selection.
+### AI-Powered Moderation
+**DeepSeek AI integration** for ultra-strict content moderation:
+
+**Text Analysis:**
+- Multi-language detection (Spanish, English, German, French, etc.)
+- Cuba-specific prohibited keywords and patterns
+- Dynamic blacklist management
+- Spam and duplicate detection
+
+**Image Analysis (NEW):**
+- DeepSeek Vision API with multimodal support
+- Base64 image encoding from local uploads
+- Detects: nudity, violence, political symbols, weapons, drugs
+- Ultra-strict scoring: <70 = reject
+- Security: Path traversal prevention
+
+**Moderation Flow:**
+1. Text analysis (title + description)
+2. Image analysis (up to 8 images)
+3. Cuba-rules check (blacklist + prohibited keywords)
+4. Spam detection
+5. Duplicate check
+6. Combined scoring → Auto-approve (≥70) or Auto-reject (<70)
+
+**Admin Features:**
+- Moderation queue for manual review
+- Appeal system (configurable limits)
+- Blacklist management (words, users, emails, phones)
+- Configurable settings (confidence threshold, strictness level)
+
+### Security
+- Rate limiting (global + endpoint-specific)
+- Content Security Policy with Helmet.js
+- Input validation with Zod schemas
+- Secure password hashing (scrypt)
+- Path traversal prevention
+- Magic byte + Sharp validation for images
+- HTTPS enforcement (HSTS)
 
 ## External Dependencies
 
-### Core Technologies
-- **Node.js Runtime**
-- **TypeScript**
-- **Vite**
-- **Express.js**
+### Core
+- Node.js, TypeScript, Express.js, Vite
 
-### Database & ORM
-- **PostgreSQL**
-- **Neon Database**
-- **Drizzle ORM**
-- **Drizzle Kit**
+### Database
+- PostgreSQL, Neon Database, Drizzle ORM
 
-### UI & Styling
-- **React**
-- **Tailwind CSS**
-- **Radix UI**
-- **Lucide React**
-- **shadcn/ui**
+### UI
+- React, Tailwind CSS, Radix UI, Lucide React, shadcn/ui
 
-### Authentication & Security
-- **Passport.js**
-- **Express Session**
-- **Helmet.js**
-- **CSRF Protection**
+### AI
+- **DeepSeek AI** (text moderation + vision)
 
-### AI Services
-- **DeepSeek AI**
+### Tools
+- Wouter (routing), TanStack Query, React Hook Form, Zod, Sharp (image processing)
+- Passport.js, Express Session, Helmet.js, CSRF Protection
 
-### Development Tools
-- **Wouter** (routing)
-- **TanStack Query**
-- **React Hook Form**
-- **Zod**
-- **Sharp** (image processing)
+## Category Structure
+7 main categories (all in Spanish):
+- Comprar & Vender
+- Autos/Vehículos  
+- Inmobiliaria
+- Generación de Energía
+- Servicios Ofrecidos
+- Material de Construcción & Maquinaria
+- Empleos
+
+## Environment Variables
+- `DEEPSEEK_API_KEY`: Required for AI text & image moderation
+- `DATABASE_URL`: PostgreSQL connection (auto-configured by Replit)
+
+## Key Features
+- Cuban phone number validation
+- Province-based user registration
+- Flexible pricing (CUP/USD, "Precio a consultar")
+- Up to 10 images per listing
+- Banner advertisement system (5 positions)
+- Mobile-first responsive design
+- Admin panel with unified sidebar navigation
+- Drag & drop category reordering
