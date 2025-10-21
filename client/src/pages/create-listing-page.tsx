@@ -366,13 +366,45 @@ export default function CreateListingPage() {
       return;
     }
 
-    // Subir las imágenes válidas
-    for (const file of filesToUpload) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImages(prev => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+    // Subir las imágenes válidas usando la API
+    try {
+      const uploadedPaths: string[] = [];
+      
+      for (const file of filesToUpload) {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const response = await fetch('/api/listings/upload-image', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          toast({
+            title: "Error al subir imagen",
+            description: data.message || data.error || "No se pudo subir la imagen",
+            variant: "destructive"
+          });
+          continue;
+        }
+        
+        uploadedPaths.push(data.objectPath);
+      }
+      
+      // Agregar las rutas de las imágenes subidas
+      if (uploadedPaths.length > 0) {
+        setImages(prev => [...prev, ...uploadedPaths]);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Error al subir imágenes",
+        description: "No se pudieron subir las imágenes. Inténtalo de nuevo.",
+        variant: "destructive"
+      });
     }
 
     // Resetear el input para permitir seleccionar el mismo archivo de nuevo

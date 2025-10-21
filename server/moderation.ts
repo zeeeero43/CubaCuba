@@ -316,50 +316,70 @@ Respond ONLY with JSON:
     // Process up to 8 images
     for (const imageUrl of imageUrls.slice(0, 8)) {
       try {
-        // Validate image URL to prevent path traversal attacks
-        if (!imageUrl.startsWith('/uploads/')) {
-          console.error(`❌ Invalid image URL (must start with /uploads/): ${imageUrl}`);
-          scores.push(0); // Reject invalid URLs
-          issues.push('invalid_image_url');
-          continue;
+        let base64Image: string;
+        let mimeType: string;
+
+        // Check if the image is already Base64 encoded (legacy data)
+        if (imageUrl.startsWith('data:image/')) {
+          // Extract MIME type and base64 data from data URL
+          const matches = imageUrl.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+          if (!matches) {
+            console.error(`❌ Invalid Base64 image format: ${imageUrl.substring(0, 50)}...`);
+            scores.push(0);
+            issues.push('invalid_base64_format');
+            continue;
+          }
+          
+          mimeType = matches[1];
+          base64Image = matches[2];
+          console.log(`📦 Processing legacy Base64 image (${mimeType})`);
+        } else {
+          // Process file path (new format)
+          // Validate image URL to prevent path traversal attacks
+          if (!imageUrl.startsWith('/uploads/')) {
+            console.error(`❌ Invalid image URL (must start with /uploads/): ${imageUrl}`);
+            scores.push(0); // Reject invalid URLs
+            issues.push('invalid_image_url');
+            continue;
+          }
+          
+          // Check for path traversal attempts (..)
+          if (imageUrl.includes('..')) {
+            console.error(`❌ Path traversal attempt detected in image URL: ${imageUrl}`);
+            scores.push(0); // Reject path traversal
+            issues.push('path_traversal_attempt');
+            continue;
+          }
+          
+          // Convert image to base64
+          // Remove leading slash and join with process.cwd()
+          const relativePath = imageUrl.replace(/^\//, '');
+          const imagePath = path.join(process.cwd(), relativePath);
+          
+          // Verify the resolved path is still within uploads directory
+          const uploadsDir = path.join(process.cwd(), 'uploads');
+          const resolvedPath = path.resolve(imagePath);
+          if (!resolvedPath.startsWith(uploadsDir)) {
+            console.error(`❌ Resolved path outside uploads directory: ${resolvedPath}`);
+            scores.push(0);
+            issues.push('invalid_image_path');
+            continue;
+          }
+          
+          const imageBuffer = readFileSync(imagePath);
+          base64Image = imageBuffer.toString('base64');
+          
+          // Determine MIME type from file extension
+          const ext = path.extname(imageUrl).toLowerCase();
+          const mimeTypes: Record<string, string> = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp'
+          };
+          mimeType = mimeTypes[ext] || 'image/jpeg';
         }
-        
-        // Check for path traversal attempts (..)
-        if (imageUrl.includes('..')) {
-          console.error(`❌ Path traversal attempt detected in image URL: ${imageUrl}`);
-          scores.push(0); // Reject path traversal
-          issues.push('path_traversal_attempt');
-          continue;
-        }
-        
-        // Convert image to base64
-        // Remove leading slash and join with process.cwd()
-        const relativePath = imageUrl.replace(/^\//, '');
-        const imagePath = path.join(process.cwd(), relativePath);
-        
-        // Verify the resolved path is still within uploads directory
-        const uploadsDir = path.join(process.cwd(), 'uploads');
-        const resolvedPath = path.resolve(imagePath);
-        if (!resolvedPath.startsWith(uploadsDir)) {
-          console.error(`❌ Resolved path outside uploads directory: ${resolvedPath}`);
-          scores.push(0);
-          issues.push('invalid_image_path');
-          continue;
-        }
-        
-        const imageBuffer = readFileSync(imagePath);
-        const base64Image = imageBuffer.toString('base64');
-        
-        // Determine MIME type from file extension
-        const ext = path.extname(imageUrl).toLowerCase();
-        const mimeTypes: Record<string, string> = {
-          '.jpg': 'image/jpeg',
-          '.jpeg': 'image/jpeg',
-          '.png': 'image/png',
-          '.gif': 'image/gif',
-          '.webp': 'image/webp'
-        };
-        const mimeType = mimeTypes[ext] || 'image/jpeg';
 
         const systemPrompt = `Eres un moderador de contenido visual ULTRA-ESTRICTO para una plataforma cubana. 
 Analiza la imagen y determina si es apropiada.
