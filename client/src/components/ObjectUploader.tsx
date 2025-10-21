@@ -87,11 +87,18 @@ export function ObjectUploader({
           credentials: 'include'
         });
         
+        const data = await response.json();
+        
         if (!response.ok) {
-          throw new Error('Upload failed');
+          // Show specific error message from backend validation
+          toast({
+            title: "Fehler beim Hochladen",
+            description: data.message || data.error || "Ungültige Bilddatei",
+            variant: "destructive"
+          });
+          throw new Error(data.message || 'Upload failed');
         }
         
-        const data = await response.json();
         objectPaths.push(data.objectPath);
       }
       

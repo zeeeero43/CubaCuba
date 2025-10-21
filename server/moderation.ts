@@ -101,8 +101,9 @@ export class ModerationService {
       contactPhone: content.contactPhone,
       sellerId: content.userId,
       price: "0",
+      currency: "USD" as const,
       priceType: "fixed" as const,
-      categoryId: null,
+      categoryId: "",
       locationCity: "",
       locationRegion: "",
       condition: "used" as const,
@@ -303,61 +304,29 @@ Respond ONLY with JSON:
     const scores: number[] = [];
     const issues: string[] = [];
 
-    for (const imageUrl of imageUrls.slice(0, 8)) {
-      const systemPrompt = `Eres un moderador de contenido visual. Analiza la imagen y determina si es apropiada para una plataforma de clasificados.
-
-Rechazar si contiene:
-- Contenido sexual o desnudez
-- Violencia gráfica
-- Símbolos políticos anti-gobierno
-- Contenido ofensivo o que incita al odio
-- Productos ilegales visibles
-
-Responde SOLO con un JSON:
-{
-  "score": <0-100, donde 100 es apropiado>,
-  "issues": [<problemas encontrados>]
-}`;
-
-      try {
-        const response = await fetch(this.apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${this.apiKey}`
-          },
-          body: JSON.stringify({
-            model: "deepseek-chat",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: `Analiza esta imagen: ${imageUrl}` }
-            ],
-            temperature: 0.3,
-            max_tokens: 300
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const content = data.choices[0].message.content;
-          
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const result = JSON.parse(jsonMatch[0]);
-            scores.push(result.score || 80);
-            if (result.issues && result.issues.length > 0) {
-              issues.push(...result.issues);
-            }
-          } else {
-            scores.push(80);
-          }
-        } else {
-          scores.push(80);
-        }
-      } catch (error) {
-        console.error("Image analysis error:", error);
-        scores.push(80);
-      }
+    console.log("⚠️  Image content analysis is currently disabled.");
+    console.log("ℹ️  Images are validated for format/structure during upload using magic bytes and Sharp library.");
+    console.log("ℹ️  To enable AI-based image content analysis, integrate a vision API (e.g., OpenAI GPT-4 Vision, Google Vision API).");
+    
+    // Note: The previous implementation was broken - it sent image URLs as text to a chat model
+    // which cannot actually "see" or analyze image content. This is why ANY image could pass through.
+    //
+    // Proper image content analysis requires:
+    // 1. A vision model API (e.g., OpenAI GPT-4 Vision, Google Cloud Vision, AWS Rekognition)
+    // 2. Either sending the image as base64 data or providing a publicly accessible URL
+    // 3. The model must support vision/image understanding capabilities
+    //
+    // For now, we rely on:
+    // - Magic byte validation (ensures files are real images, not malware)
+    // - Sharp library validation (ensures images can be decoded)
+    // - File type and size restrictions
+    //
+    // This prevents malicious files but does NOT analyze image CONTENT for inappropriate material.
+    
+    // Return neutral scores since we can't actually analyze image content
+    // Images pass through if they are valid image files (validated during upload)
+    for (let i = 0; i < imageUrls.length && i < 8; i++) {
+      scores.push(85); // Neutral score - file format was validated during upload
     }
 
     return { scores, issues };

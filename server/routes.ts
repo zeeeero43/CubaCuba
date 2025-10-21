@@ -12,7 +12,7 @@ import sharp from 'sharp';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, openSync, readSync, closeSync } from 'fs';
 
 // Helper function to parse object path
 function parseObjectPath(fullPath: string): { bucketName: string; objectName: string } {
@@ -23,6 +23,115 @@ function parseObjectPath(fullPath: string): { bucketName: string; objectName: st
   const bucketName = pathParts[1];
   const objectName = pathParts.slice(2).join("/");
   return { bucketName, objectName };
+}
+
+// Magic bytes for image validation with strict format checking
+const IMAGE_MAGIC_BYTES: Record<string, number[][]> = {
+  'jpeg': [[0xFF, 0xD8, 0xFF]],
+  'png': [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]],
+  'gif': [[0x47, 0x49, 0x46, 0x38, 0x37, 0x61], [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]]
+};
+
+// Validate WebP file structure (RIFF + WEBP FourCC + valid chunk)
+function validateWebPStructure(buffer: Buffer): boolean {
+  // WebP must be at least 12 bytes (RIFF header + size + WEBP)
+  if (buffer.length < 12) return false;
+  
+  // Check RIFF header
+  if (buffer[0] !== 0x52 || buffer[1] !== 0x49 || buffer[2] !== 0x46 || buffer[3] !== 0x46) {
+    return false;
+  }
+  
+  // Check WEBP FourCC at offset 8
+  if (buffer[8] !== 0x57 || buffer[9] !== 0x45 || buffer[10] !== 0x42 || buffer[11] !== 0x50) {
+    return false; // Not a WebP file, could be WAV/AVI
+  }
+  
+  // Check for valid WebP chunk types (VP8, VP8L, VP8X)
+  if (buffer.length >= 16) {
+    const chunkType = String.fromCharCode(buffer[12], buffer[13], buffer[14], buffer[15]);
+    const validChunks = ['VP8 ', 'VP8L', 'VP8X'];
+    if (!validChunks.includes(chunkType)) {
+      return false; // Invalid WebP chunk type
+    }
+  }
+  
+  return true;
+}
+
+// Validate image file using strict magic bytes and Sharp
+async function validateImageFile(filePath: string): Promise<{ isValid: boolean; error?: string }> {
+  let fd: number | null = null;
+  try {
+    // Read only the first 32 bytes for header validation (memory efficient)
+    const HEADER_SIZE = 32;
+    const buffer = Buffer.alloc(HEADER_SIZE);
+    
+    fd = openSync(filePath, 'r');
+    const bytesRead = readSync(fd, buffer, 0, HEADER_SIZE, 0);
+    closeSync(fd);
+    fd = null;
+    
+    if (bytesRead < 12) {
+      return { isValid: false, error: 'Datei zu klein, um ein gültiges Bild zu sein' };
+    }
+
+    // Check for standard image formats (JPEG, PNG, GIF)
+    let formatDetected = false;
+    for (const [format, signatures] of Object.entries(IMAGE_MAGIC_BYTES)) {
+      for (const signature of signatures) {
+        if (signature.every((byte, index) => buffer[index] === byte)) {
+          formatDetected = true;
+          break;
+        }
+      }
+      if (formatDetected) break;
+    }
+    
+    // Check for WebP with strict validation
+    if (!formatDetected && buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) {
+      if (!validateWebPStructure(buffer)) {
+        return { isValid: false, error: 'Ungültige WebP-Datei: RIFF-Container enthält kein gültiges WebP-Bild' };
+      }
+      formatDetected = true;
+    }
+
+    if (!formatDetected) {
+      return { isValid: false, error: 'Ungültige Bilddatei: Nur JPEG, PNG, GIF und WebP werden akzeptiert' };
+    }
+
+    // Validate with Sharp - this ensures the file is a real, decodable image
+    try {
+      const metadata = await sharp(filePath).metadata();
+      
+      // Additional validation: ensure image has valid dimensions
+      if (!metadata.width || !metadata.height) {
+        return { isValid: false, error: 'Ungültige Bilddimensionen' };
+      }
+
+      // Check for extremely large or suspicious dimensions
+      if (metadata.width > 50000 || metadata.height > 50000) {
+        return { isValid: false, error: 'Bilddimensionen zu groß (max. 50000px)' };
+      }
+
+      return { isValid: true };
+    } catch (sharpError) {
+      console.error('Sharp validation error:', sharpError);
+      return { isValid: false, error: 'Datei ist kein gültiges/dekodierbare Bild' };
+    }
+  } catch (error) {
+    console.error('File validation error:', error);
+    return { isValid: false, error: 'Fehler beim Validieren der Datei' };
+  } finally {
+    // Ensure file descriptor is closed
+    if (fd !== null) {
+      try {
+        closeSync(fd);
+      } catch (e) {
+        console.error('Error closing file descriptor:', e);
+      }
+    }
+  }
 }
 
 // Configure multer for local file uploads
@@ -1209,6 +1318,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filename = req.file.filename;
       const webpFilename = filename.replace(/\.[^.]+$/, '.webp');
       const webpPath = path.join(path.dirname(originalPath), webpFilename);
+      
+      // ===== VALIDATE IMAGE FILE =====
+      console.log("🔒 Validating image file:", filename);
+      const validation = await validateImageFile(originalPath);
+      if (!validation.isValid) {
+        console.error("❌ Image validation failed:", validation.error);
+        // Delete invalid file
+        await fs.unlink(originalPath).catch(console.error);
+        return res.status(400).json({ 
+          error: validation.error || "Ungültige Bilddatei",
+          message: "Die hochgeladene Datei ist kein gültiges Bild. Bitte laden Sie nur echte Bilddateien hoch (JPEG, PNG, GIF, WebP)."
+        });
+      }
+      console.log("✅ Image validation passed");
       
       // ===== WEBP CONVERSION FOR BANDWIDTH OPTIMIZATION =====
       try {
