@@ -121,8 +121,8 @@ export default function CategoryPage() {
       </div>
 
       <div className="max-w-md lg:max-w-6xl mx-auto px-4 py-6">
-        {/* Create Listing Button - Only show when viewing a subcategory AND there are listings */}
-        {activeCategory && listings.length > 0 && (
+        {/* Create Listing Button - Show when viewing a subcategory */}
+        {activeCategory && (
           <div className="mb-6 flex justify-center">
             <Button
               onClick={() => navigate(`/create-listing?categoryId=${activeCategory}`)}
@@ -209,16 +209,9 @@ export default function CategoryPage() {
           </div>
         ) : listings.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-gray-500 dark:text-gray-400 text-lg">
               No hay anuncios en esta categoría
             </p>
-            <Button
-              className="mt-4"
-              onClick={() => navigate(`/create-listing${activeCategory ? `?categoryId=${activeCategory}` : ''}`)}
-              data-testid="button-create-first"
-            >
-              Crear el primer anuncio
-            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
