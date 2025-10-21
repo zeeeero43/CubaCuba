@@ -419,14 +419,14 @@ export default function EditListingPage() {
               <div>
                 <Label htmlFor="deliveryOption">Opciones de entrega (opcional)</Label>
                 <Select
-                  value={form.watch("deliveryOption") || ""}
-                  onValueChange={(value) => form.setValue("deliveryOption", value === "" ? undefined : value as any)}
+                  value={form.watch("deliveryOption") || "none"}
+                  onValueChange={(value) => form.setValue("deliveryOption", value === "none" ? undefined : value as any)}
                 >
                   <SelectTrigger data-testid="select-delivery">
                     <SelectValue placeholder="Selecciona opción" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin especificar</SelectItem>
+                    <SelectItem value="none">Sin especificar</SelectItem>
                     <SelectItem value="free_50km">Gratis dentro de 50km</SelectItem>
                     <SelectItem value="paid">Entrega con costo adicional</SelectItem>
                     <SelectItem value="pickup">Solo recogida en persona</SelectItem>
@@ -438,14 +438,14 @@ export default function EditListingPage() {
                 <div>
                   <Label htmlFor="hasWarranty">¿Con garantía? (opcional)</Label>
                   <Select
-                    value={form.watch("hasWarranty") || ""}
-                    onValueChange={(value) => form.setValue("hasWarranty", value === "" ? undefined : value as any)}
+                    value={form.watch("hasWarranty") || "none"}
+                    onValueChange={(value) => form.setValue("hasWarranty", value === "none" ? undefined : value as any)}
                   >
                     <SelectTrigger data-testid="select-warranty">
                       <SelectValue placeholder="Selecciona" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-</SelectItem>
+                      <SelectItem value="none">-</SelectItem>
                       <SelectItem value="true">Sí</SelectItem>
                       <SelectItem value="false">No</SelectItem>
                     </SelectContent>
@@ -455,14 +455,14 @@ export default function EditListingPage() {
                 <div>
                   <Label htmlFor="hasReceipt">¿Con factura? (opcional)</Label>
                   <Select
-                    value={form.watch("hasReceipt") || ""}
-                    onValueChange={(value) => form.setValue("hasReceipt", value === "" ? undefined : value as any)}
+                    value={form.watch("hasReceipt") || "none"}
+                    onValueChange={(value) => form.setValue("hasReceipt", value === "none" ? undefined : value as any)}
                   >
                     <SelectTrigger data-testid="select-receipt">
                       <SelectValue placeholder="Selecciona" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-</SelectItem>
+                      <SelectItem value="none">-</SelectItem>
                       <SelectItem value="true">Sí</SelectItem>
                       <SelectItem value="false">No</SelectItem>
                     </SelectContent>
