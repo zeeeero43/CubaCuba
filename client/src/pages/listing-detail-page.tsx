@@ -1015,14 +1015,40 @@ export default function ListingDetailPage() {
                   <span className="text-sm text-muted-foreground">Estado</span>
                   <p className="font-medium">
                     {listing.condition === 'new' ? 'Nuevo' : 
-                     listing.condition === 'used' ? 'Usado - Buen estado' : 
-                     'Usado - Con defectos'}
+                     listing.condition === 'used' ? 'Usado' : 
+                     'Defectuoso'}
                   </p>
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Ubicación</span>
                   <p className="font-medium">{listing.locationCity}, {listing.locationRegion}</p>
                 </div>
+                {(listing as any).deliveryOption && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Entrega</span>
+                    <p className="font-medium">
+                      {(listing as any).deliveryOption === 'free_50km' ? 'Gratis dentro de 50km' :
+                       (listing as any).deliveryOption === 'paid' ? 'Con costo adicional' :
+                       'Solo recogida en persona'}
+                    </p>
+                  </div>
+                )}
+                {(listing as any).hasWarranty && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Garantía</span>
+                    <p className="font-medium">
+                      {(listing as any).hasWarranty === 'true' ? 'Sí' : 'No'}
+                    </p>
+                  </div>
+                )}
+                {(listing as any).hasReceipt && (
+                  <div>
+                    <span className="text-sm text-muted-foreground">Factura</span>
+                    <p className="font-medium">
+                      {(listing as any).hasReceipt === 'true' ? 'Sí' : 'No'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

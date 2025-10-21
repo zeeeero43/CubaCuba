@@ -1326,7 +1326,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: JSON.stringify({ reviewId: review.id, reason })
       });
 
-      res.json(updated);
+      res.json({ 
+        success: true, 
+        message: "Apelación enviada correctamente",
+        review: updated 
+      });
     } catch (error) {
       console.error("Error submitting appeal:", error);
       res.status(500).json({ message: "Error interno del servidor" });

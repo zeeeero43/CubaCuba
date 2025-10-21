@@ -105,7 +105,7 @@ export const listings = pgTable("listings", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }), // Optional - can be null for "Precio a consultar"
-  currency: text("currency").notNull().default("CUP"), // "CUP" | "USD"
+  currency: text("currency").notNull().default("USD"), // "USD" | "CUP" | "EUR" | "Zelle" | "PayPal" | "Transfer"
   priceType: text("price_type").notNull().default("fixed"), // "fixed" | "consult"
   categoryId: varchar("category_id").references(() => categories.id, { onDelete: "set null" }),
   sellerId: varchar("seller_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
@@ -114,7 +114,10 @@ export const listings = pgTable("listings", {
   latitude: decimal("latitude", { precision: 10, scale: 8 }),  // Geographical coordinates
   longitude: decimal("longitude", { precision: 11, scale: 8 }), // for distance-based search
   images: text("images").array().default(sql`ARRAY[]::text[]`), // max 10 image URLs
-  condition: text("condition").notNull().default("used"), // "new" | "used" | "defective"
+  condition: text("condition").notNull().default("new"), // "new" | "used" | "defective"
+  deliveryOption: text("delivery_option"), // "free_50km" | "paid" | "pickup" (optional)
+  hasWarranty: text("has_warranty"), // "true" | "false" (optional)
+  hasReceipt: text("has_receipt"), // "true" | "false" (optional)
   contactPhone: text("contact_phone").notNull(),
   contactWhatsApp: text("contact_whatsapp").notNull().default("false"), // "true" | "false"
   status: text("status").notNull().default("active"), // "active" | "paused" | "sold"
@@ -324,8 +327,11 @@ export const insertListingSchema = createInsertSchema(listings, {
     z.literal(""),
     z.null()
   ]),
-  currency: z.enum(["CUP", "USD"], { message: "Moneda inválida" }),
+  currency: z.enum(["USD", "CUP", "EUR", "Zelle", "PayPal", "Transfer"], { message: "Moneda inválida" }),
   priceType: z.enum(["fixed", "consult"], { message: "Tipo de precio inválido" }),
+  deliveryOption: z.enum(["free_50km", "paid", "pickup"], { message: "Opción de entrega inválida" }).optional(),
+  hasWarranty: z.enum(["true", "false"], { message: "Valor de garantía inválido" }).optional(),
+  hasReceipt: z.enum(["true", "false"], { message: "Valor de factura inválido" }).optional(),
   categoryId: z.string().min(1, "La categoría es requerida"),
   locationCity: z.union([
     z.string().min(2, "La ciudad debe tener al menos 2 caracteres"),
@@ -348,6 +354,9 @@ export const insertListingSchema = createInsertSchema(listings, {
   locationRegion: true,
   images: true,
   condition: true,
+  deliveryOption: true,
+  hasWarranty: true,
+  hasReceipt: true,
   contactPhone: true,
   contactWhatsApp: true,
 });

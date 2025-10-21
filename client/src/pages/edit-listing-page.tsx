@@ -96,13 +96,16 @@ export default function EditListingPage() {
       title: "",
       description: "",
       price: "",
-      currency: "CUP",
+      currency: "USD",
       priceType: "fixed",
       categoryId: "",
       locationCity: "",
       locationRegion: "",
       images: [],
-      condition: "used",
+      condition: "new",
+      deliveryOption: undefined,
+      hasWarranty: undefined,
+      hasReceipt: undefined,
       contactPhone: "",
       contactWhatsApp: "false",
     },
@@ -263,13 +266,16 @@ export default function EditListingPage() {
         title: existingListing.title,
         description: existingListing.description,
         price: hasPrice && existingListing.price ? existingListing.price.toString() : "",
-        currency: (existingListing.currency as "CUP" | "USD") || "CUP",
+        currency: (existingListing.currency as "USD" | "CUP" | "EUR" | "Zelle" | "PayPal" | "Transfer") || "USD",
         priceType: (existingListing.priceType as "fixed" | "consult") || "fixed",
         categoryId: existingListing.categoryId || "",
         locationCity: existingListing.locationCity,
         locationRegion: existingListing.locationRegion,
         images: existingListing.images || [],
         condition: existingListing.condition as "new" | "used" | "defective",
+        deliveryOption: (existingListing as any).deliveryOption as "free_50km" | "paid" | "pickup" | undefined,
+        hasWarranty: (existingListing as any).hasWarranty as "true" | "false" | undefined,
+        hasReceipt: (existingListing as any).hasReceipt as "true" | "false" | undefined,
         contactPhone: existingListing.contactPhone,
         contactWhatsApp: existingListing.contactWhatsApp as "true" | "false",
       });
@@ -396,7 +402,7 @@ export default function EditListingPage() {
               <div>
                 <Label htmlFor="condition">Condición del producto *</Label>
                 <Select
-                  value={watchedCondition || "used"}
+                  value={watchedCondition || "new"}
                   onValueChange={(value) => form.setValue("condition", value as any)}
                 >
                   <SelectTrigger data-testid="select-condition">
@@ -408,6 +414,60 @@ export default function EditListingPage() {
                     <SelectItem value="defective">Defectuoso</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="deliveryOption">Opciones de entrega (opcional)</Label>
+                <Select
+                  value={form.watch("deliveryOption") || ""}
+                  onValueChange={(value) => form.setValue("deliveryOption", value === "" ? undefined : value as any)}
+                >
+                  <SelectTrigger data-testid="select-delivery">
+                    <SelectValue placeholder="Selecciona opción" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin especificar</SelectItem>
+                    <SelectItem value="free_50km">Gratis dentro de 50km</SelectItem>
+                    <SelectItem value="paid">Entrega con costo adicional</SelectItem>
+                    <SelectItem value="pickup">Solo recogida en persona</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="hasWarranty">¿Con garantía? (opcional)</Label>
+                  <Select
+                    value={form.watch("hasWarranty") || ""}
+                    onValueChange={(value) => form.setValue("hasWarranty", value === "" ? undefined : value as any)}
+                  >
+                    <SelectTrigger data-testid="select-warranty">
+                      <SelectValue placeholder="Selecciona" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">-</SelectItem>
+                      <SelectItem value="true">Sí</SelectItem>
+                      <SelectItem value="false">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="hasReceipt">¿Con factura? (opcional)</Label>
+                  <Select
+                    value={form.watch("hasReceipt") || ""}
+                    onValueChange={(value) => form.setValue("hasReceipt", value === "" ? undefined : value as any)}
+                  >
+                    <SelectTrigger data-testid="select-receipt">
+                      <SelectValue placeholder="Selecciona" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">-</SelectItem>
+                      <SelectItem value="true">Sí</SelectItem>
+                      <SelectItem value="false">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -580,8 +640,12 @@ export default function EditListingPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="CUP">CUP</SelectItem>
-                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="USD">USD (Dólares)</SelectItem>
+                        <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                        <SelectItem value="CUP">CUP (Pesos Cubanos)</SelectItem>
+                        <SelectItem value="Zelle">Zelle</SelectItem>
+                        <SelectItem value="PayPal">PayPal</SelectItem>
+                        <SelectItem value="Transfer">Überweisung aus dem Ausland</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

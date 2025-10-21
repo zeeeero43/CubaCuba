@@ -129,13 +129,16 @@ export default function CreateListingPage() {
       title: "",
       description: "",
       price: "",
-      currency: "CUP",
+      currency: "USD",
       priceType: "fixed",
       categoryId: "",
       locationCity: "",
       locationRegion: user?.province || "",
       images: [],
-      condition: "used",
+      condition: "new",
+      deliveryOption: undefined,
+      hasWarranty: undefined,
+      hasReceipt: undefined,
       contactPhone: "",
       contactWhatsApp: "true", // Default WhatsApp ON
     },
@@ -738,7 +741,7 @@ export default function CreateListingPage() {
         <div>
           <Label htmlFor="condition">Condición del producto *</Label>
           <Select
-            value={watchedCondition || "used"}
+            value={watchedCondition || "new"}
             onValueChange={(value) => form.setValue("condition", value as any)}
           >
             <SelectTrigger data-testid="select-condition">
@@ -746,11 +749,66 @@ export default function CreateListingPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="new">Nuevo</SelectItem>
-              <SelectItem value="like-new">Como nuevo</SelectItem>
               <SelectItem value="used">Usado</SelectItem>
-              <SelectItem value="refurbished">Reacondicionado</SelectItem>
+              <SelectItem value="defective">Defectuoso</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <Label htmlFor="deliveryOption">Opciones de entrega (opcional)</Label>
+            <Select
+              value={form.watch("deliveryOption") || ""}
+              onValueChange={(value) => form.setValue("deliveryOption", value === "" ? undefined : value as any)}
+            >
+              <SelectTrigger data-testid="select-delivery">
+                <SelectValue placeholder="Selecciona opción" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Sin especificar</SelectItem>
+                <SelectItem value="free_50km">Gratis dentro de 50km</SelectItem>
+                <SelectItem value="paid">Entrega con costo adicional</SelectItem>
+                <SelectItem value="pickup">Solo recogida en persona</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="hasWarranty">¿Con garantía? (opcional)</Label>
+              <Select
+                value={form.watch("hasWarranty") || ""}
+                onValueChange={(value) => form.setValue("hasWarranty", value === "" ? undefined : value as any)}
+              >
+                <SelectTrigger data-testid="select-warranty">
+                  <SelectValue placeholder="Selecciona" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">-</SelectItem>
+                  <SelectItem value="true">Sí</SelectItem>
+                  <SelectItem value="false">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="hasReceipt">¿Con factura? (opcional)</Label>
+              <Select
+                value={form.watch("hasReceipt") || ""}
+                onValueChange={(value) => form.setValue("hasReceipt", value === "" ? undefined : value as any)}
+              >
+                <SelectTrigger data-testid="select-receipt">
+                  <SelectValue placeholder="Selecciona" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">-</SelectItem>
+                  <SelectItem value="true">Sí</SelectItem>
+                  <SelectItem value="false">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -882,8 +940,12 @@ export default function CreateListingPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="CUP">CUP (Pesos Cubanos)</SelectItem>
                   <SelectItem value="USD">USD (Dólares)</SelectItem>
+                  <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                  <SelectItem value="CUP">CUP (Pesos Cubanos)</SelectItem>
+                  <SelectItem value="Zelle">Zelle</SelectItem>
+                  <SelectItem value="PayPal">PayPal</SelectItem>
+                  <SelectItem value="Transfer">Überweisung aus dem Ausland</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -964,13 +1026,24 @@ export default function CreateListingPage() {
           </CardContent>
         </Card>
 
+        {/* AI Moderation Notice */}
+        {createListingMutation.isPending && (
+          <Alert className="mt-6 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertTitle className="text-blue-900 dark:text-blue-100">Verificación en proceso</AlertTitle>
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
+              Su anuncio está siendo verificado por una IA. Esto puede tomar unos segundos. Por favor, espere...
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-6">
           <Button
             type="button"
             variant="outline"
             onClick={prevStep}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || createListingMutation.isPending}
             data-testid="button-prev-step"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -993,7 +1066,7 @@ export default function CreateListingPage() {
               disabled={createListingMutation.isPending || purchasePremiumMutation.isPending}
               data-testid="button-submit"
             >
-              {createListingMutation.isPending ? "Creando..." : "Publicar Anuncio"}
+              {createListingMutation.isPending ? "Verificando con IA..." : "Publicar Anuncio"}
             </Button>
           )}
         </div>
