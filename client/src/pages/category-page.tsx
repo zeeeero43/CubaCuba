@@ -121,8 +121,8 @@ export default function CategoryPage() {
       </div>
 
       <div className="max-w-md lg:max-w-6xl mx-auto px-4 py-6">
-        {/* Create Listing Button - Only show when viewing a subcategory */}
-        {activeCategory && (
+        {/* Create Listing Button - Only show when viewing a subcategory AND there are listings */}
+        {activeCategory && listings.length > 0 && (
           <div className="mb-6 flex justify-center">
             <Button
               onClick={() => navigate(`/create-listing?categoryId=${activeCategory}`)}
@@ -214,7 +214,7 @@ export default function CategoryPage() {
             </p>
             <Button
               className="mt-4"
-              onClick={() => navigate('/create-listing')}
+              onClick={() => navigate(`/create-listing${activeCategory ? `?categoryId=${activeCategory}` : ''}`)}
               data-testid="button-create-first"
             >
               Crear el primer anuncio
