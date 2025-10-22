@@ -416,12 +416,8 @@ Responde SOLO con un JSON:
             "Authorization": `Bearer ${this.apiKey}`
           },
           body: JSON.stringify({
-            model: "deepseek-chat",
+            model: "deepseek-reasoner",
             messages: [
-              { 
-                role: "system", 
-                content: systemPrompt 
-              },
               {
                 role: "user",
                 content: [
@@ -433,7 +429,7 @@ Responde SOLO con un JSON:
                   },
                   {
                     type: "text",
-                    text: "Analiza esta imagen según las reglas de moderación."
+                    text: systemPrompt + "\n\nAnaliza esta imagen según las reglas de moderación."
                   }
                 ]
               }
