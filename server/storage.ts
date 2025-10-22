@@ -528,8 +528,7 @@ export class DatabaseStorage implements IStorage {
   async getFeaturedListings(): Promise<Listing[]> {
     return await db.select().from(listings)
       .where(eq(listings.status, "active"))
-      .orderBy(desc(listings.createdAt))
-      .limit(6);
+      .orderBy(desc(listings.createdAt));
   }
 
   async getListing(id: string): Promise<Listing | undefined> {
