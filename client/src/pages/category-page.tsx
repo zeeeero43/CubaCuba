@@ -136,7 +136,7 @@ export default function CategoryPage() {
         )}
 
         {/* Subcategories - Show as list for main categories */}
-        {isMainCategory && !selectedSubcategory ? (
+        {isMainCategory && !selectedSubcategory && (
           <div className="mb-6">
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
               Selecciona una subcategoría
@@ -159,40 +159,7 @@ export default function CategoryPage() {
               ))}
             </div>
           </div>
-        ) : subcategories.length > 0 ? (
-          <div className="mb-6">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              Subcategorías
-            </h2>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              <Badge
-                className={`cursor-pointer whitespace-nowrap ${
-                  !selectedSubcategory
-                    ? colors.badge + ' font-semibold'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                onClick={() => setSelectedSubcategory(null)}
-                data-testid="badge-all"
-              >
-                Todas
-              </Badge>
-              {subcategories.map((subcat) => (
-                <Badge
-                  key={subcat.id}
-                  className={`cursor-pointer whitespace-nowrap ${
-                    selectedSubcategory === subcat.id
-                      ? colors.badge + ' font-semibold'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                  onClick={() => setSelectedSubcategory(subcat.id)}
-                  data-testid={`badge-subcategory-${subcat.id}`}
-                >
-                  {subcat.name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        )}
 
         {/* Listings Grid - Only show when activeCategory is set (subcategory selected) */}
         {activeCategory && (
