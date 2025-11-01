@@ -76,14 +76,39 @@ export default function ProfilePage() {
     },
   });
 
-  // Boost listing mutation
+  // Boost listing mutation with optimistic update
   const boostListingMutation = useMutation({
     mutationFn: (id: string) => apiRequest('POST', `/api/listings/${id}/boost`),
-    onSuccess: () => {
-      toast({ title: "¡Anuncio impulsado!", description: "Tu anuncio ahora aparece más arriba en los resultados" });
-      queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
+    onMutate: async (id: string) => {
+      // Cancel ongoing queries
+      await queryClient.cancelQueries({ queryKey: ['/api/me/listings'] });
+      
+      // Snapshot current state
+      const previousListings = queryClient.getQueryData<Listing[]>(['/api/me/listings']);
+      
+      // Optimistically update the one listing
+      queryClient.setQueryData<Listing[]>(['/api/me/listings'], (old) => {
+        if (!old) return old;
+        return old.map(listing => 
+          listing.id === id 
+            ? { ...listing, lastBoostedAt: new Date() as any }
+            : listing
+        );
+      });
+      
+      return { previousListings };
     },
-    onError: (error: any) => {
+    onSuccess: (_, id) => {
+      toast({ title: "¡Anuncio impulsado!", description: "Tu anuncio ahora aparece más arriba en los resultados" });
+      // Refetch to get accurate server state
+      queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/listings/featured/paginated'] });
+    },
+    onError: (error: any, _, context) => {
+      // Rollback optimistic update
+      if (context?.previousListings) {
+        queryClient.setQueryData(['/api/me/listings'], context.previousListings);
+      }
       toast({ 
         title: "No se pudo impulsar", 
         description: error.message || "Intenta de nuevo más tarde",
