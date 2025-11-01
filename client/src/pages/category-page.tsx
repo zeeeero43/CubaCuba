@@ -9,6 +9,7 @@ import { Banner } from "@/components/Banner";
 import { ArrowLeft, MapPin, Heart, Eye } from "lucide-react";
 import { useState } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import MobileHeader from "@/components/MobileHeader";
 
 export default function CategoryPage() {
   const { categoryId } = useParams();
@@ -95,8 +96,17 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header with Category Name */}
-      <div className={`${colors.bg} ${colors.text} shadow-sm`}>
+      {/* Mobile Header */}
+      <div className="md:hidden">
+        <MobileHeader 
+          showBack={true}
+          showSearch={true}
+          onBack={() => navigate('/')}
+        />
+      </div>
+
+      {/* Desktop Header with Category Name */}
+      <div className={`hidden md:block ${colors.bg} ${colors.text} shadow-sm`}>
         <div className="max-w-md lg:max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <Button
@@ -116,7 +126,7 @@ export default function CategoryPage() {
       </div>
 
       {/* Category Banner */}
-      <div className="max-w-md lg:max-w-6xl mx-auto px-4 pt-4">
+      <div className="max-w-md lg:max-w-6xl mx-auto px-4 pt-6">
         <Banner position="category" />
       </div>
 

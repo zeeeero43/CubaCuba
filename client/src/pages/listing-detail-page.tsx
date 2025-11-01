@@ -33,6 +33,7 @@ import { useLocation } from "wouter";
 import type { Listing, Category } from "@shared/schema";
 import { ReportDialog } from "@/components/ReportDialog";
 import { PremiumFeaturesSelector } from "@/components/PremiumFeaturesSelector";
+import MobileHeader from "@/components/MobileHeader";
 
 // Types for seller profile
 interface SellerProfile {
@@ -827,8 +828,17 @@ export default function ListingDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
+      {/* Mobile Header */}
+      <div className="md:hidden">
+        <MobileHeader 
+          showBack={true}
+          showSearch={true}
+          onBack={() => navigate('/')}
+        />
+      </div>
+
+      {/* Desktop Header */}
+      <div className="hidden md:block bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Button 
             variant="ghost" 
@@ -879,7 +889,7 @@ export default function ListingDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 pt-6 md:pt-6">
         {/* Image Gallery */}
         {listing.images && listing.images.length > 0 ? (
           <div className="relative mb-6">
