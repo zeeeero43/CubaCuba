@@ -118,7 +118,7 @@ export default function ProfilePage() {
     },
   });
 
-  // Calculate boost availability
+  // Calculate boost availability with precise time
   const getBoostStatus = (listing: Listing) => {
     if (!listing.lastBoostedAt) {
       return { canBoost: true, text: "Impulsar anuncio" };
@@ -126,16 +126,18 @@ export default function ProfilePage() {
 
     const lastBoost = new Date(listing.lastBoostedAt);
     const now = new Date();
-    const hoursSince = (now.getTime() - lastBoost.getTime()) / (1000 * 60 * 60);
+    const millisRemaining = (lastBoost.getTime() + 24 * 60 * 60 * 1000) - now.getTime();
 
-    if (hoursSince >= 24) {
+    if (millisRemaining <= 0) {
       return { canBoost: true, text: "Impulsar anuncio" };
     }
 
-    const hoursRemaining = Math.ceil(24 - hoursSince);
+    const hours = Math.floor(millisRemaining / (1000 * 60 * 60));
+    const minutes = Math.floor((millisRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    
     return { 
       canBoost: false, 
-      text: `Disponible en ${hoursRemaining}h` 
+      text: `Disponible en ${hours}h ${minutes}m` 
     };
   };
 
