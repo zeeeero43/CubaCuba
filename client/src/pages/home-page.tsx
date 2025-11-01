@@ -111,41 +111,30 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              {/* Mobile: Only 3 categories + arrow */}
-              <div className="flex md:hidden gap-4 px-4 overflow-x-auto no-scrollbar pb-2">
-                {mainCategories.slice(0, 3).map((category) => {
-                  const IconComponent = getIconComponent(category.icon);
-                  const colors = colorMap[category.color] || colorMap['cyan'];
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => navigate(`/category/${category.id}`)}
-                      className="flex-shrink-0 flex flex-col items-center gap-2 group"
-                      data-testid={`button-category-${category.id}`}
-                    >
-                      <div className={`w-20 h-20 rounded-2xl ${colors.bg} flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm`}>
-                        <IconComponent className={`w-10 h-10 ${colors.text}`} />
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center max-w-[80px] leading-tight">
-                        {category.name}
-                      </span>
-                    </button>
-                  );
-                })}
-                
-                {/* Arrow button for mobile */}
-                <button
-                  onClick={() => navigate('/categories')}
-                  className="flex-shrink-0 flex flex-col items-center gap-2 group"
-                  data-testid="button-view-all-categories-mobile"
-                >
-                  <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-                    <ArrowRight className="w-8 h-8 text-gray-700 dark:text-gray-300" />
-                  </div>
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center max-w-[80px] leading-tight">
-                    Ver todas
-                  </span>
-                </button>
+              {/* Mobile: 6 categories in 3x2 grid (excluding Empleos) */}
+              <div className="grid md:hidden grid-cols-3 gap-4 px-4 pb-2">
+                {mainCategories
+                  .filter(cat => cat.name !== 'Empleos')
+                  .slice(0, 6)
+                  .map((category) => {
+                    const IconComponent = getIconComponent(category.icon);
+                    const colors = colorMap[category.color] || colorMap['cyan'];
+                    return (
+                      <button
+                        key={category.id}
+                        onClick={() => navigate(`/category/${category.id}`)}
+                        className="flex flex-col items-center gap-2 group"
+                        data-testid={`button-category-${category.id}`}
+                      >
+                        <div className={`w-20 h-20 rounded-2xl ${colors.bg} flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm`}>
+                          <IconComponent className={`w-10 h-10 ${colors.text}`} />
+                        </div>
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center max-w-[80px] leading-tight">
+                          {category.name}
+                        </span>
+                      </button>
+                    );
+                  })}
               </div>
 
               {/* Desktop: All categories + arrow */}
