@@ -148,7 +148,7 @@ export default function MyListingsPage() {
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No tienes anuncios todavía</p>
             <Button onClick={() => navigate('/create-listing')} data-testid="button-create-first">
-              Crear mi primer anuncio
+              Publicar mi primer anuncio
             </Button>
           </div>
         ) : (

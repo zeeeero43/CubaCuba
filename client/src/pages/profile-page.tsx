@@ -256,7 +256,7 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground mb-4">No tienes anuncios publicados</p>
                 <Link href="/create-listing" asChild>
                   <Button data-testid="button-create-first-listing">
-                    Crear primer anuncio
+                    Publicar primer anuncio
                   </Button>
                 </Link>
               </div>

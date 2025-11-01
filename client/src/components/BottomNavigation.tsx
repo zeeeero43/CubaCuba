@@ -55,7 +55,7 @@ export default function BottomNavigation() {
             data-testid="nav-create"
           >
             <Plus className={`w-6 h-6 ${location === '/create-listing' ? 'text-primary' : 'text-primary'}`} />
-            <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">Crear</span>
+            <span className="text-xs text-gray-600 dark:text-gray-300 mt-1">Publicar</span>
           </Button>
           
           <Button 

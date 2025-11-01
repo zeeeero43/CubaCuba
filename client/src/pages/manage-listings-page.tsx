@@ -161,7 +161,7 @@ export default function ManageListingsPage() {
               data-testid="button-create-listing"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Crear Anuncio
+              Publicar Anuncio
             </Button>
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function ManageListingsPage() {
             {selectedStatus === "all" && (
               <Button onClick={() => navigate('/create-listing')} data-testid="button-create-first">
                 <Plus className="w-4 h-4 mr-2" />
-                Crear mi primer anuncio
+                Publicar mi primer anuncio
               </Button>
             )}
           </div>

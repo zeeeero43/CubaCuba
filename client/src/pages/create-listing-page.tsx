@@ -1079,7 +1079,7 @@ export default function CreateListingPage() {
             <ArrowLeft className="w-5 h-5" />
             Volver
           </button>
-          <h1 className="text-3xl font-bold">Crear Anuncio</h1>
+          <h1 className="text-3xl font-bold">Publicar Anuncio</h1>
         </div>
 
         {/* Step Indicator */}

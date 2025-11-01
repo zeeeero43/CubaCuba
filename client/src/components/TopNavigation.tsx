@@ -43,7 +43,7 @@ export default function TopNavigation() {
               data-testid="button-create-listing-desktop"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Crear anuncio
+              Publicar anuncio
             </Button>
             
             <Button
