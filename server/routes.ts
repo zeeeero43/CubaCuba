@@ -765,6 +765,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST /api/listings/:id/boost - Free boost listing (24h cooldown, requires auth + ownership)
+  app.post("/api/listings/:id/boost", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debe iniciar sesión" });
+    }
+
+    try {
+      const result = await storage.boostListing(req.params.id, req.user!.id);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: result.message,
+          hoursRemaining: result.hoursRemaining 
+        });
+      }
+      
+      res.json({ message: "Anuncio impulsado exitosamente" });
+    } catch (error) {
+      console.error("Error boosting listing:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // POST /api/listings/:id/view - Increment view count (public)
   app.post("/api/listings/:id/view", async (req, res) => {
     try {

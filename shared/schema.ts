@@ -128,6 +128,7 @@ export const listings = pgTable("listings", {
   moderationStatus: text("moderation_status").notNull().default("pending"), // "pending" | "approved" | "rejected" | "appealed"
   moderationReviewId: varchar("moderation_review_id"),
   isPublished: text("is_published").notNull().default("false"), // "true" | "false"
+  lastBoostedAt: timestamp("last_boosted_at"), // Timestamp of last free boost (24h cooldown)
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
   updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
 });

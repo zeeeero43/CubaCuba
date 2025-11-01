@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { User, Phone, MapPin, Calendar, Settings, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart, Star, Users, AlertTriangle, ShieldCheck } from "lucide-react";
+import { User, Phone, MapPin, Calendar, Settings, LogOut, Package, Eye, Heart, MoreVertical, Edit, Trash2, Pause, Play, ShoppingCart, Star, Users, AlertTriangle, ShieldCheck, TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -75,6 +75,43 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
     },
   });
+
+  // Boost listing mutation
+  const boostListingMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('POST', `/api/listings/${id}/boost`),
+    onSuccess: () => {
+      toast({ title: "¡Anuncio impulsado!", description: "Tu anuncio ahora aparece más arriba en los resultados" });
+      queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "No se pudo impulsar", 
+        description: error.message || "Intenta de nuevo más tarde",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Calculate boost availability
+  const getBoostStatus = (listing: Listing) => {
+    if (!listing.lastBoostedAt) {
+      return { canBoost: true, text: "Impulsar anuncio" };
+    }
+
+    const lastBoost = new Date(listing.lastBoostedAt);
+    const now = new Date();
+    const hoursSince = (now.getTime() - lastBoost.getTime()) / (1000 * 60 * 60);
+
+    if (hoursSince >= 24) {
+      return { canBoost: true, text: "Impulsar anuncio" };
+    }
+
+    const hoursRemaining = Math.ceil(24 - hoursSince);
+    return { 
+      canBoost: false, 
+      text: `Disponible en ${hoursRemaining}h` 
+    };
+  };
 
   if (!user) return <></>;
 
@@ -345,6 +382,22 @@ export default function ProfilePage() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
+
+                      {/* Boost Button - Full Width */}
+                      {listing.status === 'active' && (
+                        <div className="mt-3 pt-3 border-t">
+                          <Button
+                            onClick={() => boostListingMutation.mutate(listing.id)}
+                            disabled={!getBoostStatus(listing).canBoost || boostListingMutation.isPending}
+                            className="w-full"
+                            variant={getBoostStatus(listing).canBoost ? "default" : "outline"}
+                            data-testid={`button-boost-${listing.id}`}
+                          >
+                            <TrendingUp className="w-4 h-4 mr-2" />
+                            {boostListingMutation.isPending ? "Impulsando..." : getBoostStatus(listing).text}
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

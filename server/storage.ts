@@ -83,6 +83,7 @@ export interface IStorage {
   deleteListingAsAdmin(id: string): Promise<boolean>;
   setListingStatus(id: string, userId: string, status: string): Promise<boolean>;
   markListingSold(id: string, userId: string): Promise<boolean>;
+  boostListing(id: string, userId: string): Promise<{ success: boolean; message: string; hoursRemaining?: number }>;
   incrementViews(id: string): Promise<void>;
   incrementContacts(id: string): Promise<void>;
   
@@ -601,6 +602,46 @@ export class DatabaseStorage implements IStorage {
 
   async markListingSold(id: string, userId: string): Promise<boolean> {
     return this.setListingStatus(id, userId, 'sold');
+  }
+
+  async boostListing(id: string, userId: string): Promise<{ success: boolean; message: string; hoursRemaining?: number }> {
+    const [listing] = await db
+      .select()
+      .from(listings)
+      .where(and(
+        eq(listings.id, id),
+        eq(listings.sellerId, userId)
+      ));
+
+    if (!listing) {
+      return { success: false, message: "Anuncio no encontrado o sin permiso" };
+    }
+
+    const now = new Date();
+    const lastBoostedAt = listing.lastBoostedAt;
+
+    if (lastBoostedAt) {
+      const hoursSinceBoost = (now.getTime() - new Date(lastBoostedAt).getTime()) / (1000 * 60 * 60);
+      
+      if (hoursSinceBoost < 24) {
+        const hoursRemaining = Math.ceil(24 - hoursSinceBoost);
+        return { 
+          success: false, 
+          message: `Debes esperar ${hoursRemaining} horas antes de impulsar de nuevo`,
+          hoursRemaining 
+        };
+      }
+    }
+
+    await db
+      .update(listings)
+      .set({ 
+        lastBoostedAt: now,
+        updatedAt: now
+      })
+      .where(eq(listings.id, id));
+
+    return { success: true, message: "Anuncio impulsado exitosamente" };
   }
 
   async incrementViews(id: string): Promise<void> {
