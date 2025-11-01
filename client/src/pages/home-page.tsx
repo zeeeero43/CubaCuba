@@ -112,7 +112,7 @@ export default function HomePage() {
           ) : (
             <>
               {/* Mobile: 6 categories in 3x2 grid (excluding Empleos) */}
-              <div className="grid md:hidden grid-cols-3 gap-4 px-4 pb-2">
+              <div className="grid md:hidden grid-cols-3 gap-2 px-4 pb-2">
                 {mainCategories
                   .filter(cat => cat.name !== 'Empleos')
                   .slice(0, 6)
