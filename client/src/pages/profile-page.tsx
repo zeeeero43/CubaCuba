@@ -100,9 +100,10 @@ export default function ProfilePage() {
     },
     onSuccess: (_, id) => {
       toast({ title: "¡Anuncio impulsado!", description: "Tu anuncio ahora aparece más arriba en los resultados" });
-      // Refetch to get accurate server state
+      // Refetch to get accurate server state across all pages
       queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/listings/featured/paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/listings'] });
     },
     onError: (error: any, _, context) => {
       // Rollback optimistic update
