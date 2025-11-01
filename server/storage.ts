@@ -514,12 +514,18 @@ export class DatabaseStorage implements IStorage {
       .where(whereClause);
 
     // Apply pagination and ordering
+    // Priority: Featured > Boosted (last 24h) > Newest
     const offset = (page - 1) * pageSize;
     const result = await db
       .select()
       .from(listings)
       .where(whereClause)
-      .orderBy(desc(listings.featured), desc(listings.createdAt))
+      .orderBy(
+        desc(listings.featured),
+        desc(sql`CASE WHEN ${listings.lastBoostedAt} IS NULL THEN 0 ELSE 1 END`),
+        desc(listings.lastBoostedAt),
+        desc(listings.createdAt)
+      )
       .limit(pageSize)
       .offset(offset);
 
@@ -529,7 +535,11 @@ export class DatabaseStorage implements IStorage {
   async getFeaturedListings(): Promise<Listing[]> {
     return await db.select().from(listings)
       .where(eq(listings.status, "active"))
-      .orderBy(desc(listings.createdAt));
+      .orderBy(
+        desc(sql`CASE WHEN ${listings.lastBoostedAt} IS NULL THEN 0 ELSE 1 END`),
+        desc(listings.lastBoostedAt),
+        desc(listings.createdAt)
+      );
   }
 
   async getListing(id: string): Promise<Listing | undefined> {
