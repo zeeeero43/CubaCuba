@@ -306,9 +306,18 @@ export default function ProfilePage() {
         {/* User's Listings */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Package className="w-5 h-5 text-primary" />
-              Mis Anuncios ({listings.length})
+            <CardTitle className="text-base flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
+                Mis Anuncios ({listings.length})
+              </div>
+              {listings.length > 0 && (
+                <Link href="/my-listings" asChild>
+                  <Button variant="link" size="sm" className="text-primary" data-testid="link-view-all-listings">
+                    Ver todos
+                  </Button>
+                </Link>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -327,7 +336,7 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {listings.map((listing) => (
+                {listings.slice(0, 5).map((listing) => (
                   <Card key={listing.id} className="hover:shadow-md transition-shadow" data-testid={`card-listing-${listing.id}`}>
                     <CardContent className="p-4">
                       <div className="flex gap-3">
@@ -429,6 +438,17 @@ export default function ProfilePage() {
                     </CardContent>
                   </Card>
                 ))}
+                
+                {/* View All Button */}
+                {listings.length > 5 && (
+                  <div className="mt-4 text-center">
+                    <Link href="/my-listings" asChild>
+                      <Button variant="outline" className="w-full" data-testid="button-view-all-listings">
+                        Ver todos los anuncios ({listings.length})
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
