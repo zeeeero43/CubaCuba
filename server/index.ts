@@ -94,12 +94,14 @@ app.use('/api/resend-verification', authLimiter, authSlowDown);
 app.use('/api/reset-password', authLimiter, authSlowDown);
 app.use('/api/confirm-reset', authLimiter, authSlowDown);
 
-// Disable browser caching completely (always show latest version)
+// Disable browser caching for HTML only (API and static assets can cache properly)
 app.use((req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
+  // Only disable caching for HTML pages, not for API or static assets
+  if (req.path === '/' || req.path.endsWith('.html') || (!req.path.includes('.') && !req.path.startsWith('/api'))) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
   next();
 });
 
