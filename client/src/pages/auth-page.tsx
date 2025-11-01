@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail } from "lucide-react";
 import { FaGoogle, FaFacebook } from "react-icons/fa";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { z } from "zod";
 
 type Screen = "login" | "register";
@@ -21,6 +21,11 @@ const loginSchema = z.object({
 export default function AuthPage() {
   const { user, registerMutation, loginMutation } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
+  const [location] = useLocation();
+  
+  // Get redirect parameter from URL
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const redirectTo = urlParams.get('redirect') || '/';
 
   // Registration form
   const registerForm = useForm({
@@ -43,7 +48,7 @@ export default function AuthPage() {
 
   // Redirect if already logged in (after hooks)
   if (user) {
-    return <Redirect to="/" />;
+    return <Redirect to={redirectTo} />;
   }
 
   // Submit registration

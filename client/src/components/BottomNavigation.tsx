@@ -7,9 +7,19 @@ import {
   User,
   LayoutGrid
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function BottomNavigation() {
   const [location, navigate] = useLocation();
+  const { user } = useAuth();
+  
+  const handleCreateListing = () => {
+    if (!user) {
+      navigate('/auth?redirect=/create-listing');
+    } else {
+      navigate('/create-listing');
+    }
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
@@ -41,7 +51,7 @@ export default function BottomNavigation() {
             variant="ghost" 
             size="icon" 
             className={`flex flex-col items-center py-2 px-3 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-gray-700 ${location === '/create-listing' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
-            onClick={() => navigate('/create-listing')}
+            onClick={handleCreateListing}
             data-testid="nav-create"
           >
             <Plus className={`w-6 h-6 ${location === '/create-listing' ? 'text-primary' : 'text-primary'}`} />

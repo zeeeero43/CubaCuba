@@ -34,6 +34,7 @@ import AdminCategoriesPage from "@/pages/admin-categories-page";
 import AdminBannersPage from "@/pages/admin-banners-page";
 import NotFound from "@/pages/not-found";
 import BottomNavigation from "@/components/BottomNavigation";
+import TopNavigation from "@/components/TopNavigation";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -103,6 +104,7 @@ function App() {
         <TooltipProvider>
           <AuthProvider>
             <Toaster />
+            <TopNavigation />
             <div className="min-h-screen flex flex-col">
               <div className="flex-1 pb-20">
                 <Router />
