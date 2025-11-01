@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Listing } from "@shared/schema";
-import { ArrowLeft, MoreVertical, Edit, Pause, Play, Trash2, CheckCircle, Eye, Phone, MessageSquare } from "lucide-react";
+import { ArrowLeft, MoreVertical, Edit, Pause, Play, Trash2, CheckCircle, Eye, Phone, MessageSquare, TrendingUp } from "lucide-react";
 import { ModerationStatusBadge } from "@/components/ModerationStatusBadge";
 import { AppealDialog } from "@/components/AppealDialog";
 
@@ -90,6 +90,65 @@ export default function MyListingsPage() {
       });
     },
   });
+
+  // Boost listing mutation
+  const boostListingMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('POST', `/api/listings/${id}/boost`),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['/api/me/listings'] });
+      
+      const previousListings = queryClient.getQueryData<Listing[]>(['/api/me/listings']);
+      
+      queryClient.setQueryData<Listing[]>(['/api/me/listings'], (old) => {
+        if (!old) return old;
+        return old.map(listing => 
+          listing.id === id 
+            ? { ...listing, lastBoostedAt: new Date() as any }
+            : listing
+        );
+      });
+      
+      return { previousListings };
+    },
+    onSuccess: (_, id) => {
+      toast({ title: "¡Anuncio impulsado!", description: "Tu anuncio ahora aparece más arriba en los resultados" });
+      queryClient.invalidateQueries({ queryKey: ['/api/me/listings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/listings/featured/paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/listings'] });
+    },
+    onError: (error: any, _, context) => {
+      if (context?.previousListings) {
+        queryClient.setQueryData(['/api/me/listings'], context.previousListings);
+      }
+      toast({ 
+        title: "No se pudo impulsar", 
+        description: error.message || "Intenta de nuevo más tarde",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const getBoostStatus = (listing: Listing) => {
+    if (!listing.lastBoostedAt) {
+      return { canBoost: true, text: "Impulsar anuncio" };
+    }
+
+    const lastBoost = new Date(listing.lastBoostedAt);
+    const now = new Date();
+    const millisRemaining = (lastBoost.getTime() + 24 * 60 * 60 * 1000) - now.getTime();
+
+    if (millisRemaining <= 0) {
+      return { canBoost: true, text: "Impulsar anuncio" };
+    }
+
+    const hours = Math.floor(millisRemaining / (1000 * 60 * 60));
+    const minutes = Math.floor((millisRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return { 
+      canBoost: false, 
+      text: `Disponible en ${hours}h ${minutes}m` 
+    };
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -253,6 +312,21 @@ export default function MyListingsPage() {
                           <span>{listing.contacts || 0}</span>
                         </div>
                       </div>
+
+                      {/* Boost Button for Active Listings */}
+                      {listing.status === 'active' && (
+                        <Button
+                          onClick={() => boostListingMutation.mutate(listing.id)}
+                          disabled={!getBoostStatus(listing).canBoost || boostListingMutation.isPending}
+                          size="sm"
+                          className="mt-3 w-full"
+                          variant={getBoostStatus(listing).canBoost ? "default" : "outline"}
+                          data-testid={`button-boost-${listing.id}`}
+                        >
+                          <TrendingUp className="w-4 h-4 mr-2" />
+                          {boostListingMutation.isPending ? "Impulsando..." : getBoostStatus(listing).text}
+                        </Button>
+                      )}
 
                       {/* Appeal Button for Rejected Listings */}
                       {listing.moderationStatus === 'rejected' && (
