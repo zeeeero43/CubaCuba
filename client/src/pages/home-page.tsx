@@ -43,7 +43,9 @@ export default function HomePage() {
     initialPageParam: 1,
   });
 
-  const featuredListings = listingsData?.pages.flatMap((page) => page.listings) || [];
+  const featuredListings = listingsData?.pages
+    .flatMap((page) => page.listings || [])
+    .filter((listing) => listing && listing.id) || [];
 
   // Intersection Observer for infinite scroll
   const loadMoreRef = useRef<HTMLDivElement>(null);
