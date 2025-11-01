@@ -9,6 +9,7 @@ import type { Category, Listing } from "@shared/schema";
 import { useEffect, useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import { getIconComponent } from "@/lib/utils";
+import MobileHeader from "@/components/MobileHeader";
 
 export default function HomePage() {
   const [, navigate] = useLocation();
@@ -74,8 +75,16 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero Section with Search */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      {/* Mobile Header */}
+      <div className="md:hidden">
+        <MobileHeader 
+          showBack={false}
+          showSearch={true}
+        />
+      </div>
+
+      {/* Desktop Hero Section with Search */}
+      <div className="hidden md:block bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
@@ -95,6 +104,14 @@ export default function HomePage() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Mobile Search Bar - Compact */}
+      <div className="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+        <SearchBar 
+          placeholder="¿Qué buscas?"
+          className="w-full"
+        />
       </div>
 
       <div className="max-w-7xl mx-auto">
