@@ -172,10 +172,10 @@ EOF
 
 chmod 600 "$PROJECT_DIR/.env"
 
-# Credentials speichern
-CREDS_FILE="/root/cubacuba-credentials.txt"
-cat > "$CREDS_FILE" << EOF
-╔═══════════════════════════════════════════════════════╗
+log_success "Umgebungsvariablen konfiguriert"
+
+# Credentials temporär speichern (wird später angezeigt und optional gespeichert)
+CREDENTIALS_TEXT="╔═══════════════════════════════════════════════════════╗
 ║         CubaCuba - Zugangsdaten & Credentials         ║
 ╚═══════════════════════════════════════════════════════╝
 
@@ -197,13 +197,8 @@ Session Secret:
 --------------
 SESSION_SECRET=$SESSION_SECRET
 
-WICHTIG: Diese Datei sicher aufbewahren und nach dem Lesen löschen!
-Zum Löschen: rm -f $CREDS_FILE
-EOF
-
-chmod 600 "$CREDS_FILE"
-log_success "Umgebungsvariablen konfiguriert"
-log_warning "Credentials gespeichert in: $CREDS_FILE"
+⚠️  WICHTIG: Diese Credentials sicher aufbewahren!
+   Verwende einen Passwort-Manager (z.B. 1Password, Bitwarden, KeePass)"
 
 ################################################################################
 # 7. Dependencies installieren und Projekt bauen
@@ -415,11 +410,28 @@ echo "   Manuelles Backup: /usr/local/bin/backup-cubacuba"
 echo "   Backup-Verzeichnis: /root/backups/cubacuba"
 echo ""
 
-echo "🔐 Credentials:"
-echo "   Gespeichert in: $CREDS_FILE"
-log_warning "WICHTIG: Diese Datei enthält sensible Zugangsdaten!"
-echo "   Bitte sicher aufbewahren und anschließend löschen mit:"
-echo "   rm -f $CREDS_FILE"
+echo "🔐 Zugangsdaten:"
+echo ""
+echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo "$CREDENTIALS_TEXT"
+echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+log_warning "⚠️  WICHTIG: Diese Credentials werden NUR EINMAL angezeigt!"
+echo ""
+read -p "Möchtest du die Credentials in einer Datei speichern? (nicht empfohlen) (j/n): " SAVE_CREDS
+if [[ $SAVE_CREDS == "j" || $SAVE_CREDS == "J" ]]; then
+    CREDS_FILE="/root/.cubacuba-credentials-$(date +%Y%m%d_%H%M%S).txt"
+    echo "$CREDENTIALS_TEXT" > "$CREDS_FILE"
+    chmod 600 "$CREDS_FILE"
+    echo "   Gespeichert in: $CREDS_FILE"
+    echo "   Zum Löschen: rm -f $CREDS_FILE"
+
+    # Auto-delete nach 24 Stunden
+    (crontab -l 2>/dev/null | grep -v "$CREDS_FILE"; echo "0 $(date -d '+1 day' +%H) $(date -d '+1 day' +%d) * * rm -f $CREDS_FILE 2>/dev/null") | crontab - 2>/dev/null
+    log_info "Datei wird automatisch in 24 Stunden gelöscht"
+else
+    log_info "Credentials nicht gespeichert - notiere sie jetzt!"
+fi
 echo ""
 
 echo "📝 Logs:"
