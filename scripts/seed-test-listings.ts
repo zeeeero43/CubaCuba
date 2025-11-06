@@ -20,7 +20,7 @@ async function seedTestListings() {
       console.error("❌ No users found! Create a user first.");
       process.exit(1);
     }
-    const userId = allUsers[0].id;
+    const sellerId = allUsers[0].id;
     console.log(`✅ Using user: ${allUsers[0].email}`);
 
     // Get some categories (main categories without parent)
@@ -40,7 +40,7 @@ async function seedTestListings() {
         currency: "USD" as const,
         priceType: "fixed" as const,
         categoryId: cats[0].id,
-        userId,
+        sellerId,
         status: "active" as const,
         condition: "used" as const,
         locationProvince: "La Habana",
@@ -55,7 +55,7 @@ async function seedTestListings() {
         currency: "USD" as const,
         priceType: "negotiable" as const,
         categoryId: cats[0].id,
-        userId,
+        sellerId,
         status: "active" as const,
         condition: "used" as const,
         locationProvince: "La Habana",
@@ -70,7 +70,7 @@ async function seedTestListings() {
         currency: "USD" as const,
         priceType: "negotiable" as const,
         categoryId: cats[1] ? cats[1].id : cats[0].id,
-        userId,
+        sellerId,
         status: "active" as const,
         condition: "used" as const,
         locationProvince: "La Habana",
@@ -85,7 +85,7 @@ async function seedTestListings() {
         currency: "USD" as const,
         priceType: "fixed" as const,
         categoryId: cats[0].id,
-        userId,
+        sellerId,
         status: "active" as const,
         condition: "used" as const,
         locationProvince: "La Habana",
@@ -100,7 +100,7 @@ async function seedTestListings() {
         currency: "USD" as const,
         priceType: "negotiable" as const,
         categoryId: cats[2] ? cats[2].id : cats[0].id,
-        userId,
+        sellerId,
         status: "active" as const,
         condition: "new" as const,
         locationProvince: "Matanzas",
