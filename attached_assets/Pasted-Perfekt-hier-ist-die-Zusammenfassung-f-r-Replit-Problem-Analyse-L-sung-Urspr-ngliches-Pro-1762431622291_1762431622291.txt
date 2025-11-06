@@ -1,0 +1,117 @@
+Perfekt, hier ist die Zusammenfassung für Replit:
+
+🔍 Problem-Analyse & Lösung
+Ursprüngliches Problem: .env wurde nicht geladen
+❌ Was nicht funktionierte:
+PM2 Setup in deinem Script:
+
+sudo -u ricoapp pm2 start npm --name "rico-cuba" -- start
+Problem:
+
+npm start führt aus: NODE_ENV=production node dist/index.js
+Node.js lädt .env Dateien NICHT automatisch!
+process.env.DATABASE_URL war undefined → App crashed
+⚠️ Warum env_file nicht half:
+// ecosystem.config.cjs (funktionierte nicht)
+env_file: '/var/www/CubaCuba/.env',  // <- PM2 Bug/Limitation
+PM2's env_file Parameter ist unzuverlässig bei ES Modules ("type": "module").
+
+✅ Lösung 1: .env explizit laden
+Wir haben einen Wrapper-Script erstellt:
+
+// start-production.js
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// WICHTIG: .env EXPLIZIT laden BEVOR die App startet
+dotenv.config({ path: join(__dirname, '.env') });
+
+// Jetzt erst die Haupt-App importieren
+import('./dist/index.js');
+PM2 startet jetzt den Wrapper:
+
+// ecosystem.config.cjs
+script: './start-production.js',  // <- Nicht mehr npm start!
+interpreter: 'node',
+Warum das funktioniert:
+
+start-production.js wird geladen
+ZUERST wird dotenv.config() ausgeführt → .env geladen
+DANN wird dist/index.js importiert → process.env.DATABASE_URL ist verfügbar
+✅ Lösung 2: Secure Cookies für HTTP deaktiviert
+Zweites Problem nach DB-Fix:
+
+POST /api/login 200  ← Login erfolgreich
+GET /api/user 401    ← Aber sofort wieder ausgeloggt!
+Ursache:
+
+// server/auth.ts (original)
+cookie: {
+  secure: process.env.NODE_ENV === "production",  // true in Production
+}
+secure: true → Cookies nur über HTTPS
+Server läuft auf HTTP (nur IP, kein SSL)
+Browser blockiert Cookies → Session geht verloren
+Fix:
+
+// server/auth.ts (geändert)
+cookie: {
+  secure: false,  // Temporär für HTTP ohne Domain
+}
+📝 Zusammenfassung für Replit
+Was ihr im Setup-Script ändern solltet:
+1. Fügt start-production.js hinzu:
+
+# Im Setup-Script nach "npm run build"
+cat > "$PROJECT_DIR/start-production.js" << 'EOF'
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: join(__dirname, '.env') });
+import('./dist/index.js');
+EOF
+
+chown ricoapp:ricoapp "$PROJECT_DIR/start-production.js"
+2. Ändert PM2-Start zu:
+
+# Statt:
+pm2 start npm --name "rico-cuba" -- start
+
+# Nutzt ecosystem.config.cjs:
+cat > "$PROJECT_DIR/ecosystem.config.cjs" << 'EOF'
+module.exports = {
+  apps: [{
+    name: 'rico-cuba',
+    script: './start-production.js',
+    cwd: '/var/www/rico-cuba',
+    interpreter: 'node',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production'
+    }
+  }]
+};
+EOF
+
+sudo -u ricoapp pm2 start "$PROJECT_DIR/ecosystem.config.cjs"
+3. Cookie-Fix (optional für HTTP ohne Domain):
+
+# Nach dem Build, vor PM2-Start:
+sed -i 's/secure: process.env.NODE_ENV === "production"/secure: false/' "$PROJECT_DIR/server/auth.ts"
+🎯 Root Cause
+Node.js ES Modules laden .env nicht automatisch!
+
+Anders als CommonJS (require) oder Tools wie dotenv-cli, muss bei ES Modules (import) die .env Datei explizit mit dotenv.config() geladen werden bevor der Code läuft, der process.env verwendet.
+
+Das haben wir mit dem Wrapper-Script gelöst.
