@@ -289,7 +289,11 @@ sudo -u ricoapp npm install --quiet --production=false
 log_success "Dependencies installiert"
 
 log_info "Datenbank-Schema wird erstellt..."
-sudo -u ricoapp npm run db:push --force || sudo -u ricoapp npm run db:push
+if ! sudo -u ricoapp npm run db:push; then
+    log_error "Datenbank-Schema konnte nicht erstellt werden!"
+    log_error "Bitte prüfe die Datenbank-Verbindung und Schema-Definitionen."
+    exit 1
+fi
 log_success "Datenbank-Schema erstellt"
 
 log_info "Projekt wird gebaut..."
@@ -323,7 +327,10 @@ pm2 save
 EOPM2
 
 # PM2 Startup Script für ricoapp User erstellen
-env PATH=$PATH:/usr/bin pm2 startup systemd -u ricoapp --hp /home/ricoapp
+STARTUP_CMD=$(pm2 startup systemd -u ricoapp --hp /home/ricoapp | grep "sudo")
+if [ -n "$STARTUP_CMD" ]; then
+    eval $STARTUP_CMD
+fi
 
 log_success "Rico-Cuba App mit PM2 gestartet (als ricoapp User)"
 log_info "⚠️  App läuft NICHT als root (Sicherheit!)"
@@ -380,7 +387,7 @@ server {
 
     # Upload-Verzeichnis für Bilder
     location /uploads/ {
-        alias $PROJECT_DIR/uploads/;
+        alias /var/www/rico-cuba/uploads/;
         expires 7d;
         add_header Cache-Control "public, immutable";
     }
