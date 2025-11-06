@@ -1,3 +1,6 @@
+// Load .env file FIRST (before any other imports that use process.env)
+import 'dotenv/config';
+
 import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import compression from "compression";
