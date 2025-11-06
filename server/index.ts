@@ -36,16 +36,13 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // needed for Vite in dev
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "ws:", "wss:"], // WebSockets for Vite HMR
+      upgradeInsecureRequests: null, // DISABLED: No SSL/HTTPS configured
     },
     ...(process.env.NODE_ENV === "development" && {
       reportOnly: true // Less strict in development
     })
   },
-  hsts: process.env.NODE_ENV === "production" ? {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  } : false
+  hsts: false // DISABLED: No SSL/HTTPS configured - prevents ERR_CONNECTION_REFUSED
 }));
 
 // Global rate limiting
