@@ -1,0 +1,67 @@
+
+root@ubuntu:/var/www/CubaCuba# sudo -u ricoapp pm2 logs rico-cuba --lines 30
+[TAILING] Tailing last 30 lines for [rico-cuba] process (change the value with --lines option)
+/home/ricoapp/.pm2/logs/rico-cuba-error.log last 30 lines:
+0|rico-cub |
+0|rico-cub | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|rico-cub |     at file:///var/www/CubaCuba/dist/index.js:578:9
+0|rico-cub |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|rico-cub |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+0|rico-cub |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|rico-cub |
+0|rico-cub | Node.js v22.21.0
+0|rico-cub | file:///var/www/CubaCuba/dist/index.js:578
+0|rico-cub |   throw new Error(
+0|rico-cub |         ^
+0|rico-cub |
+0|rico-cub | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|rico-cub |     at file:///var/www/CubaCuba/dist/index.js:578:9
+0|rico-cub |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|rico-cub |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+0|rico-cub |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|rico-cub |
+0|rico-cub | Node.js v22.21.0
+0|rico-cub | file:///var/www/CubaCuba/dist/index.js:578
+0|rico-cub |   throw new Error(
+0|rico-cub |         ^
+0|rico-cub |
+0|rico-cub | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|rico-cub |     at file:///var/www/CubaCuba/dist/index.js:578:9
+0|rico-cub |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|rico-cub |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+0|rico-cub |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|rico-cub |
+0|rico-cub | Node.js v22.21.0
+
+/home/ricoapp/.pm2/logs/rico-cuba-out.log last 30 lines:
+0|rico-cub |   ⊙ Setting already exists: max_appeals_per_listing
+0|rico-cub |   ⊙ Setting already exists: blacklist_enabled
+0|rico-cub |   ⊙ Setting already exists: spam_detection_enabled
+0|rico-cub |   ⊙ Setting already exists: duplicate_detection_enabled
+0|rico-cub |   ⊙ Setting already exists: image_moderation_enabled
+0|rico-cub |   ⊙ Setting already exists: cuba_rules_enforcement
+0|rico-cub |   ⊙ Setting already exists: max_strikes_before_ban
+0|rico-cub |   ⊙ Setting already exists: ai_system_prompt
+0|rico-cub | 🚫 Creating blacklist entries...
+0|rico-cub |   ⊙ Word already blacklisted: golpe de estado
+0|rico-cub |   ⊙ Word already blacklisted: contra revolución
+0|rico-cub |   ⊙ Word already blacklisted: disidente
+0|rico-cub |   ⊙ Word already blacklisted: oposición política
+0|rico-cub |   ⊙ Word already blacklisted: libertad de prensa
+0|rico-cub |   ⊙ Word already blacklisted: censura gobierno
+0|rico-cub |   ⊙ Word already blacklisted: narcotrafico
+0|rico-cub |   ⊙ Word already blacklisted: trafico de armas
+0|rico-cub |   ⊙ Word already blacklisted: trafico humano
+0|rico-cub |   ⊙ Word already blacklisted: pornografia
+0|rico-cub | ✅ Moderation system seeding complete!
+0|rico-cub | 🎯 Seeding premium features...
+0|rico-cub |   ↻ Updated premium feature: Impulsar
+0|rico-cub |   ↻ Updated premium feature: Destacar
+0|rico-cub |   ↻ Updated premium feature: Ubicación Superior
+0|rico-cub |   ↻ Updated premium feature: Más Imágenes
+0|rico-cub |   ↻ Updated premium feature: Estado Destacado
+0|rico-cub |   ↻ Updated premium feature: Mayor Duración
+0|rico-cub |   ↻ Updated premium feature: Estadísticas Plus
+0|rico-cub | ✅ Premium features seeding complete!
+0|rico-cub | 11:56:59 AM [express] serving on port 3000
+
