@@ -1,0 +1,55 @@
+in 4ms :: {"id":"3c8…
+
+/home/ricoapp/.pm2/logs/rico-cuba-error.log last 50 lines:
+0|rico-cub |   detail: undefined,
+0|rico-cub |   hint: 'No function matches the given name and argument types. You might need to add explicit type casts.',
+0|rico-cub |   position: '222',
+0|rico-cub |   internalPosition: undefined,
+0|rico-cub |   internalQuery: undefined,
+0|rico-cub |   where: undefined,
+0|rico-cub |   schema: undefined,
+0|rico-cub |   table: undefined,
+0|rico-cub |   column: undefined,
+0|rico-cub |   dataType: undefined,
+0|rico-cub |   constraint: undefined,
+0|rico-cub |   file: 'parse_func.c',
+0|rico-cub |   line: '629',
+0|rico-cub |   routine: 'ParseFuncOrColumn'
+0|rico-cub | }
+0|rico-cub | 2025-11-06 12:21:46 +00:00: Error searching listings: error: function similarity(text, unknown) does not exist
+0|rico-cub |     at /var/www/CubaCuba/node_modules/pg-pool/index.js:45:11
+0|rico-cub |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+0|rico-cub |     at async file:///var/www/CubaCuba/node_modules/drizzle-orm/node-postgres/session.js:83:22
+0|rico-cub |     at async DatabaseStorage.searchListings (file:///var/www/CubaCuba/dist/index.js:1164:27)
+0|rico-cub |     at async file:///var/www/CubaCuba/dist/index.js:3282:22 {
+0|rico-cub |   length: 219,
+0|rico-cub |   severity: 'ERROR',
+0|rico-cub |   code: '42883',
+0|rico-cub |   detail: undefined,
+0|rico-cub |   hint: 'No function matches the given name and argument types. You might need to add explicit type casts.',
+0|rico-cub |   position: '222',
+0|rico-cub |   internalPosition: undefined,
+0|rico-cub |   internalQuery: undefined,
+0|rico-cub |   where: undefined,
+0|rico-cub |   schema: undefined,
+0|rico-cub |   table: undefined,
+0|rico-cub |   column: undefined,
+0|rico-cub |   dataType: undefined,
+0|rico-cub |   constraint: undefined,
+0|rico-cub |   file: 'parse_func.c',
+0|rico-cub |   line: '629',
+0|rico-cub |   routine: 'ParseFuncOrColumn'
+0|rico-cub | }
+0|rico-cub | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|rico-cub | Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'dotenv' imported from /var/www/CubaCuba/start-production.js
+0|rico-cub |     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9)
+0|rico-cub |     at packageResolve (node:internal/modules/esm/resolve:767:81)
+0|rico-cub |     at moduleResolve (node:internal/modules/esm/resolve:853:18)
+0|rico-cub |     at defaultResolve (node:internal/modules/esm/resolve:983:11)
+0|rico-cub |     at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
+0|rico-cub |     at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
+0|rico-cub |     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
+0|rico-cub |     at ModuleJob._link (node:internal/modules/esm/module_job:182:49)
+0|rico-cub |     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
