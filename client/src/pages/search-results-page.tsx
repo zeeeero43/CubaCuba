@@ -132,8 +132,23 @@ export default function SearchResultsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const formatPrice = (price: string, currency: string) => {
-    return `${parseFloat(price).toLocaleString('es-ES')} ${currency}`;
+  const formatPrice = (price: string, currency: string, priceType?: string) => {
+    // Handle "Precio a consultar" (on_request type)
+    if (priceType === 'on_request') {
+      return 'Precio a consultar';
+    }
+    
+    // Handle empty or invalid prices
+    if (!price || price.trim() === '') {
+      return 'Precio a consultar';
+    }
+    
+    const numPrice = parseFloat(price);
+    if (isNaN(numPrice) || numPrice <= 0) {
+      return 'Precio a consultar';
+    }
+    
+    return `${numPrice.toLocaleString('es-ES')} ${currency}`;
   };
 
   const getConditionLabel = (condition: string) => {
@@ -276,7 +291,7 @@ export default function SearchResultsPage() {
                               </h3>
 
                               <p className="text-2xl font-bold text-primary mb-2" data-testid={`text-price-${listing.id}`}>
-                                {formatPrice(listing.price, listing.currency)}
+                                {formatPrice(listing.price, listing.currency, listing.priceType)}
                                 {listing.priceType === "negotiable" && (
                                   <span className="text-sm text-muted-foreground ml-2">Negociable</span>
                                 )}

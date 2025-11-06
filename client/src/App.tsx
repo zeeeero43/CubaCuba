@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -82,6 +82,29 @@ function Router() {
   );
 }
 
+function ConditionalLayout({ children }: { children: ReactNode }) {
+  const [location] = useLocation();
+  // Only match /admin exactly or /admin/ paths (not /admin-something or other paths)
+  // Also handles query strings like /admin?tab=xyz
+  const isAdminRoute = location === '/admin' || location.startsWith('/admin/') || location.startsWith('/admin?');
+
+  if (isAdminRoute) {
+    return <>{children}</>;
+  }
+
+  return (
+    <>
+      <TopNavigation />
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-1 pb-20">
+          {children}
+        </div>
+      </div>
+      <BottomNavigation />
+    </>
+  );
+}
+
 function App() {
   useEffect(() => {
     const removeBanner = () => {
@@ -104,13 +127,9 @@ function App() {
         <TooltipProvider>
           <AuthProvider>
             <Toaster />
-            <TopNavigation />
-            <div className="min-h-screen flex flex-col">
-              <div className="flex-1 pb-20">
-                <Router />
-              </div>
-            </div>
-            <BottomNavigation />
+            <ConditionalLayout>
+              <Router />
+            </ConditionalLayout>
           </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
