@@ -1,0 +1,13 @@
+
+root@ubuntu:/var/www/CubaCuba# ^C
+root@ubuntu:/var/www/CubaCuba# curl http://217.154.105.67/assets/index-C49Irrxy.js | head -n 5
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0var Bee=Object.defineProperty;var nz=e=>{throw TypeError(e)};var Uee=(e,t,n)=>t in e?Bee(e,t,{enumerable:!0,configurable:!0,writable:!0,value:n}):e[t]=n;var E=(e,t,n)=>Uee(e,typeof t!="symbol"?t+"":t,n),FA=(e,t,n)=>t.has(e)||nz("Cannot "+n);var R=(e,t,n)=>(FA(e,t,"read from private field"),n?n.call(e):t.get(e)),be=(e,t,n)=>t.has(e)?nz("Cannot add the same private member more than once"):t instanceof WeakSet?t.add(e):t.set(e,n),he=(e,t,n,a)=>(FA(e,t,"write to private field"),a?a.call(e,n):t.set(e,n),n),Be=(e,t,n)=>(FA(e,t,"access private method"),n);var W2=(e,t,n,a)=>({set _(i){he(e,t,i,n)},get _(){return R(e,t,a)}});function $ee(e,t){for(var n=0;n<t.length;n++){const a=t[n];if(typeof a!="string"&&!Array.isArray(a)){for(const i in a)if(i!=="default"&&!(i in e)){const s=Object.getOwnPropertyDescriptor(a,i);s&&Object.defineProperty(e,i,s.get?s:{enumerable:!0,get:()=>a[i]})}}}return Object.freeze(Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}))}(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const i of document.querySelectorAll('link[rel="modulepreload"]'))a(i);new MutationObserver(i=>{for(const s of i)if(s.type==="childList")for(const o of s.addedNodes)o.tagName==="LINK"&&o.rel==="modulepreload"&&a(o)}).observe(document,{childList:!0,subtree:!0});function n(i){const s={};return i.integrity&&(s.integrity=i.integrity),i.referrerPolicy&&(s.referrerPolicy=i.referrerPolicy),i.crossOrigin==="use-credentials"?s.credentials="include":i.crossOrigin==="anonymous"?s.credentials="omit":s.credentials="same-origin",s}function a(i){if(i.ep)return;i.ep=!0;const s=n(i);fetch(i.href,s)}})();function VB(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}var HB={exports:{}},_P={},BB={exports:{}},Ge={};/**
+ * @license React
+ * react.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+  7 1579k    7  110k    0     0  25.5M      0 --:--:-- --:--:-- --:--:-- 27.0M
+curl: (23) Failure writing output to destination
+root@ubuntu:/var/www/CubaCuba#
