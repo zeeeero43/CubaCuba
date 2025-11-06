@@ -162,9 +162,15 @@ else
 fi
 
 ################################################################################
-# Datenbank-Migrationen
+# Datenbank-Migrationen & Extensions
 ################################################################################
 log_info "Prüfe Datenbank-Schema..."
+
+# Enable PostgreSQL extensions for search (idempotent)
+log_info "Aktiviere PostgreSQL Extensions für Suche..."
+sudo -u postgres psql -d ricocuba -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;" 2>/dev/null || log_warning "pg_trgm Extension bereits aktiv oder Fehler"
+sudo -u postgres psql -d ricocuba -c "CREATE EXTENSION IF NOT EXISTS unaccent;" 2>/dev/null || log_warning "unaccent Extension bereits aktiv oder Fehler"
+log_success "PostgreSQL Extensions geprüft"
 
 # Check if schema changed
 if git diff "$BEFORE_COMMIT" "$AFTER_COMMIT" --name-only | grep -q "shared/schema.ts" || [ "$REBUILD" == "j" ] || [ "$REBUILD" == "J" ]; then
@@ -258,6 +264,10 @@ if [ "$BEFORE_COMMIT" != "$AFTER_COMMIT" ]; then
     echo "   Zu:  $AFTER_COMMIT"
     echo ""
 fi
+
+echo "👨‍💼 Admin-User erstellen:"
+echo "   sudo -u ricoapp bash -c 'source <(grep -v \"^#\" .env | sed \"s/^/export /\") && npx tsx scripts/make-admin.ts'"
+echo ""
 
 log_success "Update abgeschlossen! 🚀"
 echo ""
