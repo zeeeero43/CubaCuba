@@ -34,7 +34,7 @@ Vollständige Anleitung zum Deployment von Rico-Cuba auf einem Ubuntu 22.04 VPS.
 ssh root@deine-server-ip
 
 # 2. Projekt-Verzeichnis erstellen
-mkdir -p /var/www/rico-cuba
+mkdir -p /var/www/CubaCuba
 
 # 3. Projekt auf VPS hochladen (von deinem lokalen Rechner)
 # Option A: Git Clone
@@ -43,10 +43,10 @@ git clone https://github.com/dein-username/rico-cuba.git
 
 # Option B: rsync (falls du keinen Git Remote hast)
 rsync -avz --exclude 'node_modules' --exclude 'dist' \
-  /pfad/zu/lokalem/projekt/ root@deine-server-ip:/var/www/rico-cuba/
+  /pfad/zu/lokalem/projekt/ root@deine-server-ip:/var/www/CubaCuba/
 
 # 4. Setup-Script ausführbar machen und starten
-cd /var/www/rico-cuba
+cd /var/www/CubaCuba
 chmod +x setup-vps.sh
 sudo ./setup-vps.sh
 ```
@@ -95,12 +95,12 @@ rsync -avz --progress \
   --exclude 'node_modules' \
   --exclude 'dist' \
   --exclude '.git' \
-  /pfad/zu/rico-cuba/ root@SERVER_IP:/var/www/rico-cuba/
+  /pfad/zu/rico-cuba/ root@SERVER_IP:/var/www/CubaCuba/
 ```
 
 #### Via SFTP (FileZilla)
 1. Verbinde zu `SERVER_IP` Port 22
-2. Lade alle Files nach `/var/www/rico-cuba/` hoch
+2. Lade alle Files nach `/var/www/CubaCuba/` hoch
 3. Überspringe `node_modules` und `dist` Ordner
 
 ### Schritt 3: WICHTIGE Code-Änderung VOR dem Setup
@@ -108,7 +108,7 @@ rsync -avz --progress \
 ⚠️ **KRITISCH:** Bearbeite `vite.config.ts` VOR dem Setup-Script!
 
 ```bash
-nano /var/www/rico-cuba/vite.config.ts
+nano /var/www/CubaCuba/vite.config.ts
 ```
 
 Ändere Zeilen 7-21 von:
@@ -145,7 +145,7 @@ Speichern: `STRG+O`, `Enter`, `STRG+X`
 ### Schritt 4: Setup-Script ausführen
 
 ```bash
-cd /var/www/rico-cuba
+cd /var/www/CubaCuba
 chmod +x setup-vps.sh
 sudo ./setup-vps.sh
 ```
@@ -182,7 +182,7 @@ htop
 ### DeepSeek API Key nachträglich hinzufügen (falls übersprungen)
 
 ```bash
-nano /var/www/rico-cuba/.env
+nano /var/www/CubaCuba/.env
 ```
 
 Setze:
@@ -231,7 +231,7 @@ To                         Action      From
 ### Automatisches Update-Script (Empfohlen)
 
 ```bash
-cd /var/www/rico-cuba
+cd /var/www/CubaCuba
 sudo ./update-vps.sh
 ```
 
@@ -248,7 +248,7 @@ Das Script:
 ### Manuelles Update
 
 ```bash
-cd /var/www/rico-cuba
+cd /var/www/CubaCuba
 
 # 1. Backup erstellen (als root)
 sudo /usr/local/bin/backup-rico-cuba
@@ -306,7 +306,7 @@ PGPASSWORD=dein-db-password psql -h localhost -U ricocuba_user ricocuba
 
 ```bash
 # Backup entpacken
-tar -xzf /root/backups/rico-cuba/uploads_20250101_030000.tar.gz -C /var/www/rico-cuba/
+tar -xzf /root/backups/rico-cuba/uploads_20250101_030000.tar.gz -C /var/www/CubaCuba/
 ```
 
 ---
@@ -442,13 +442,13 @@ sudo -u ricoapp pm2 logs rico-cuba --err --lines 50
 
 # Häufige Ursachen:
 # 1. DATABASE_URL falsch
-grep DATABASE_URL /var/www/rico-cuba/.env
+grep DATABASE_URL /var/www/CubaCuba/.env
 
 # 2. Port 3000 belegt
 netstat -tulpn | grep :3000
 
 # 3. Dependencies fehlen
-cd /var/www/rico-cuba && sudo -u ricoapp npm install
+cd /var/www/CubaCuba && sudo -u ricoapp npm install
 ```
 
 ### Problem: 502 Bad Gateway (Nginx)
@@ -475,7 +475,7 @@ systemctl restart nginx
 systemctl status postgresql
 
 # Credentials prüfen
-cat /var/www/rico-cuba/.env | grep DATABASE_URL
+cat /var/www/CubaCuba/.env | grep DATABASE_URL
 
 # Manuell testen
 psql -U ricocuba_user -d ricocuba -h localhost
@@ -485,7 +485,7 @@ psql -U ricocuba_user -d ricocuba -h localhost
 
 ```bash
 # API Key prüfen
-grep DEEPSEEK_API_KEY /var/www/rico-cuba/.env
+grep DEEPSEEK_API_KEY /var/www/CubaCuba/.env
 
 # Test-Request
 curl -X POST "https://api.deepseek.com/v1/chat/completions" \
@@ -498,14 +498,14 @@ curl -X POST "https://api.deepseek.com/v1/chat/completions" \
 
 ```bash
 # Verzeichnis existiert?
-ls -la /var/www/rico-cuba/uploads
+ls -la /var/www/CubaCuba/uploads
 
 # Berechtigungen prüfen
-stat /var/www/rico-cuba/uploads
+stat /var/www/CubaCuba/uploads
 
 # Fix Permissions (App läuft als ricoapp, NICHT www-data!)
-chown -R ricoapp:ricoapp /var/www/rico-cuba/uploads
-chmod 755 /var/www/rico-cuba/uploads
+chown -R ricoapp:ricoapp /var/www/CubaCuba/uploads
+chmod 755 /var/www/CubaCuba/uploads
 ```
 
 ---
@@ -623,9 +623,9 @@ systemctl status nginx        # Nginx Status
 
 | Datei/Pfad | Beschreibung |
 |------------|--------------|
-| `/var/www/rico-cuba/` | Projekt-Root |
-| `/var/www/rico-cuba/.env` | Environment Variables |
-| `/var/www/rico-cuba/uploads/` | Hochgeladene Bilder |
+| `/var/www/CubaCuba/` | Projekt-Root |
+| `/var/www/CubaCuba/.env` | Environment Variables |
+| `/var/www/CubaCuba/uploads/` | Hochgeladene Bilder |
 | `/root/backups/rico-cuba/` | Backup-Verzeichnis |
 | `/etc/nginx/sites-available/rico-cuba` | Nginx Config |
 | `/home/ricoapp/.pm2/logs/` | PM2 Log-Files (App läuft als ricoapp) |
