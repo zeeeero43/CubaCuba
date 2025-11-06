@@ -46,7 +46,7 @@ cat << "EOF"
 EOF
 echo -e "${NC}"
 
-PROJECT_DIR="/var/www/rico-cuba"
+PROJECT_DIR="/var/www/CubaCuba"
 
 if [ ! -d "$PROJECT_DIR" ]; then
     log_error "Projekt-Verzeichnis $PROJECT_DIR nicht gefunden!"
@@ -85,7 +85,7 @@ mkdir -p "$BACKUP_DIR"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # DB Backup
-PGPASSWORD=$(grep DATABASE_URL /var/www/rico-cuba/.env | cut -d':' -f3 | cut -d'@' -f1)
+PGPASSWORD=$(grep DATABASE_URL /var/www/CubaCuba/.env | cut -d':' -f3 | cut -d'@' -f1)
 export PGPASSWORD
 
 if pg_dump -h localhost -U ricocuba_user ricocuba | gzip > "$BACKUP_DIR/db_backup_$TIMESTAMP.sql.gz"; then
@@ -95,7 +95,7 @@ else
 fi
 
 # Code Backup
-if tar -czf "$BACKUP_DIR/code_backup_$TIMESTAMP.tar.gz" -C /var/www rico-cuba --exclude=node_modules --exclude=dist 2>/dev/null; then
+if tar -czf "$BACKUP_DIR/code_backup_$TIMESTAMP.tar.gz" -C /var/www CubaCuba --exclude=node_modules --exclude=dist 2>/dev/null; then
     log_success "Code-Backup erstellt: code_backup_$TIMESTAMP.tar.gz"
 else
     log_warning "Code-Backup fehlgeschlagen"

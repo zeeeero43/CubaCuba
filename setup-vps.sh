@@ -6,7 +6,7 @@
 # Dieses Script automatisiert das komplette Setup auf einem frischen Ubuntu 22.04 VPS
 #
 # Verwendung:
-#   1. Projekt auf VPS hochladen (nach /var/www/rico-cuba)
+#   1. Projekt auf VPS hochladen (nach /var/www/CubaCuba)
 #   2. Script ausführbar machen: chmod +x setup-vps.sh
 #   3. Als root ausführen: sudo ./setup-vps.sh
 ################################################################################
@@ -55,7 +55,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Projekt-Verzeichnis überprüfen
-PROJECT_DIR="/var/www/rico-cuba"
+PROJECT_DIR="/var/www/CubaCuba"
 if [ ! -d "$PROJECT_DIR" ]; then
     log_error "Projekt-Verzeichnis $PROJECT_DIR nicht gefunden!"
     log_info "Bitte stelle sicher, dass das Projekt nach $PROJECT_DIR hochgeladen wurde."
@@ -196,8 +196,8 @@ fi
 ################################################################################
 log_info "Step 8/12: Umgebungsvariablen werden konfiguriert..."
 
-# Hole Server IP
-SERVER_IP=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
+# Server IP fest gesetzt
+SERVER_IP="217.154.105.67"
 
 # Erstelle .env Datei
 cat > "$PROJECT_DIR/.env" << EOF
@@ -223,10 +223,10 @@ DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY
 # Optional: OAuth (anpassen falls benötigt)
 # GOOGLE_CLIENT_ID=
 # GOOGLE_CLIENT_SECRET=
-# GOOGLE_CALLBACK_URL=https://$SERVER_IP/api/auth/google/callback
+# GOOGLE_CALLBACK_URL=http://$SERVER_IP/api/auth/google/callback
 # FACEBOOK_APP_ID=
 # FACEBOOK_APP_SECRET=
-# FACEBOOK_CALLBACK_URL=https://$SERVER_IP/api/auth/facebook/callback
+# FACEBOOK_CALLBACK_URL=http://$SERVER_IP/api/auth/facebook/callback
 EOF
 
 chmod 600 "$PROJECT_DIR/.env"
@@ -321,7 +321,7 @@ sudo -u ricoapp pm2 delete rico-cuba 2>/dev/null || true
 
 # Starte App als ricoapp User
 sudo -u ricoapp bash << 'EOPM2'
-cd /var/www/rico-cuba
+cd /var/www/CubaCuba
 pm2 start npm --name "rico-cuba" -- start
 pm2 save
 EOPM2
@@ -347,16 +347,8 @@ else
     log_info "Nginx bereits installiert"
 fi
 
-# Domain/IP ermitteln
-echo ""
-read -p "Hast du eine Domain? (j/n): " HAS_DOMAIN
-if [[ $HAS_DOMAIN == "j" || $HAS_DOMAIN == "J" ]]; then
-    read -p "Domain eingeben (z.B. rico-cuba.com): " DOMAIN
-    SERVER_NAME="$DOMAIN www.$DOMAIN"
-else
-    DOMAIN=$SERVER_IP
-    SERVER_NAME="_"
-fi
+# Server für IP konfiguriert
+SERVER_NAME="217.154.105.67"
 
 # Nginx-Konfiguration erstellen
 cat > /etc/nginx/sites-available/rico-cuba << EOF
@@ -387,7 +379,7 @@ server {
 
     # Upload-Verzeichnis für Bilder
     location /uploads/ {
-        alias /var/www/rico-cuba/uploads/;
+        alias /var/www/CubaCuba/uploads/;
         expires 7d;
         add_header Cache-Control "public, immutable";
     }
@@ -424,31 +416,6 @@ else
 fi
 
 ################################################################################
-# SSL-Zertifikat (optional)
-################################################################################
-log_info "SSL-Zertifikat einrichten..."
-if [[ $HAS_DOMAIN == "j" || $HAS_DOMAIN == "J" ]]; then
-    echo ""
-    read -p "Möchtest du SSL mit Let's Encrypt einrichten? (j/n): " SETUP_SSL
-    if [[ $SETUP_SSL == "j" || $SETUP_SSL == "J" ]]; then
-        if ! command -v certbot &> /dev/null; then
-            apt install -y -qq certbot python3-certbot-nginx
-        fi
-
-        read -p "E-Mail-Adresse für Let's Encrypt: " EMAIL
-        certbot --nginx -d $DOMAIN -d www.$DOMAIN --non-interactive --agree-tos --email $EMAIL
-
-        if [ $? -eq 0 ]; then
-            log_success "SSL-Zertifikat erfolgreich installiert"
-        else
-            log_warning "SSL-Installation fehlgeschlagen. Kann später manuell nachgeholt werden."
-        fi
-    fi
-else
-    log_info "SSL übersprungen (keine Domain angegeben)"
-fi
-
-################################################################################
 # Zusätzliche Tools installieren
 ################################################################################
 log_info "Zusätzliche Tools werden installiert..."
@@ -470,12 +437,12 @@ mkdir -p $BACKUP_DIR
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # DB Backup
-PGPASSWORD=$(grep DATABASE_URL /var/www/rico-cuba/.env | cut -d':' -f3 | cut -d'@' -f1)
+PGPASSWORD=$(grep DATABASE_URL /var/www/CubaCuba/.env | cut -d':' -f3 | cut -d'@' -f1)
 export PGPASSWORD
 pg_dump -h localhost -U ricocuba_user ricocuba | gzip > $BACKUP_DIR/ricocuba_$TIMESTAMP.sql.gz
 
 # Uploads Backup
-tar -czf $BACKUP_DIR/uploads_$TIMESTAMP.tar.gz -C /var/www/rico-cuba uploads
+tar -czf $BACKUP_DIR/uploads_$TIMESTAMP.tar.gz -C /var/www/CubaCuba uploads
 
 # Lösche alte Backups (älter als 7 Tage)
 find $BACKUP_DIR -name "ricocuba_*.sql.gz" -mtime +7 -delete
@@ -540,10 +507,10 @@ if [ -z "$DEEPSEEK_API_KEY" ]; then
     echo "Die App wird NICHT funktionieren ohne API Key!"
     echo ""
     echo "Bitte füge den API Key hinzu:"
-    echo "  1. nano /var/www/rico-cuba/.env"
+    echo "  1. nano /var/www/CubaCuba/.env"
     echo "  2. Setze DEEPSEEK_API_KEY=dein-api-key"
     echo "  3. Speichern mit STRG+O, Enter, STRG+X"
-    echo "  4. pm2 restart rico-cuba"
+    echo "  4. sudo -u ricoapp pm2 restart rico-cuba"
     echo ""
 fi
 
