@@ -152,6 +152,13 @@ fi
 ################################################################################
 log_info "Prüfe Dependencies..."
 
+# Always ensure dotenv is installed (required for .env loading in production)
+log_info "Prüfe dotenv Installation..."
+if ! sudo -u ricoapp npm list dotenv --depth=0 &>/dev/null; then
+    log_warning "dotenv nicht gefunden, installiere..."
+    sudo -u ricoapp npm install dotenv
+fi
+
 # Check if package.json changed
 if git diff "$BEFORE_COMMIT" "$AFTER_COMMIT" --name-only | grep -q "package.json" || [ "$REBUILD" == "j" ] || [ "$REBUILD" == "J" ]; then
     log_info "Dependencies werden aktualisiert (als ricoapp User)..."
@@ -188,6 +195,33 @@ else
 fi
 
 ################################################################################
+# PM2 Configuration Check
+################################################################################
+log_info "Prüfe PM2 Konfiguration..."
+
+# Ensure ecosystem.config.cjs exists with correct settings
+cat > "$PROJECT_DIR/ecosystem.config.cjs" << 'EOF'
+module.exports = {
+  apps: [{
+    name: 'rico-cuba',
+    script: 'npm',
+    args: 'start',
+    cwd: '/var/www/CubaCuba',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production'
+    }
+  }]
+};
+EOF
+
+chown ricoapp:ricoapp "$PROJECT_DIR/ecosystem.config.cjs"
+log_success "PM2 Konfiguration aktualisiert"
+
+################################################################################
 # Build
 ################################################################################
 log_info "Baue Projekt neu (als ricoapp User)..."
@@ -198,7 +232,17 @@ log_success "Build erfolgreich"
 # Reload App
 ################################################################################
 log_info "Lade App neu (Zero-Downtime)..."
-sudo -u ricoapp pm2 reload rico-cuba
+
+# Check if app is already running in PM2
+if sudo -u ricoapp pm2 list | grep -q "rico-cuba"; then
+    log_info "App läuft bereits, führe reload durch..."
+    sudo -u ricoapp pm2 reload rico-cuba
+else
+    log_info "App läuft nicht, starte neu..."
+    sudo -u ricoapp pm2 start "$PROJECT_DIR/ecosystem.config.cjs"
+    sudo -u ricoapp pm2 save
+fi
+
 log_success "App erfolgreich neu geladen"
 
 ################################################################################
