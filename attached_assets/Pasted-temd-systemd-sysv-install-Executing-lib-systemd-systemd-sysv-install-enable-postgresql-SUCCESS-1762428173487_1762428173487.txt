@@ -1,0 +1,150 @@
+temd/systemd-sysv-install.
+Executing: /lib/systemd/systemd-sysv-install enable postgresql
+[SUCCESS] PostgreSQL installiert
+[INFO] Step 5/11: Application User wird erstellt...
+[SUCCESS] User 'ricoapp' erstellt
+[INFO] Step 6/11: Datenbank wird konfiguriert...
+[SUCCESS] DB-User 'ricocuba_user' erstellt
+[SUCCESS] Datenbank 'ricocuba' erstellt mit User 'ricocuba_user'
+[INFO] Step 7/12: DeepSeek AI API Key wird konfiguriert...
+
+[WARNING] ⚠️  Rico-Cuba benötigt einen DeepSeek API Key für AI-Moderation
+
+Ohne API Key funktioniert die Anzeigenerstellung NICHT!
+
+DeepSeek API Key erhalten:
+  1. Gehe zu: https://platform.deepseek.com
+  2. Registriere dich / Logge dich ein
+  3. Navigiere zu API Keys
+  4. Erstelle einen neuen API Key
+
+DeepSeek API Key eingeben (oder 'skip' zum Überspringen): sk-b9e099fe12674d86afa                                                                                             88517bba38cff
+[SUCCESS] DeepSeek API Key gespeichert
+[INFO] Step 8/12: Umgebungsvariablen werden konfiguriert...
+[SUCCESS] Umgebungsvariablen konfiguriert
+[INFO] Step 9/12: Setze Projekt-Berechtigungen...
+[SUCCESS] Berechtigungen gesetzt (Owner: ricoapp)
+[INFO] Step 10/12: Dependencies werden installiert...
+npm warn config production Use `--omit=dev` instead.
+npm warn deprecated csurf@1.11.0: This package is archived and no longer maintai                                                                                             ned. For support, visit https://github.com/expressjs/express/discussions
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.                                                                                             is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.                                                                                             is
+
+added 643 packages, and audited 644 packages in 7s
+
+87 packages are looking for funding
+  run `npm fund` for details
+
+10 vulnerabilities (5 low, 5 moderate)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm notice
+npm notice New major version of npm available! 10.9.4 -> 11.6.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+npm notice To update run: npm install -g npm@11.6.2
+npm notice
+[SUCCESS] Dependencies installiert
+[INFO] Datenbank-Schema wird erstellt...
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/var/www/CubaCuba/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
+[✓] Changes applied
+[SUCCESS] Datenbank-Schema erstellt
+[INFO] Projekt wird gebaut...
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bu                                                                                             ndle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (3) src/main.tsxBrowserslist: browsers data (caniuse-lite) is 13 mo                                                                                             nths old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#read                                                                                             me
+✓ 1899 modules transformed.
+../dist/public/index.html                     4.99 kB │ gzip:   1.62 kB
+../dist/public/assets/index-X6UGFD7K.css     82.56 kB │ gzip:  14.06 kB
+../dist/public/assets/index-C49Irrxy.js   1,616.27 kB │ gzip: 374.25 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollu                                                                                             pjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 5.08s
+
+  dist/index.js  195.3kb
+
+⚡ Done in 15ms
+[SUCCESS] Projekt gebaut
+[INFO] Step 11/12: PM2 wird konfiguriert...
+
+added 133 packages in 3s
+
+13 packages are looking for funding
+  run `npm fund` for details
+npm notice
+npm notice New major version of npm available! 10.9.4 -> 11.6.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+npm notice To update run: npm install -g npm@11.6.2
+npm notice
+[SUCCESS] PM2 installiert
+[INFO] Starte App als ricoapp User (NICHT als root!)...
+
+                        -------------
+
+__/\\\\\\\\\\\\\____/\\\\____________/\\\\____/\\\\\\\\\_____
+ _\/\\\/////////\\\_\/\\\\\\________/\\\\\\__/\\\///////\\\___
+  _\/\\\_______\/\\\_\/\\\//\\\____/\\\//\\\_\///______\//\\\__
+   _\/\\\\\\\\\\\\\/__\/\\\\///\\\/\\\/_\/\\\___________/\\\/___
+    _\/\\\/////////____\/\\\__\///\\\/___\/\\\________/\\\//_____
+     _\/\\\_____________\/\\\____\///_____\/\\\_____/\\\//________
+      _\/\\\_____________\/\\\_____________\/\\\___/\\\/___________
+       _\/\\\_____________\/\\\_____________\/\\\__/\\\\\\\\\\\\\\\_
+        _\///______________\///______________\///__\///////////////__
+
+
+                          Runtime Edition
+
+        PM2 is a Production Process Manager for Node.js applications
+                     with a built-in Load Balancer.
+
+                Start and Daemonize any application:
+                $ pm2 start app.js
+
+                Load Balance 4 instances of api.js:
+                $ pm2 start api.js -i 4
+
+                Monitor in production:
+                $ pm2 monitor
+
+                Make pm2 auto-boot at server restart:
+                $ pm2 startup
+
+                To go further checkout:
+                http://pm2.io/
+
+
+                        -------------
+
+[PM2] Spawning PM2 daemon with pm2_home=/home/ricoapp/.pm2
+[PM2] PM2 Successfully daemonized
+[PM2] Starting /usr/bin/npm in fork_mode (1 instance)
+[PM2] Done.
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ rico-cuba          │ fork     │ 0    │ online    │ 0%       │ 31.7mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /home/ricoapp/.pm2/dump.pm2
+Created symlink /etc/systemd/system/multi-user.target.wants/pm2-ricoapp.service                                                                                              → /etc/systemd/system/pm2-ricoapp.service.
+root@ubuntu:/var/www/CubaCuba#
