@@ -31,6 +31,10 @@ echo "🔍 PostgreSQL Extensions..."
 sudo -u postgres psql -d ricocuba -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;" 2>/dev/null || true
 sudo -u postgres psql -d ricocuba -c "CREATE EXTENSION IF NOT EXISTS unaccent;" 2>/dev/null || true
 
+# Clean dist folder
+echo "🗑️  Lösche dist Ordner..."
+rm -rf "$PROJECT_DIR/dist"
+
 # Build
 echo "🔨 npm run build..."
 sudo -u ricoapp npm run build

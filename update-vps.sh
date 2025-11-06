@@ -224,6 +224,10 @@ log_success "PM2 Konfiguration aktualisiert"
 ################################################################################
 # Build
 ################################################################################
+log_info "Lösche alten dist Ordner (vermeidet Berechtigungsprobleme)..."
+rm -rf "$PROJECT_DIR/dist"
+log_success "dist Ordner gelöscht"
+
 log_info "Baue Projekt neu (als ricoapp User)..."
 sudo -u ricoapp npm run build
 log_success "Build erfolgreich"
