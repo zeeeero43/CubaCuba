@@ -1,0 +1,48 @@
+[SUCCESS] Setup abgeschlossen! 🚀
+
+root@ubuntu:/var/www/CubaCuba# ^C
+root@ubuntu:/var/www/CubaCuba# sudo -u ricoapp pm2 status
+┌────┬──────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name         │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ rico-cuba    │ default     │ N/A     │ fork    │ 0        │ 0      │ 15   │ errored   │ 0%       │ 0b       │ ricoapp  │ disabled │
+└────┴──────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@ubuntu:/var/www/CubaCuba# ^C
+root@ubuntu:/var/www/CubaCuba# sudo -u ricoapp pm2 logs rico-cuba
+[TAILING] Tailing last 15 lines for [rico-cuba] process (change the value with --lines option)
+/home/ricoapp/.pm2/logs/rico-cuba-out.log last 15 lines:
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+0|rico-cub |
+0|rico-cub | > rest-express@1.0.0 start
+0|rico-cub | > NODE_ENV=production node dist/index.js
+0|rico-cub |
+
+/home/ricoapp/.pm2/logs/rico-cuba-error.log last 15 lines:
+0|rico-cub |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+0|rico-cub |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|rico-cub |
+0|rico-cub | Node.js v22.21.0
+0|rico-cub | file:///var/www/CubaCuba/dist/index.js:578
+0|rico-cub |   throw new Error(
+0|rico-cub |         ^
+0|rico-cub |
+0|rico-cub | Error: DATABASE_URL must be set. Did you forget to provision a database?
+0|rico-cub |     at file:///var/www/CubaCuba/dist/index.js:578:9
+0|rico-cub |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+0|rico-cub |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+0|rico-cub |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+0|rico-cub |
+0|rico-cub | Node.js v22.21.0
+
+^C
+root@ubuntu:/var/www/CubaCuba#
