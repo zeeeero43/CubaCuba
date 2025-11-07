@@ -24,6 +24,10 @@ chown -R ricoapp:ricoapp "$PROJECT_DIR"
 find "$PROJECT_DIR" -type d -exec chmod 755 {} \;
 find "$PROJECT_DIR" -type f -exec chmod 644 {} \;
 chmod +x "$PROJECT_DIR"/*.sh 2>/dev/null || true
+# Make node_modules/.bin/* executable
+if [ -d "$PROJECT_DIR/node_modules/.bin" ]; then
+  chmod +x "$PROJECT_DIR/node_modules/.bin"/* 2>/dev/null || true
+fi
 
 # Clean npm cache to avoid permission issues
 echo "🧹 Räume npm Cache auf..."
@@ -36,6 +40,12 @@ sudo -u ricoapp npm list dotenv --depth=0 &>/dev/null || sudo -u ricoapp npm ins
 # Install dependencies
 echo "📦 npm install..."
 sudo -u ricoapp npm install
+
+# Fix node_modules/.bin permissions after npm install
+echo "🔧 Korrigiere node_modules Berechtigungen..."
+if [ -d "$PROJECT_DIR/node_modules/.bin" ]; then
+  chmod +x "$PROJECT_DIR/node_modules/.bin"/* 2>/dev/null || true
+fi
 
 # Enable PostgreSQL extensions
 echo "🔍 PostgreSQL Extensions..."

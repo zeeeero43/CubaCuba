@@ -158,6 +158,10 @@ chown -R ricoapp:ricoapp "$PROJECT_DIR"
 find "$PROJECT_DIR" -type d -exec chmod 755 {} \;
 find "$PROJECT_DIR" -type f -exec chmod 644 {} \;
 chmod +x "$PROJECT_DIR"/*.sh 2>/dev/null || true
+# Make node_modules/.bin/* executable
+if [ -d "$PROJECT_DIR/node_modules/.bin" ]; then
+  chmod +x "$PROJECT_DIR/node_modules/.bin"/* 2>/dev/null || true
+fi
 log_success "Berechtigungen korrigiert"
 
 # Clean npm cache to avoid permission issues
@@ -175,6 +179,10 @@ fi
 if git diff "$BEFORE_COMMIT" "$AFTER_COMMIT" --name-only | grep -q "package.json" || [ "$REBUILD" == "j" ] || [ "$REBUILD" == "J" ]; then
     log_info "Dependencies werden aktualisiert (als ricoapp User)..."
     sudo -u ricoapp npm install
+    # Fix node_modules/.bin permissions after npm install
+    if [ -d "$PROJECT_DIR/node_modules/.bin" ]; then
+      chmod +x "$PROJECT_DIR/node_modules/.bin"/* 2>/dev/null || true
+    fi
     log_success "Dependencies aktualisiert"
 else
     log_info "package.json unverändert, überspringe npm install"
