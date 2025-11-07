@@ -204,10 +204,15 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        {/* Profile Header */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Desktop Grid Layout: Sidebar + Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
+          
+          {/* Left Sidebar: Profile Info (Desktop sticky) */}
+          <div className="lg:sticky lg:top-20 lg:self-start">
+            {/* Profile Header */}
+            <Card>
+              <CardContent className="p-6">
             <div className="flex flex-col items-center text-center mb-6">
               {/* Avatar */}
               <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -280,11 +285,14 @@ export default function UserProfilePage() {
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
+          {/* Right Content: Search + Listings + Ratings */}
+          <div className="space-y-6">
+            {/* Search Bar */}
+            <div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
@@ -295,11 +303,11 @@ export default function UserProfilePage() {
               className="pl-10"
               data-testid="input-search-profile"
             />
-          </div>
-        </div>
+              </div>
+            </div>
 
-        {/* Listings Grid */}
-        <div className="mb-8">
+            {/* Listings Grid */}
+            <div>
           <h3 className="text-lg font-semibold mb-4">
             Anuncios ({filteredListings.length})
           </h3>
@@ -367,11 +375,11 @@ export default function UserProfilePage() {
               ))}
             </div>
           )}
-        </div>
+            </div>
 
-        {/* Ratings Section */}
-        {ratingsData && ratingsData.items.length > 0 && (
-          <div>
+            {/* Ratings Section */}
+            {ratingsData && ratingsData.items.length > 0 && (
+              <div>
             <h3 className="text-lg font-semibold mb-4">
               Valoraciones ({ratingsData.total})
             </h3>
@@ -401,8 +409,10 @@ export default function UserProfilePage() {
                 </Card>
               ))}
             </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

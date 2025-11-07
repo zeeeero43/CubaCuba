@@ -65,7 +65,7 @@ function SortableSubcategoryItem({ category, onEdit, onDelete }: SortableSubcate
       </div>
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <IconComponent className="w-5 h-5 text-blue-600" />
+          <IconComponent className="w-5 h-5 text-green-600" />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{category.name}</span>
         </div>
       </div>
@@ -326,7 +326,7 @@ export default function AdminCategoriesPage() {
                         <div className="flex items-center gap-3">
                           {(() => {
                             const MainIconComponent = getIconComponent(mainCategory.icon);
-                            return <MainIconComponent className="w-7 h-7 text-blue-600" />;
+                            return <MainIconComponent className="w-7 h-7 text-green-600" />;
                           })()}
                           <span className="font-semibold text-lg">{mainCategory.name}</span>
                           <span className="text-xs text-gray-500 ml-2">

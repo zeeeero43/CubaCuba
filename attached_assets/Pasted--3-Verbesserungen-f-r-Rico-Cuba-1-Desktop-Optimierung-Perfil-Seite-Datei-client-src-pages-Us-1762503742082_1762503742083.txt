@@ -1,0 +1,91 @@
+📋 3 Verbesserungen für Rico-Cuba
+1. Desktop-Optimierung: Perfil-Seite
+Datei: /client/src/pages/UserProfilePage.tsx
+
+Problem: Mobile-First Design, Desktop nutzt nicht den verfügbaren Platz.
+
+Änderungen:
+
+// Zeile ~20-30: Container ändern
+<div className="max-w-7xl mx-auto px-4 py-8">
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    {/* Linke Spalte: User Info (auf Desktop 1/3 Breite) */}
+    <div className="lg:col-span-1">
+      {/* Bestehender User-Info-Card */}
+    </div>
+    
+    {/* Rechte Spalte: Listings/Tabs (auf Desktop 2/3 Breite) */}
+    <div className="lg:col-span-2">
+      {/* Bestehende Tabs & Listings */}
+    </div>
+  </div>
+</div>
+Oder simpler: Füge max-w-7xl zum Container hinzu und nutze lg:grid-cols-[300px_1fr] für fixe Sidebar-Breite.
+
+2. Kategorie-Farbe: Blau → Grün
+Datei: /client/src/pages/CategoriesPage.tsx
+
+Such nach: bg-blue- oder text-blue- Klassen
+
+Ersetze:
+
+bg-blue-50 → bg-green-50
+bg-blue-100 → bg-green-100
+text-blue-600 → text-green-600
+text-blue-700 → text-green-700
+hover:bg-blue-50 → hover:bg-green-50
+Regex für find/replace:
+
+bg-blue-(\d+) → bg-green-$1
+text-blue-(\d+) → text-green-$1
+border-blue-(\d+) → border-green-$1
+3. DeepSeek Vision API Fix
+Datei: /server/moderation.ts
+
+Problem: DeepSeek API hat sich geändert. Vision nutzt jetzt anderen Endpoint.
+
+Aktuelle Zeile ~400-450 checken:
+
+// Alt (funktioniert nicht mehr):
+model: "deepseek-vision"
+
+// Neu (2024 Update):
+model: "deepseek-chat"  // Vision ist jetzt Teil von Chat!
+Kompletter Fix in analyzeImageWithDeepSeek():
+
+const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
+  },
+  body: JSON.stringify({
+    model: "deepseek-chat",  // <- Geändert!
+    messages: [{
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: systemPrompt  // Dein bestehender Prompt
+        },
+        {
+          type: "image_url",
+          image_url: {
+            url: `data:image/jpeg;base64,${base64Image}`
+          }
+        }
+      ]
+    }],
+    max_tokens: 500,
+    temperature: 0.1
+  })
+});
+Falls deepseek-chat nicht funktioniert, prüfe DeepSeek Docs:
+
+curl https://api.deepseek.com/v1/models \
+  -H "Authorization: Bearer $DEEPSEEK_API_KEY"
+Aktuelles Vision-Modell könnte auch sein:
+
+deepseek-vl-7b-chat (alt)
+deepseek-vl-1.3b-chat
+Oder Vision ist deprecated → Nutze GPT-4V oder andere Vision API
