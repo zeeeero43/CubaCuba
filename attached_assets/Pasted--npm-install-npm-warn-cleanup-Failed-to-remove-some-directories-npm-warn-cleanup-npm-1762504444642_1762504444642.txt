@@ -1,0 +1,40 @@
+
+📦 npm install...
+npm warn cleanup Failed to remove some directories [
+npm warn cleanup   [
+npm warn cleanup     '/var/www/CubaCuba/node_modules/.dotenv-P3GkFzDH',
+npm warn cleanup     [Error: EACCES: permission denied, unlink '/var/www/CubaCub                                                                                                a/node_modules/.dotenv-P3GkFzDH/CHANGELOG.md'] {
+npm warn cleanup       errno: -13,
+npm warn cleanup       code: 'EACCES',
+npm warn cleanup       syscall: 'unlink',
+npm warn cleanup       path: '/var/www/CubaCuba/node_modules/.dotenv-P3GkFzDH/CH                                                                                                ANGELOG.md'
+npm warn cleanup     }
+npm warn cleanup   ]
+npm warn cleanup ]
+npm error code EACCES
+npm error syscall open
+npm error path /var/www/CubaCuba/package-lock.json
+npm error errno -13
+npm error Error: EACCES: permission denied, open '/var/www/CubaCuba/package-lock                                                                                                .json'
+npm error     at async open (node:internal/fs/promises:641:25)
+npm error     at async writeFile (node:internal/fs/promises:1215:14)
+npm error     at async Promise.all (index 0)
+npm error     at async [saveIdealTree] (/usr/lib/node_modules/npm/node_modules/@                                                                                                npmcli/arborist/lib/arborist/reify.js:1526:7)
+npm error     at async Arborist.reify (/usr/lib/node_modules/npm/node_modules/@n                                                                                                pmcli/arborist/lib/arborist/reify.js:148:5)
+npm error     at async Install.exec (/usr/lib/node_modules/npm/lib/commands/inst                                                                                                all.js:150:5)
+npm error     at async Npm.exec (/usr/lib/node_modules/npm/lib/npm.js:207:9)
+npm error     at async module.exports (/usr/lib/node_modules/npm/lib/cli/entry.j                                                                                                s:74:5) {
+npm error   errno: -13,
+npm error   code: 'EACCES',
+npm error   syscall: 'open',
+npm error   path: '/var/www/CubaCuba/package-lock.json'
+npm error }
+npm error
+npm error The operation was rejected by your operating system.
+npm error It is likely you do not have the permissions to access this file as th                                                                                                e current user
+npm error
+npm error If you believe this might be a permissions issue, please double-check                                                                                                 the
+npm error permissions of the file and its containing directories, or try running
+npm error the command again as root/Administrator.
+npm error A complete log of this run can be found in: /home/ricoapp/.npm/_logs/2                                                                                                025-11-07T08_33_45_590Z-debug-0.log
+root@ubuntu:/var/www/CubaCuba#

@@ -152,6 +152,18 @@ fi
 ################################################################################
 log_info "Prüfe Dependencies..."
 
+# Fix file permissions before npm operations
+log_info "Korrigiere Dateiberechtigungen..."
+chown -R ricoapp:ricoapp "$PROJECT_DIR"
+find "$PROJECT_DIR" -type d -exec chmod 755 {} \;
+find "$PROJECT_DIR" -type f -exec chmod 644 {} \;
+chmod +x "$PROJECT_DIR"/*.sh 2>/dev/null || true
+log_success "Berechtigungen korrigiert"
+
+# Clean npm cache to avoid permission issues
+log_info "Räume npm Cache auf..."
+sudo -u ricoapp npm cache clean --force 2>/dev/null || true
+
 # Always ensure dotenv is installed (required for .env loading in production)
 log_info "Prüfe dotenv Installation..."
 if ! sudo -u ricoapp npm list dotenv --depth=0 &>/dev/null; then

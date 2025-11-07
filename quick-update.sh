@@ -18,6 +18,17 @@ echo "🚀 Quick Update gestartet..."
 echo "📥 Git pull..."
 git pull || { echo "❌ Git pull fehlgeschlagen!"; exit 1; }
 
+# Fix file permissions before npm install
+echo "🔧 Korrigiere Dateiberechtigungen..."
+chown -R ricoapp:ricoapp "$PROJECT_DIR"
+find "$PROJECT_DIR" -type d -exec chmod 755 {} \;
+find "$PROJECT_DIR" -type f -exec chmod 644 {} \;
+chmod +x "$PROJECT_DIR"/*.sh 2>/dev/null || true
+
+# Clean npm cache to avoid permission issues
+echo "🧹 Räume npm Cache auf..."
+sudo -u ricoapp npm cache clean --force 2>/dev/null || true
+
 # Ensure dotenv is installed
 echo "📦 Prüfe dotenv..."
 sudo -u ricoapp npm list dotenv --depth=0 &>/dev/null || sudo -u ricoapp npm install dotenv
