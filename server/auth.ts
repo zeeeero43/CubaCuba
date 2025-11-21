@@ -264,6 +264,9 @@ export function setupAuth(app: Express) {
             province: user.province,
             role: user.role,
             provider: user.provider,
+            profilePicture: user.profilePicture,
+            createdAt: user.createdAt,
+            moderationStrikes: user.moderationStrikes,
           });
         });
       });
@@ -299,6 +302,9 @@ export function setupAuth(app: Express) {
             province: user.province,
             role: user.role,
             provider: user.provider,
+            profilePicture: user.profilePicture,
+            createdAt: user.createdAt,
+            moderationStrikes: user.moderationStrikes,
           });
         });
       });
@@ -352,6 +358,9 @@ export function setupAuth(app: Express) {
       province: req.user!.province,
       role: req.user!.role,
       provider: req.user!.provider,
+      profilePicture: req.user!.profilePicture,
+      createdAt: req.user!.createdAt,
+      moderationStrikes: req.user!.moderationStrikes,
       hasPhone: !!req.user!.phone, // Flag for frontend
     });
   });

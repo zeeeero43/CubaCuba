@@ -18,6 +18,7 @@ export const users = pgTable("users", {
   isBanned: text("is_banned").notNull().default("false"), // "true" | "false"
   bannedAt: timestamp("banned_at"),
   banReason: text("ban_reason"),
+  profilePicture: text("profile_picture"),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 });
 
@@ -108,7 +109,7 @@ export const listings = pgTable("listings", {
   currency: text("currency").notNull().default("USD"), // "USD" | "CUP" | "EUR" | "Zelle" | "PayPal" | "Transfer"
   priceType: text("price_type").notNull().default("fixed"), // "fixed" | "consult"
   categoryId: varchar("category_id").references(() => categories.id, { onDelete: "set null" }),
-  sellerId: varchar("seller_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  sellerId: varchar("seller_id").references(() => users.id, { onDelete: "cascade" }), // Made nullable for scraped listings
   locationCity: text("location_city"),
   locationRegion: text("location_region").notNull(), // province
   latitude: decimal("latitude", { precision: 10, scale: 8 }),  // Geographical coordinates
@@ -129,6 +130,13 @@ export const listings = pgTable("listings", {
   moderationReviewId: varchar("moderation_review_id"),
   isPublished: text("is_published").notNull().default("false"), // "true" | "false"
   lastBoostedAt: timestamp("last_boosted_at"), // Timestamp of last free boost (24h cooldown)
+  // Revolico scraping fields
+  source: text("source").default("user"), // "user" | "revolico_scraped"
+  revolicoId: text("revolico_id"), // Original Revolico listing ID
+  scrapedAt: timestamp("scraped_at"), // When it was scraped from Revolico
+  scrapedSellerName: text("scraped_seller_name"), // Seller name from scraped source
+  scrapedSellerPhone: text("scraped_seller_phone"), // Seller phone from scraped source
+  scrapedSellerProfilePicture: text("scraped_seller_profile_picture"), // Profile picture from scraped source
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
   updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
 });

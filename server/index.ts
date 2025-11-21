@@ -1,14 +1,4 @@
-// Load .env file in production (Replit handles it automatically in dev)
-if (process.env.NODE_ENV === 'production') {
-  try {
-    // Dynamic import for production environments (VPS)
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require('dotenv').config();
-  } catch (error) {
-    // dotenv not installed or not needed (e.g., Docker, Replit)
-    console.warn('⚠️  dotenv not available, using system environment variables');
-  }
-}
+import 'dotenv/config';
 
 import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
@@ -19,6 +9,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedModerationSystem } from "./seed-moderation";
 import { seedPremiumFeatures } from "./seed-premium";
+import { startAutomaticCleanup } from "./cleanup-revolico";
 
 const app = express();
 
@@ -158,6 +149,9 @@ app.use((req, res, next) => {
   await seedPremiumFeatures().catch(err => {
     console.error("❌ Error seeding premium features:", err);
   });
+
+  // Start automatic Revolico cleanup (every 15 minutes)
+  startAutomaticCleanup();
 
   const server = await registerRoutes(app);
 

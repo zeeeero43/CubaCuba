@@ -115,7 +115,7 @@ export interface IStorage {
   
   // User Profile
   getUserPublicProfile(userId: string): Promise<{
-    user: Pick<User, 'id' | 'name' | 'createdAt'>;
+    user: Pick<User, 'id' | 'name' | 'createdAt' | 'profilePicture'>;
     followersCount: number;
     followingCount: number;
     avgRating: number;
@@ -235,6 +235,25 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
+/**
+ * Normalize phone number for flexible matching
+ * Removes all non-digits and handles Cuban country code (53)
+ * Returns 8-digit Cuban mobile number for comparison
+ */
+function normalizePhoneNumber(phone: string): string {
+  // Remove all non-digit characters
+  let digits = phone.replace(/\D/g, '');
+
+  // Handle country code 53
+  if (digits.startsWith('53') && digits.length > 8) {
+    // Remove country code to get 8-digit local number
+    digits = digits.substring(2);
+  }
+
+  // Return normalized 8-digit number (or original if not valid Cuban format)
+  return digits.length === 8 && digits.startsWith('5') ? digits : phone;
+}
+
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
@@ -251,8 +270,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByPhone(phone: string): Promise<User | undefined> {
+    // Try exact match first (for performance)
     const [user] = await db.select().from(users).where(eq(users.phone, phone));
-    return user || undefined;
+    if (user) return user;
+
+    // Fallback: normalized phone matching
+    const normalizedSearchPhone = normalizePhoneNumber(phone);
+    const allUsers = await db.select().from(users);
+
+    const matchedUser = allUsers.find(u => {
+      if (!u.phone) return false;
+      return normalizePhoneNumber(u.phone) === normalizedSearchPhone;
+    });
+
+    return matchedUser || undefined;
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -911,7 +942,7 @@ export class DatabaseStorage implements IStorage {
 
   // User Profile implementation
   async getUserPublicProfile(userId: string): Promise<{
-    user: Pick<User, 'id' | 'name' | 'createdAt'>;
+    user: Pick<User, 'id' | 'name' | 'createdAt' | 'profilePicture'>;
     followersCount: number;
     followingCount: number;
     avgRating: number;
@@ -925,7 +956,7 @@ export class DatabaseStorage implements IStorage {
     const [followersResult] = await db.select({ count: count() })
       .from(follows)
       .where(eq(follows.followeeId, userId));
-    
+
     // Get following count
     const [followingResult] = await db.select({ count: count() })
       .from(follows)
@@ -938,7 +969,8 @@ export class DatabaseStorage implements IStorage {
       user: {
         id: user.id,
         name: user.name,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        profilePicture: user.profilePicture
       },
       followersCount: followersResult.count,
       followingCount: followingResult.count,

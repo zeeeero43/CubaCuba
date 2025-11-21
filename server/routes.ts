@@ -13,6 +13,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync, openSync, readSync, closeSync } from 'fs';
+import { importRevolicoListings, assignListingsByPhone } from "./revolico-import";
 
 // Helper function to parse object path
 function parseObjectPath(fullPath: string): { bucketName: string; objectName: string } {
@@ -341,9 +342,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         page: req.query.page ? Number(req.query.page) : 1,
         pageSize: req.query.pageSize ? Number(req.query.pageSize) : 20,
       };
-      
+
       const result = await storage.getListings(filters);
-      
+
       // Transform to match frontend expectations
       const response = {
         listings: result.listings,
@@ -351,10 +352,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentPage: filters.page,
         totalPages: Math.ceil(result.total / filters.pageSize)
       };
-      
+
       res.json(response);
     } catch (error) {
       console.error("Error fetching listings:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/listings/thumbnails - Optimized endpoint for grid view (70% less payload)
+  app.get("/api/listings/thumbnails", async (req, res) => {
+    try {
+      const filters = {
+        q: req.query.q as string,
+        categoryId: req.query.categoryId as string,
+        region: req.query.region as string,
+        priceMin: req.query.priceMin ? Number(req.query.priceMin) : undefined,
+        priceMax: req.query.priceMax ? Number(req.query.priceMax) : undefined,
+        condition: req.query.condition as string,
+        sellerId: req.query.sellerId as string,
+        status: (req.query.status as string) || 'active',
+        source: req.query.source as string,
+        page: req.query.page ? Number(req.query.page) : 1,
+        pageSize: req.query.pageSize ? Number(req.query.pageSize) : 20,
+      };
+
+      const result = await storage.getListings(filters);
+
+      // Return only minimal data needed for listing cards
+      const thumbnails = result.listings.map(listing => ({
+        id: listing.id,
+        title: listing.title,
+        price: listing.price,
+        currency: listing.currency,
+        locationCity: listing.locationCity,
+        thumbnail: listing.images?.[0] || null,
+        imageCount: listing.images?.length || 0,
+        featured: listing.featured,
+        condition: listing.condition,
+        views: listing.views,
+      }));
+
+      const response = {
+        listings: thumbnails,
+        totalCount: result.total,
+        currentPage: filters.page,
+        totalPages: Math.ceil(result.total / filters.pageSize)
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Error fetching listing thumbnails:", error);
       res.status(500).json({ message: "Error interno del servidor" });
     }
   });
@@ -1120,7 +1168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const validatedData = updatePhoneSchema.parse(req.body);
-      
+
       // Check if phone is already used by another user
       if (validatedData.phone) {
         const existingUser = await storage.getUserByPhone(validatedData.phone);
@@ -1135,15 +1183,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.province
       );
 
+      // Auto-assign Revolico listings with this phone number
+      let assignedListings = 0;
+      if (validatedData.phone) {
+        try {
+          assignedListings = await assignListingsByPhone(validatedData.phone, req.user!.id);
+          if (assignedListings > 0) {
+            console.log(`Auto-assigned ${assignedListings} Revolico listings to user ${req.user!.id}`);
+          }
+        } catch (error) {
+          console.error("Error auto-assigning listings:", error);
+          // Don't fail the request if assignment fails
+        }
+      }
+
+      // Reload user to get updated profile picture (if assigned from Revolico)
+      const reloadedUser = await storage.getUserById(req.user!.id);
+
       res.json({
-        id: updatedUser.id,
-        email: updatedUser.email,
-        name: updatedUser.name,
-        phone: updatedUser.phone,
-        province: updatedUser.province,
-        role: updatedUser.role,
-        provider: updatedUser.provider,
-        hasPhone: !!updatedUser.phone,
+        id: reloadedUser!.id,
+        email: reloadedUser!.email,
+        name: reloadedUser!.name,
+        phone: reloadedUser!.phone,
+        province: reloadedUser!.province,
+        role: reloadedUser!.role,
+        provider: reloadedUser!.provider,
+        profilePicture: reloadedUser!.profilePicture,
+        createdAt: reloadedUser!.createdAt,
+        moderationStrikes: reloadedUser!.moderationStrikes,
+        hasPhone: !!reloadedUser!.phone,
+        assignedListings, // Include count of auto-assigned listings
       });
     } catch (error: any) {
       if (error.name === "ZodError") {
@@ -1387,6 +1456,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload profile picture
+  app.post("/api/user/profile-picture", (req, res, next) => {
+    upload.single('image')(req, res, (err) => {
+      if (err) {
+        console.error("Multer error:", err);
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: "El archivo es demasiado grande. El tamaño máximo es 50MB." });
+        }
+        return res.status(400).json({ error: err.message || "Error al subir el archivo" });
+      }
+      next();
+    });
+  }, async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debe iniciar sesión para subir una foto de perfil" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No se proporcionó ningún archivo de imagen" });
+    }
+
+    try {
+      const userId = req.user!.id;
+      const originalPath = req.file.path;
+      const filename = req.file.filename;
+
+      // Create profile directory if it doesn't exist
+      const profileDir = path.join(uploadDir, userId, 'profile');
+      await fs.mkdir(profileDir, { recursive: true });
+
+      const webpFilename = 'avatar.webp';
+      const webpPath = path.join(profileDir, webpFilename);
+
+      // Validate image file
+      console.log("🔒 Validating profile picture:", filename);
+      const validation = await validateImageFile(originalPath);
+      if (!validation.isValid) {
+        console.error("❌ Profile picture validation failed:", validation.error);
+        await fs.unlink(originalPath).catch(console.error);
+        return res.status(400).json({
+          error: validation.error || "Archivo de imagen inválido",
+          message: "El archivo cargado no es una imagen válida. Por favor cargue solo archivos de imagen reales (JPEG, PNG, GIF, WebP)."
+        });
+      }
+      console.log("✅ Profile picture validation passed");
+
+      // Delete old profile picture if exists
+      if (existsSync(webpPath)) {
+        await fs.unlink(webpPath).catch(console.error);
+      }
+
+      // Convert to WebP, resize to 300x300px for profile pictures
+      await sharp(originalPath)
+        .resize(300, 300, {
+          fit: 'cover',
+          position: 'center'
+        })
+        .webp({ quality: 85 })
+        .toFile(webpPath);
+
+      // Delete original file
+      await fs.unlink(originalPath);
+
+      // Update user record with profile picture path
+      const profilePicturePath = `/uploads/${userId}/profile/${webpFilename}`;
+      await db.update(users)
+        .set({ profilePicture: profilePicturePath })
+        .where(eq(users.id, userId));
+
+      res.json({ profilePicture: profilePicturePath });
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      res.status(500).json({ error: "Error al subir la foto de perfil" });
+    }
+  });
+
+  // Delete profile picture
+  app.delete("/api/user/profile-picture", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Debe iniciar sesión" });
+    }
+
+    try {
+      const userId = req.user!.id;
+
+      // Get current profile picture
+      const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user[0] || !user[0].profilePicture) {
+        return res.status(404).json({ error: "No hay foto de perfil para eliminar" });
+      }
+
+      // Delete file from disk
+      const profileDir = path.join(uploadDir, userId, 'profile');
+      const webpPath = path.join(profileDir, 'avatar.webp');
+      if (existsSync(webpPath)) {
+        await fs.unlink(webpPath);
+      }
+
+      // Update user record
+      await db.update(users)
+        .set({ profilePicture: null })
+        .where(eq(users.id, userId));
+
+      res.json({ message: "Foto de perfil eliminada" });
+    } catch (error) {
+      console.error("Error deleting profile picture:", error);
+      res.status(500).json({ error: "Error al eliminar la foto de perfil" });
+    }
+  });
+
+  // Serve profile pictures
+  app.get("/uploads/:userId/profile/:filename", async (req, res) => {
+    try {
+      const { userId, filename } = req.params;
+      const filePath = path.join(uploadDir, userId, 'profile', filename);
+
+      // Check if file exists
+      if (!existsSync(filePath)) {
+        return res.status(404).json({ error: "Profile picture not found" });
+      }
+
+      // Determine content type
+      const ext = path.extname(filename).toLowerCase();
+      const contentTypes: Record<string, string> = {
+        '.webp': 'image/webp',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif'
+      };
+
+      res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+
+      const fileBuffer = await fs.readFile(filePath);
+      res.send(fileBuffer);
+    } catch (error) {
+      console.error("Error serving profile picture:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Serve uploaded images
   app.get("/uploads/:userId/:filename", async (req, res) => {
     try {
@@ -1415,6 +1626,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(fileBuffer);
     } catch (error) {
       console.error("Error serving image:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Serve scraped Revolico seller profile pictures
+  app.get("/uploads/revolico-profiles/:filename", async (req, res) => {
+    try {
+      const { filename } = req.params;
+
+      // Security: Prevent directory traversal
+      if (filename.includes('..') || filename.includes('/')) {
+        return res.status(400).json({ error: "Invalid filename" });
+      }
+
+      const filePath = path.join(process.cwd(), 'uploads', 'revolico-profiles', filename);
+
+      // Check if file exists
+      if (!await fs.pathExists(filePath)) {
+        return res.status(404).json({ error: "Profile picture not found" });
+      }
+
+      // Determine content type from extension
+      const ext = path.extname(filename).toLowerCase();
+      const contentType =
+        ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
+        ext === '.png' ? 'image/png' :
+        ext === '.webp' ? 'image/webp' :
+        'application/octet-stream';
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+
+      const fileBuffer = await fs.readFile(filePath);
+      res.send(fileBuffer);
+    } catch (error) {
+      console.error("Error serving Revolico profile picture:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -2726,13 +2973,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/categories/reorder", requireAdmin, async (req, res) => {
     try {
       const { categoryOrders } = req.body;
-      
+
       if (!Array.isArray(categoryOrders)) {
         return res.status(400).json({ message: "Ungültiges Format" });
       }
-      
+
       await storage.reorderCategories(categoryOrders);
-      
+
       await storage.createModerationLog({
         action: "categories_reordered",
         targetType: "category",
@@ -2740,11 +2987,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         performedBy: req.user!.id,
         details: JSON.stringify(categoryOrders)
       });
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error reordering categories:", error);
       res.status(500).json({ message: "Error al ordenar las categorías" });
+    }
+  });
+
+  // Import Revolico listings
+  app.post("/api/admin/revolico/import", requireAdmin, async (req, res) => {
+    try {
+      const scraperApiUrl = req.body.scraperApiUrl || process.env.SCRAPER_API_URL || 'http://localhost:5000';
+
+      console.log(`Starting Revolico import from ${scraperApiUrl}...`);
+
+      const result = await importRevolicoListings(scraperApiUrl);
+
+      await storage.createModerationLog({
+        action: "revolico_import",
+        targetType: "listing",
+        targetId: "",
+        performedBy: req.user!.id,
+        details: JSON.stringify({
+          imported: result.imported,
+          skipped: result.skipped,
+          errors: result.errors,
+          total: result.imported + result.skipped + result.errors
+        })
+      });
+
+      res.json({
+        success: result.success,
+        message: `Import abgeschlossen: ${result.imported} importiert, ${result.skipped} übersprungen, ${result.errors} Fehler`,
+        ...result
+      });
+    } catch (error) {
+      console.error("Error importing Revolico listings:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al importar anuncios de Revolico",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

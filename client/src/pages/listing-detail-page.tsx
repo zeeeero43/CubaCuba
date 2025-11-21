@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { Avatar } from "@/components/Avatar";
 import {
   ArrowLeft,
   Share2,
@@ -34,6 +35,7 @@ import type { Listing, Category } from "@shared/schema";
 import { ReportDialog } from "@/components/ReportDialog";
 import { PremiumFeaturesSelector } from "@/components/PremiumFeaturesSelector";
 import MobileHeader from "@/components/MobileHeader";
+import { formatPrice } from "@/lib/format-price";
 
 // Types for seller profile
 interface SellerProfile {
@@ -65,13 +67,6 @@ interface RatingsData {
   avg: number;
 }
 
-// Helper function to format price display
-function formatPrice(listing: Listing): string {
-  if (!listing.price) {
-    return "Precio a consultar";
-  }
-  return `${listing.price} ${listing.currency || "CUP"}`;
-}
 
 // Similar Listings Component
 function SimilarListings({ categoryId, currentListingId }: { categoryId: string; currentListingId: string }) {
@@ -147,18 +142,24 @@ function SimilarListings({ categoryId, currentListingId }: { categoryId: string;
 }
 
 // Seller Info Component
-function SellerInfo({ 
-  sellerId, 
+function SellerInfo({
+  sellerId,
   currentUserId,
   contactPhone,
   contactWhatsApp,
+  scrapedSellerName,
+  scrapedSellerPhone,
+  scrapedSellerProfilePicture,
   onContact,
   onReport
-}: { 
-  sellerId: string; 
+}: {
+  sellerId: string | null;
   currentUserId?: string;
   contactPhone?: string;
   contactWhatsApp?: string;
+  scrapedSellerName?: string | null;
+  scrapedSellerPhone?: string | null;
+  scrapedSellerProfilePicture?: string | null;
   onContact?: (type: 'phone' | 'whatsapp') => void;
   onReport?: () => void;
 }) {
@@ -166,7 +167,7 @@ function SellerInfo({
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
-  // Fetch seller profile
+  // Fetch seller profile (only if sellerId exists)
   const { data: profile, isLoading } = useQuery<SellerProfile>({
     queryKey: ['/api/users', sellerId, 'public'],
     enabled: !!sellerId,
@@ -204,6 +205,83 @@ function SellerInfo({
     }
   };
 
+  // For scraped listings without a registered seller
+  if (!sellerId && contactPhone) {
+    const displayPhone = scrapedSellerPhone || contactPhone;
+    const displayName = scrapedSellerName || 'Vendedor';
+
+    return (
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-3">
+            <Avatar
+              src={scrapedSellerProfilePicture}
+              alt={displayName}
+              size="lg"
+            />
+            <div>
+              <h3 className="font-semibold text-lg" data-testid="text-seller-name">
+                {displayName}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Anuncio importado
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Contact Buttons */}
+          {displayPhone && onContact && (
+            <div className="space-y-3">
+              <Button
+                className="w-full"
+                onClick={() => onContact('phone')}
+                data-testid="button-call"
+              >
+                <Phone className="w-4 h-4 mr-2" />
+                Llamar
+              </Button>
+
+              {contactWhatsApp === "true" && (
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={() => onContact('whatsapp')}
+                  data-testid="button-whatsapp"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  WhatsApp
+                </Button>
+              )}
+
+              <div className="pt-2 text-center">
+                <p className="text-sm text-muted-foreground mb-1">
+                  Teléfono de contacto
+                </p>
+                <p className="font-mono text-sm" data-testid="text-phone">
+                  {displayPhone}
+                </p>
+              </div>
+
+              {/* Report Button */}
+              {onReport && (
+                <Button
+                  variant="outline"
+                  className="w-full mt-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
+                  onClick={onReport}
+                  data-testid="button-report"
+                >
+                  <Flag className="w-4 h-4 mr-2" />
+                  Reportar Anuncio
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isLoading) {
     return (
       <Card>
@@ -230,18 +308,25 @@ function SellerInfo({
   return (
     <Card>
       <CardContent className="p-4 space-y-4">
-        <div className="flex items-start justify-between">
-          <div 
-            className="flex-1 cursor-pointer hover:opacity-80 transition-opacity" 
+        <div className="flex items-start justify-between gap-3">
+          <div
+            className="flex items-center gap-3 flex-1 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => setLocation(`/profile/${sellerId}`)}
             data-testid="link-seller-profile"
           >
-            <h3 className="font-semibold text-lg" data-testid="text-seller-name">
-              {profile.user.name}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Miembro desde {joinDate}
-            </p>
+            <Avatar
+              src={profile.user.profilePicture}
+              alt={profile.user.name}
+              size="md"
+            />
+            <div>
+              <h3 className="font-semibold text-lg" data-testid="text-seller-name">
+                {profile.user.name}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Miembro desde {joinDate}
+              </p>
+            </div>
           </div>
           {!isOwnListing && currentUserId && (
             <Button
@@ -1077,11 +1162,14 @@ export default function ListingDetailPage() {
           {/* Contact Sidebar */}
           <div className="space-y-4">
             {/* Seller Info with Contact */}
-            <SellerInfo 
-              sellerId={listing.sellerId} 
+            <SellerInfo
+              sellerId={listing.sellerId}
               currentUserId={user?.id}
               contactPhone={listing.contactPhone}
               contactWhatsApp={listing.contactWhatsApp}
+              scrapedSellerName={(listing as any).scrapedSellerName}
+              scrapedSellerPhone={(listing as any).scrapedSellerPhone}
+              scrapedSellerProfilePicture={(listing as any).scrapedSellerProfilePicture}
               onContact={handleContact}
               onReport={() => setReportDialogOpen(true)}
             />

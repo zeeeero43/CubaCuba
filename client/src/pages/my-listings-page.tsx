@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { formatPrice } from "@/lib/format-price";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,13 +28,6 @@ import { ArrowLeft, MoreVertical, Edit, Pause, Play, Trash2, CheckCircle, Eye, P
 import { ModerationStatusBadge } from "@/components/ModerationStatusBadge";
 import { AppealDialog } from "@/components/AppealDialog";
 
-// Helper function to format price display
-function formatPrice(listing: Listing): string {
-  if (!listing.price) {
-    return "Precio a consultar";
-  }
-  return `${listing.price} ${listing.currency || "CUP"}`;
-}
 
 export default function MyListingsPage() {
   const [, navigate] = useLocation();

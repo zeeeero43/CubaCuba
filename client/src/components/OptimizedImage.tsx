@@ -7,20 +7,52 @@ interface OptimizedImageProps {
   onError?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
   fallbackSrc?: string;
   'data-testid'?: string;
+  // Responsive image sizes
+  sizes?: string;
+  // Image dimensions for aspect ratio (optional)
+  width?: number;
+  height?: number;
 }
 
-export function OptimizedImage({ 
-  src, 
-  alt, 
-  className = '', 
+/**
+ * Helper function to generate responsive image URLs
+ * Supports Google Cloud Storage transformation parameters
+ */
+function generateResponsiveSources(src: string) {
+  // Check if URL supports transformation parameters
+  const isGCS = src.includes('storage.googleapis.com') || src.includes('localhost:5000/api/image-proxy');
+
+  if (!isGCS) {
+    return {
+      srcSet: `${src} 1x`,
+      webpSrcSet: undefined,
+    };
+  }
+
+  // Generate different sizes for responsive loading
+  const sizes = [400, 800, 1200];
+  const srcSet = sizes.map(w => `${src}?w=${w}&q=80 ${w}w`).join(', ');
+  const webpSrcSet = sizes.map(w => `${src}?w=${w}&q=80&fm=webp ${w}w`).join(', ');
+
+  return { srcSet, webpSrcSet };
+}
+
+export function OptimizedImage({
+  src,
+  alt,
+  className = '',
   onError,
   fallbackSrc = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center',
-  ...props 
+  sizes = '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw',
+  width,
+  height,
+  ...props
 }: OptimizedImageProps) {
   const [imageSrc, setImageSrc] = useState<string>('');
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
+  const { srcSet, webpSrcSet } = generateResponsiveSources(src);
 
   useEffect(() => {
     // Fallback for browsers without IntersectionObserver (older Android browsers common in Cuba)
@@ -71,20 +103,35 @@ export function OptimizedImage({
         <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />
       )}
       {imageSrc && (
-        <img
-          ref={imgRef}
-          src={imageSrc}
-          alt={alt}
-          className={className}
-          onLoad={handleLoad}
-          onError={handleError}
-          loading="lazy"
-          decoding="async"
-          {...props}
-        />
+        <picture>
+          {/* WebP format for modern browsers - 30-50% smaller */}
+          {webpSrcSet && (
+            <source
+              type="image/webp"
+              srcSet={webpSrcSet}
+              sizes={sizes}
+            />
+          )}
+          {/* JPEG/PNG fallback */}
+          <img
+            ref={imgRef}
+            src={imageSrc}
+            srcSet={srcSet}
+            sizes={sizes}
+            alt={alt}
+            className={className}
+            onLoad={handleLoad}
+            onError={handleError}
+            loading="lazy"
+            decoding="async"
+            width={width}
+            height={height}
+            {...props}
+          />
+        </picture>
       )}
       {!imageSrc && (
-        <div 
+        <div
           ref={imgRef}
           className={`${className} bg-gray-200 dark:bg-gray-700 animate-pulse`}
           aria-label={`Loading ${alt}`}

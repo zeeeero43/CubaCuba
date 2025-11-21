@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { Avatar } from "@/components/Avatar";
 import {
   ArrowLeft,
   Share2,
@@ -215,10 +216,12 @@ export default function UserProfilePage() {
               <CardContent className="p-6">
             <div className="flex flex-col items-center text-center mb-6">
               {/* Avatar */}
-              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <span className="text-4xl font-bold text-primary">
-                  {profile.user.name.charAt(0).toUpperCase()}
-                </span>
+              <div className="mb-4">
+                <Avatar
+                  src={profile.user.profilePicture}
+                  alt={profile.user.name}
+                  size="xl"
+                />
               </div>
 
               {/* User Info */}

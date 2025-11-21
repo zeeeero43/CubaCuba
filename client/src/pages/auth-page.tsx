@@ -83,8 +83,8 @@ export default function AuthPage() {
       <div className="max-w-md lg:max-w-4xl xl:max-w-6xl mx-auto relative overflow-hidden">
         {/* Login Screen */}
         {currentScreen === "login" && (
-          <div className="h-screen flex flex-col justify-center px-6 animate-in fade-in duration-500">
-            <div className="text-center mb-8">
+          <div className="h-screen flex flex-col justify-center px-6 animate-in fade-in duration-500 pt-16 md:pt-0">
+            <div className="text-center mb-8 md:mb-12">
               <div className="mb-6">
                 <h1 className="text-4xl font-bold text-primary mb-2" data-testid="brand-title">Rico-Cuba</h1>
                 <p className="text-muted-foreground text-lg">Tu mercado, tu comunidad</p>
@@ -193,21 +193,21 @@ export default function AuthPage() {
 
         {/* Register Screen */}
         {currentScreen === "register" && (
-          <div className="h-screen flex flex-col px-6 md:px-8 pt-16 md:pt-12 animate-in slide-in-from-right duration-300 md:justify-center">
+          <div className="h-screen flex flex-col px-6 md:px-8 pt-16 md:pt-0 animate-in slide-in-from-right duration-300 md:justify-center">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setCurrentScreen("login")}
-              className="absolute top-6 left-6 rounded-full"
+              className="absolute top-6 left-6 rounded-full z-10"
               data-testid="button-back"
             >
               <ArrowLeft className="w-6 h-6" />
             </Button>
-            
-            <div className="flex-1 md:flex-none flex flex-col justify-center md:max-w-md md:mx-auto">
-              <div className="mb-8 md:mb-6">
-                <h2 className="text-3xl md:text-2xl font-bold mb-3 text-foreground">Crear cuenta</h2>
-                <p className="text-muted-foreground text-base">Regístrate con tu método preferido</p>
+
+            <div className="flex-1 md:flex-none flex flex-col justify-center md:max-w-md md:mx-auto w-full">
+              <div className="mb-8 md:mb-10">
+                <h2 className="text-3xl md:text-3xl lg:text-4xl font-bold mb-3 text-foreground">Crear cuenta</h2>
+                <p className="text-muted-foreground text-base md:text-lg">Regístrate con tu método preferido</p>
               </div>
 
               {/* OAuth Buttons */}

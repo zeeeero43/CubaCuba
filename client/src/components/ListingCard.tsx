@@ -3,13 +3,15 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, Eye } from "lucide-react";
 import { useLocation } from "wouter";
 import type { Listing } from "@shared/schema";
+import type { ListingThumbnail } from "@/hooks/use-listing-thumbnails";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { formatPrice } from "@/lib/format-price";
 
 interface ListingCardProps {
-  listing: Listing;
+  listing: Listing | ListingThumbnail;
   isSponsored?: boolean;
   isFavorite?: boolean;
   showFollowedBadge?: boolean;
@@ -47,18 +49,15 @@ export function ListingCard({ listing, isSponsored = false, isFavorite = false, 
     toggleFavoriteMutation.mutate();
   };
 
-  const formatPrice = (listing: Listing): string => {
-    if (!listing.price) {
-      return "Precio a consultar";
-    }
-    return `${listing.price} ${listing.currency || "CUP"}`;
-  };
+  // Support both full Listing and optimized ListingThumbnail
+  const isThumbnail = 'thumbnail' in listing;
+  const imageUrl = isThumbnail
+    ? (listing.thumbnail || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center')
+    : (listing.images && listing.images.length > 0
+        ? listing.images[0]
+        : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center');
 
-  const imageUrl = listing.images && listing.images.length > 0 
-    ? listing.images[0] 
-    : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&crop=center';
-
-  const imageCount = listing.images?.length || 0;
+  const imageCount = isThumbnail ? listing.imageCount : (listing.images?.length || 0);
 
   return (
     <Card 
@@ -73,7 +72,7 @@ export function ListingCard({ listing, isSponsored = false, isFavorite = false, 
         <OptimizedImage
           src={imageUrl}
           alt={listing.title}
-          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
 
         {/* TOP Badge for sponsored/premium */}

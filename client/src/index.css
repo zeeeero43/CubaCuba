@@ -1,10 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&display=swap');
-/* Uppy Dashboard CSS for file uploads */
-@import 'https://releases.transloadit.com/uppy/v3.25.3/uppy.min.css';
+/* Uppy Dashboard CSS for file uploads - bundled locally */
+@import url('/uppy.min.css');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Local font faces for better performance */
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/onest-400.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/onest-600.ttf') format('truetype');
+}
 
 :root {
   --background: hsl(210, 40%, 98%);
