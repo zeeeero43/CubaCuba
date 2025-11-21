@@ -47,6 +47,10 @@ if [ -d "$PROJECT_DIR/node_modules/.bin" ]; then
   chmod +x "$PROJECT_DIR/node_modules/.bin"/* 2>/dev/null || true
 fi
 
+# Fix esbuild binary permissions (important for build!)
+echo "🔧 Korrigiere esbuild Berechtigungen..."
+find "$PROJECT_DIR/node_modules" -type f -name "esbuild" -path "*/node_modules/@esbuild/*/bin/esbuild" -exec chmod +x {} \; 2>/dev/null || true
+
 # Enable PostgreSQL extensions
 echo "🔍 PostgreSQL Extensions..."
 sudo -u postgres psql -d ricocuba -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;" 2>/dev/null || true
