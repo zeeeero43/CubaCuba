@@ -1,8 +1,9 @@
 {
-  "name": "Rico-Cuba",
+  "name": "Rico-Cuba - Anuncios Clasificados Cuba",
   "short_name": "Rico-Cuba",
-  "description": "Marketplace de anuncios clasificados para Cuba - De cubanos para cubanos",
-  "start_url": "/",
+  "description": "El marketplace de anuncios clasificados para Cuba. Compra, vende e intercambia productos y servicios. De cubanos para cubanos.",
+  "start_url": "https://www.rico-cuba.com/",
+  "id": "https://www.rico-cuba.com/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0ea5e9",

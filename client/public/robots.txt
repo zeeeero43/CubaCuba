@@ -1,0 +1,34 @@
+# Rico-Cuba Robots.txt
+# https://www.rico-cuba.com/
+
+User-agent: *
+Allow: /
+Allow: /categories
+Allow: /category/
+Allow: /listing/
+Allow: /listings
+Allow: /search
+Allow: /about
+Allow: /profile/
+
+# Admin-Bereiche blockieren
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+
+# Private Benutzerseiten blockieren
+Disallow: /settings
+Disallow: /my-listings
+Disallow: /manage-listings
+Disallow: /edit-listing/
+Disallow: /create-listing
+Disallow: /favorites
+
+# Auth-Seiten blockieren
+Disallow: /auth
+
+# Crawl-Delay fuer respektvolles Crawling
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://www.rico-cuba.com/sitemap.xml

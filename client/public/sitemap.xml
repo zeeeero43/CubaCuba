@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
+  <url>
+    <loc>https://www.rico-cuba.com/</loc>
+    <lastmod>2024-12-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Kategorien-Uebersicht -->
+  <url>
+    <loc>https://www.rico-cuba.com/categories</loc>
+    <lastmod>2024-12-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Alle Anzeigen -->
+  <url>
+    <loc>https://www.rico-cuba.com/listings</loc>
+    <lastmod>2024-12-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Suche -->
+  <url>
+    <loc>https://www.rico-cuba.com/search</loc>
+    <lastmod>2024-12-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Ueber uns -->
+  <url>
+    <loc>https://www.rico-cuba.com/about</loc>
+    <lastmod>2024-12-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Moderationsregeln -->
+  <url>
+    <loc>https://www.rico-cuba.com/moderation-rules</loc>
+    <lastmod>2024-12-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
