@@ -19,7 +19,8 @@ async function refreshListings() {
 
     // Importiere neue Listings vom Scraper
     const scraperUrl = process.env.SCRAPER_API_URL || 'http://localhost:5000';
-    const importResult = await importRevolicoListings(scraperUrl);
+    const scraperPublicUrl = process.env.SCRAPER_PUBLIC_URL || 'http://217.154.105.67:5000';
+    const importResult = await importRevolicoListings(scraperUrl, scraperPublicUrl);
 
     console.log("\n📊 Import-Ergebnis:");
     console.log(`  ✓ Importiert: ${importResult.imported}`);

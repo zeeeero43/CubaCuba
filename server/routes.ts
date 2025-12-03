@@ -2999,10 +2999,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/revolico/import", requireAdmin, async (req, res) => {
     try {
       const scraperApiUrl = req.body.scraperApiUrl || process.env.SCRAPER_API_URL || 'http://localhost:5000';
+      const scraperPublicUrl = req.body.scraperPublicUrl || process.env.SCRAPER_PUBLIC_URL || 'http://217.154.105.67:5000';
 
       console.log(`Starting Revolico import from ${scraperApiUrl}...`);
+      console.log(`Using public URL for images: ${scraperPublicUrl}`);
 
-      const result = await importRevolicoListings(scraperApiUrl);
+      const result = await importRevolicoListings(scraperApiUrl, scraperPublicUrl);
 
       await storage.createModerationLog({
         action: "revolico_import",

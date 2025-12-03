@@ -219,7 +219,8 @@ interface ImportResult {
 }
 
 export async function importRevolicoListings(
-  scraperApiUrl: string = 'http://localhost:5000'
+  scraperApiUrl: string = 'http://localhost:5000',
+  scraperPublicUrl: string = 'http://217.154.105.67:5000'
 ): Promise<ImportResult> {
   const result: ImportResult = {
     success: true,
@@ -274,9 +275,9 @@ export async function importRevolicoListings(
           ? categoryMap.get(mappedCategoryName) || categoryMap.get('Otros')
           : categoryMap.get('Otros');
 
-        // Convert image hashes to URLs (proxy through scraper)
+        // Convert image hashes to URLs (use PUBLIC URL for browser access)
         const imageUrls = scraped.image_ids.map(
-          hash => `${scraperApiUrl}/api/image-proxy/${hash}`
+          hash => `${scraperPublicUrl}/api/image-proxy/${hash}`
         );
 
         // Extract primary phone number
