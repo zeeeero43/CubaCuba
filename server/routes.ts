@@ -3034,6 +3034,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Proxy für Scraper-Bilder (HTTPS -> HTTP)
+  // Ermöglicht das Laden von Scraper-Bildern ohne Mixed Content Fehler
+  app.get("/api/scraper-image/:hash", async (req, res) => {
+    try {
+      const { hash } = req.params;
+      const scraperUrl = process.env.SCRAPER_API_URL || 'http://localhost:5000';
+
+      const response = await fetch(`${scraperUrl}/api/image-proxy/${hash}`);
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: 'Image not found' });
+      }
+
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      const buffer = await response.arrayBuffer();
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // 24h cache
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error('Error proxying scraper image:', error);
+      res.status(500).json({ error: 'Failed to load image' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

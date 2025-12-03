@@ -275,9 +275,9 @@ export async function importRevolicoListings(
           ? categoryMap.get(mappedCategoryName) || categoryMap.get('Otros')
           : categoryMap.get('Otros');
 
-        // Convert image hashes to URLs (use PUBLIC URL for browser access)
+        // Convert image hashes to URLs (use local proxy for HTTPS compatibility)
         const imageUrls = scraped.image_ids.map(
-          hash => `${scraperPublicUrl}/api/image-proxy/${hash}`
+          hash => `/api/scraper-image/${hash}`
         );
 
         // Extract primary phone number
