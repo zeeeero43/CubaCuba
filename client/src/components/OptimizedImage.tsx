@@ -19,8 +19,19 @@ interface OptimizedImageProps {
  * Supports Google Cloud Storage transformation parameters
  */
 function generateResponsiveSources(src: string) {
-  // Check if URL supports transformation parameters
-  const isGCS = src.includes('storage.googleapis.com') || src.includes('localhost:5000/api/image-proxy');
+  // Check if URL supports transformation parameters (GCS only)
+  const isGCS = src.includes('storage.googleapis.com');
+
+  // Scraper API images - don't add transformation params
+  const isScraperImage = src.includes('/api/image-proxy/');
+
+  if (isScraperImage) {
+    // Scraper images: use as-is without transformation
+    return {
+      srcSet: `${src} 1x`,
+      webpSrcSet: undefined,
+    };
+  }
 
   if (!isGCS) {
     return {
@@ -29,7 +40,7 @@ function generateResponsiveSources(src: string) {
     };
   }
 
-  // Generate different sizes for responsive loading
+  // Generate different sizes for responsive loading (GCS only)
   const sizes = [400, 800, 1200];
   const srcSet = sizes.map(w => `${src}?w=${w}&q=80 ${w}w`).join(', ');
   const webpSrcSet = sizes.map(w => `${src}?w=${w}&q=80&fm=webp ${w}w`).join(', ');
