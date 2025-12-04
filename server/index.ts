@@ -37,8 +37,8 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // needed for Vite in dev
-      imgSrc: ["'self'", "data:", "https:", "http://217.154.105.67:5000"],
-      connectSrc: ["'self'", "ws:", "wss:"], // WebSockets for Vite HMR
+      imgSrc: ["'self'", "data:", "https:", "http://217.154.105.67:5000", "blob:"],
+      connectSrc: ["'self'", "ws:", "wss:", "http://217.154.105.67:5000"], // WebSockets for Vite HMR + Image Proxy
       upgradeInsecureRequests: null, // DISABLED: No SSL/HTTPS configured
     },
     ...(process.env.NODE_ENV === "development" && {
